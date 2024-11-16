@@ -16,6 +16,7 @@ class SPADEApplication:
         self.room_agents = {}
         self.professor_agents = []
         self.supervisor_agent = None
+        self.professor_data = {}  # Add this line
         self.running = True
 
     async def start_platform(self):
@@ -101,13 +102,20 @@ class SPADEApplication:
                     room_jids=room_jids
                 )
 
-                # Store next professor's JID in knowledge base for chain communication
+                # Store next professor's JID for chain communication
                 if i < len(professors_data) - 1:
                     next_jid = f"professor_{i+1}@{self.xmpp_server}"
                     professor.set(f"professor_{i+1}", next_jid)
 
                 await professor.start(auto_register=True)
                 self.professor_agents.append(professor)
+                
+                # Store professor data that we'll need later
+                self.professor_data[prof_jid] = {
+                    "name": prof_data["Nombre"],
+                    "subjects": prof_data["Asignaturas"]
+                }
+                
                 print(f"Professor agent {prof_data['Nombre']} started at {prof_jid}")
             except Exception as e:
                 print(f"Error creating professor agent {prof_data['Nombre']}: {e}")
@@ -123,6 +131,11 @@ class SPADEApplication:
                 self.password,
                 professor_jids
             )
+
+            # Store professor data in supervisor's knowledge base
+            for jid, data in self.professor_data.items():
+                self.supervisor_agent.set(f"professor_data_{jid}", data)
+
             await self.supervisor_agent.start(auto_register=True)
             print(f"Supervisor agent started at {supervisor_jid}")
         except Exception as e:

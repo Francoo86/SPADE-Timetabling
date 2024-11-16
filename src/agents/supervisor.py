@@ -125,7 +125,7 @@ class SupervisorAgent(Agent):
 
                 # Save final schedules
                 with open("professor_schedules.json", "w") as f:
-                    json.dump(professor_schedules, f, indent=2)
+                    json.dump(professor_schedules, f, indent=2, ensure_ascii=False)
                 
                 print("[Supervisor] System shutdown complete.")
                 await self.agent.stop()
@@ -175,12 +175,10 @@ class SupervisorAgent(Agent):
                 
                 # Collect schedules in parallel
                 professor_schedules = await self.collect_all_schedules()
-                print("AAAAAAAAAAAAAAAA")
-                print(professor_schedules.keys())
 
                 # Save final schedules
                 with open("professor_schedules.json", "w") as f:
-                    json.dump(professor_schedules, f, indent=2)
+                    json.dump(professor_schedules, f, indent=2, ensure_ascii=False)
                 
                 print("[Supervisor] System shutdown complete.")
                 await self.agent.stop()
@@ -188,12 +186,12 @@ class SupervisorAgent(Agent):
             except Exception as e:
                 print(f"[Supervisor] Error finishing system: {str(e)}")
 
-        async def collect_all_schedules(self) -> Dict[str, dict]:
-            """Collect schedules from all professors in parallel"""
+        async def collect_all_schedules(self) -> List[dict]:
+            """Collect and transform schedules from all professors"""
             async def get_professor_schedule(jid: aioxmpp.JID) -> tuple[str, dict]:
+                jid_str = str(jid)
                 try:
-                    receptor = f"{jid.localpart}@{jid.domain}"
-                    msg = Message(to=receptor)
+                    msg = Message(to=str(jid))
                     msg.set_metadata("performative", "query-ref")
                     msg.set_metadata("ontology", "schedule-data")
                     msg.body = "schedule_query"
@@ -202,13 +200,11 @@ class SupervisorAgent(Agent):
                     response = await self.receive(timeout=2)
                     
                     if response and response.body:
-                        print(f"[Supervisor] Received schedule from {jid}")
-                        print(response.body)
-                        return str(jid), json.loads(response.body)
-                    return str(jid), None
+                        return jid_str, json.loads(response.body)
+                    return jid_str, None
                 except Exception as e:
                     print(f"[Supervisor] Error collecting schedule from {jid}: {str(e)}")
-                    return str(jid), None
+                    return jid_str, None
 
             # Create tasks for all schedule queries
             tasks = [
@@ -216,13 +212,27 @@ class SupervisorAgent(Agent):
                 for jid in self.agent.state.professor_jids
             ]
             
-            # Run all queries in parallel
-            schedules = await asyncio.gather(*tasks)
-            return {
-                jid: schedule 
-                for jid, schedule in schedules 
-                if schedule is not None
-            }
+            # Run all queries in parallel and collect results
+            raw_schedules = await asyncio.gather(*tasks)
+            
+            # Transform the data into the desired format
+            transformed_schedules = []
+            for jid, schedule in raw_schedules:
+                if schedule is not None:
+                    # Get professor data from knowledge base
+                    prof_data = self.agent.get(f"professor_data_{jid}")
+                    if prof_data:
+                        transformed_schedule = {
+                            "Nombre": prof_data["name"],
+                            "AsignaturasCompletadas": len(schedule["Asignaturas"]),
+                            "Solicitudes": len(prof_data["subjects"]),
+                            "Asignaturas": schedule["Asignaturas"]
+                        }
+                        transformed_schedules.append(transformed_schedule)
+
+            # Sort by professor name to maintain consistent order
+            transformed_schedules.sort(key=lambda x: x["Nombre"])
+            return transformed_schedules
 
     class MessageHandlerBehaviour(CyclicBehaviour):
         async def run(self):
