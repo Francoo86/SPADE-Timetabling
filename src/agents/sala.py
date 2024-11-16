@@ -79,6 +79,11 @@ class RoomAgent(Agent):
         status_template.set_metadata("performative", "query-ref")
         status_template.set_metadata("ontology", "agent-status")
         self.add_behaviour(self.StatusResponseBehaviour(), status_template)
+        
+        schedule_template = Template()
+        schedule_template.set_metadata("performative", "query-ref")
+        schedule_template.set_metadata("ontology", "room-schedule")
+        self.add_behaviour(self.HandleScheduleQueryBehaviour(), schedule_template)
 
     @property
     def code(self) -> str:
@@ -87,6 +92,43 @@ class RoomAgent(Agent):
     @property
     def capacity(self) -> int:
         return self._capacity
+    
+    class HandleScheduleQueryBehaviour(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=0.5)
+            if not msg:
+                return
+
+            try:
+                if msg.get_metadata("ontology") == "room-schedule":
+                    # Format schedule data
+                    schedule_data = {
+                        "code": self.agent.code,
+                        "schedule": {}
+                    }
+                    
+                    for day, assignments in self.agent.state.schedule.items():
+                        schedule_data["schedule"][day] = [
+                            {
+                                "subject_name": a.subject_name,
+                                "satisfaction": a.satisfaction
+                            } if a else None
+                            for a in assignments
+                        ]
+                    
+                    # Send response
+                    reply = Message(
+                        to=str(msg.sender)
+                    )
+                    reply.set_metadata("performative", "inform")
+                    reply.set_metadata("ontology", "room-schedule-data")
+                    reply.set_metadata("room-code", self.agent.code)
+                    reply.body = json.dumps(schedule_data)
+                    await self.send(reply)
+                    
+            except Exception as e:
+                print(f"Error sending room schedule for {self.agent.code}: {str(e)}")
+
 
     class HandleRequestsBehaviour(CyclicBehaviour):
         async def run(self):

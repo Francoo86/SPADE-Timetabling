@@ -124,6 +124,7 @@ class SPADEApplication:
         """Initialize and start the supervisor agent"""
         try:
             professor_jids = [agent.jid for agent in self.professor_agents]
+            room_jids = [agent.jid for agent in self.room_agents.values()]
             supervisor_jid = f"supervisor@{self.xmpp_server}"
             
             self.supervisor_agent = SupervisorAgent(
@@ -132,9 +133,10 @@ class SPADEApplication:
                 professor_jids
             )
 
-            # Store professor data in supervisor's knowledge base
+            # Store agent data in supervisor's knowledge base
             for jid, data in self.professor_data.items():
                 self.supervisor_agent.set(f"professor_data_{jid}", data)
+            self.supervisor_agent.set("room_jids", room_jids)
 
             await self.supervisor_agent.start(auto_register=True)
             print(f"Supervisor agent started at {supervisor_jid}")
