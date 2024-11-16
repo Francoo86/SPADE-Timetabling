@@ -22,13 +22,14 @@ class ProfesorAgent(Agent):
     DAYS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"]
     TIMEOUT_PROPOSAL = 5  # seconds
 
-    def __init__(self, jid: str, password: str, json_data: dict, order: int):
+    def __init__(self, jid: str, password: str, json_data: dict, order: int, room_jids: List[str]):
         super().__init__(jid, password)
         # Store initialization data
         self._order = order
         self._name = json_data.get("Nombre")
         self._rut = json_data.get("RUT")
         self._subjects = []
+        self._room_jids = room_jids  # Store room JIDs
         
         # Process subjects from JSON
         for subject in json_data.get("Asignaturas", []):
@@ -105,12 +106,9 @@ class ProfesorAgent(Agent):
 
             current_subject = self.agent.subjects[self.agent.state.current_subject]
             
-            # Request proposals
+            # Request proposals from all known rooms
             try:
-                # Find available rooms (in real implementation, this would use service discovery)
-                room_agents = ["room_A101@localhost"]  # Example - replace with actual room discovery
-                
-                for room_jid in room_agents:
+                for room_jid in self.agent._room_jids:
                     msg = Message(
                         to=room_jid,
                         body=f"{current_subject['nombre']},{current_subject['vacantes']}",
@@ -206,20 +204,19 @@ class ProfesorAgent(Agent):
                 try:
                     self.agent.state.is_cleaning_up = True
                     
-                    # Notify next professor
-                    next_order = self.agent.order + 1
-                    # In real implementation, this would use service discovery
-                    next_professor = f"professor_{next_order}@localhost"
+                    # Get next professor's JID from knowledge base
+                    next_professor = self.agent.get(f"professor_{self.agent.order + 1}")
                     
-                    msg = Message(
-                        to=next_professor,
-                        body="START",
-                        metadata={
-                            "performative": "inform",
-                            "next_order": str(next_order)
-                        }
-                    )
-                    await self.send(msg)
+                    if next_professor:
+                        msg = Message(
+                            to=next_professor,
+                            body="START",
+                            metadata={
+                                "performative": "inform",
+                                "next_order": str(self.agent.order + 1)
+                            }
+                        )
+                        await self.send(msg)
                     
                     print(f"Professor {self.agent.name} completed negotiations")
                     

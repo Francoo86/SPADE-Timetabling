@@ -4,6 +4,7 @@ from spade.message import Message
 from spade.template import Template
 from typing import Dict, List, Optional
 import json
+import asyncio
 
 class RoomAssignment:
     def __init__(self, subject_name: str, satisfaction: int):
@@ -47,7 +48,7 @@ class RoomState:
 
 class RoomAgent(Agent):
     DAYS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"]
-
+    
     def __init__(self, jid: str, password: str, json_data: dict, schedule_handler=None):
         super().__init__(jid, password)
         self._code = json_data.get("Codigo")
@@ -60,6 +61,9 @@ class RoomAgent(Agent):
         self.state.initialize_schedule(self.DAYS)
         
         print(f"Room {self._code} started. Capacity: {self._capacity}")
+
+        # Store current status in agent's knowledge base
+        self.set("status", "ACTIVE")
         
         # Add behaviors for handling different types of messages
         cfp_template = Template()
@@ -102,9 +106,9 @@ class RoomAgent(Agent):
                     for block in range(5):
                         if schedule_day[block] is None:  # Time slot is available
                             reply = Message(
-                                to=str(msg.sender),
-                                metadata={"performative": "propose"}
+                                to=str(msg.sender)
                             )
+                            reply.set_metadata("performative", "propose")
                             reply.body = f"{day},{block + 1},{self.agent.code},{self.agent.capacity},{satisfaction}"
                             await self.send(reply)
                             proposal_sent = True
@@ -114,9 +118,9 @@ class RoomAgent(Agent):
                 
                 if not proposal_sent:
                     reply = Message(
-                        to=str(msg.sender),
-                        metadata={"performative": "refuse"}
+                        to=str(msg.sender)
                     )
+                    reply.set_metadata("performative", "refuse")
                     await self.send(reply)
                     print(f"Room {self.agent.code} has no available blocks for {subject_name}")
                     
@@ -158,20 +162,26 @@ class RoomAgent(Agent):
                     0 <= block < len(schedule_day) and 
                     schedule_day[block] is None):
                     
+                    # Create new assignment
                     new_assignment = RoomAssignment(subject_name, satisfaction)
                     schedule_day[block] = new_assignment
 
+                    # Update schedule in handler if available
                     if self.agent._schedule_handler:
+                        schedule_dict = {}
+                        for d, assignments in self.agent.state.schedule.items():
+                            schedule_dict[d] = [a.to_dict() if a else None for a in assignments]
                         await self.agent._schedule_handler.update_room_schedule(
                             self.agent.code,
-                            {day: [a.to_dict() if a else None for a in schedule_day]}
+                            schedule_dict
                         )
 
+                    # Send confirmation
                     reply = Message(
-                        to=str(msg.sender),
-                        metadata={"performative": "inform"},
-                        body="CONFIRM"
+                        to=str(msg.sender)
                     )
+                    reply.set_metadata("performative", "inform")
+                    reply.body = "CONFIRM"
                     await self.send(reply)
 
                     print(f"Room {self.agent.code}: Assigned {subject_name} on {day}, "
@@ -191,10 +201,11 @@ class RoomAgent(Agent):
 
             try:
                 reply = Message(
-                    to=str(msg.sender),
-                    metadata={"performative": "inform"}
+                    to=str(msg.sender)
                 )
-                reply.body = "ACTIVE"  # or other appropriate status
+                reply.set_metadata("performative", "inform")
+                reply.body = self.agent.get("status", "ACTIVE")
                 await self.send(reply)
+                
             except Exception as e:
                 print(f"Error sending status for room {self.agent.code}: {str(e)}")
