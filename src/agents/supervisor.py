@@ -72,72 +72,6 @@ class SupervisorAgent(Agent):
                 print(f"[Supervisor] Error handling room schedule: {str(e)}")
 
     class MonitorBehaviour(PeriodicBehaviour):
-        async def finish_system(self):
-            """Clean up and shut down the system"""
-            try:
-                self.agent.set("system_active", False)
-                print("[Supervisor] Generating final JSON files...")
-                
-                # Collect professor schedules
-                professor_schedules = await self.collect_all_schedules()
-                with open("professor_schedules.json", "w") as f:
-                    json.dump(professor_schedules, f, indent=2, ensure_ascii=False)
-
-
-                # Collect and save room schedules
-                room_schedules = await self.collect_room_schedules()
-                print("ROOM SCHEDULES: ", room_schedules)
-                with open("rooms_output.json", "w") as f:
-                    json.dump(room_schedules, f, indent=2, ensure_ascii=False)
-                
-                print("[Supervisor] System shutdown complete.")
-                await self.agent.stop()
-                
-            except Exception as e:
-                print(f"[Supervisor] Error finishing system: {str(e)}")
-
-        async def collect_room_schedules(self) -> List[dict]:
-            """Collect all room schedules and format them"""
-            room_schedules = []
-            
-            for room_jid in self.agent.get("room_jids") or []:
-                try:
-                    msg = Message(
-                        to=str(room_jid),
-                        metadata={
-                            "performative": "query-ref",
-                            "ontology": "room-schedule"
-                        }
-                    )
-                    await self.send(msg)
-                    response = await self.receive(timeout=2)
-                    
-                    if response and response.body:
-                        schedule_data = json.loads(response.body)
-                        room_schedule = {
-                            "Codigo": schedule_data["code"],
-                            "Asignaturas": []
-                        }
-                        
-                        # Transform schedule data into required format
-                        for day, assignments in schedule_data["schedule"].items():
-                            for block_idx, assignment in enumerate(assignments, 1):
-                                if assignment:
-                                    room_schedule["Asignaturas"].append({
-                                        "Nombre": assignment["subject_name"],
-                                        "Valoracion": assignment["satisfaction"],
-                                        "Bloque": block_idx,
-                                        "Dia": day
-                                    })
-                        
-                        room_schedules.append(room_schedule)
-                
-                except Exception as e:
-                    print(f"[Supervisor] Error collecting room schedule: {str(e)}")
-            
-            return room_schedules
-
-    class MonitorBehaviour(PeriodicBehaviour):
         def __init__(self, period: float, start_at: datetime | None = None):
             super().__init__(period, start_at)
             self.current_iteration = 0
@@ -202,13 +136,13 @@ class SupervisorAgent(Agent):
                 
                 # Collect professor schedules
                 professor_schedules = await self.collect_all_schedules()
-                with open("professor_schedules.json", "w") as f:
+                with open("professor_schedules.json", "w", encoding="utf-8") as f:
                     json.dump(professor_schedules, f, indent=2, ensure_ascii=False)
 
                 # Collect and save room schedules
                 room_schedules = await self.collect_room_schedules()
                 print("[Supervisor] Room schedules collected:", room_schedules)
-                with open("rooms_output.json", "w") as f:
+                with open("rooms_output.json", "w", encoding="utf-8") as f:
                     json.dump(room_schedules, f, indent=2, ensure_ascii=False)
                 
                 print("[Supervisor] System shutdown complete.")
