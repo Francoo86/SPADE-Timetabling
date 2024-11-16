@@ -89,7 +89,7 @@ class ProfesorAgent(Agent):
                 return
 
             if msg.body == "START":
-                next_order = int(msg.get_metadata("next_order", -1))
+                next_order = int(msg.get_metadata("next_order") or -1)
                 if next_order == self.agent.order:
                     print(f"Professor {self.agent.name} (order {self.agent.order}) activating on START signal")
                     self.agent.add_behaviour(self.agent.NegotiationBehaviour())
@@ -211,7 +211,7 @@ class ProfesorAgent(Agent):
                     
                     if next_professor:
                         msg = Message(
-                            to=f"professor_{self.agent.order + 1}@{self.agent.jid.host}",
+                            to=str(next_professor),
                             body="START",
                             metadata={
                                 "performative": "inform",
