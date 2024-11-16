@@ -139,6 +139,9 @@ class SPADEApplication:
             self.supervisor_agent.set("room_jids", room_jids)
 
             await self.supervisor_agent.start(auto_register=True)
+            # use the web interface to check everything
+            self.supervisor_agent.web.start(hostname="127.0.0.1", port=10000)
+            
             print(f"Supervisor agent started at {supervisor_jid}")
         except Exception as e:
             print(f"Error creating supervisor agent: {e}")
