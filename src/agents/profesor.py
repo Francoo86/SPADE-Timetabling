@@ -1,190 +1,280 @@
 from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour, PeriodicBehaviour, OneShotBehaviour
+from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
 from datetime import datetime, timedelta
+from typing import Dict, List, Optional
 import json
 import asyncio
 
+class ProfesorState:
+    def __init__(self):
+        self.current_subject = 0
+        self.proposals = []
+        self.negotiation_started = False
+        self.is_cleaning_up = False
+        self.occupied_schedule: Dict[str, set] = {}  # day -> set of blocks
+        self.schedule_json = {
+            "Asignaturas": []
+        }
+
 class ProfesorAgent(Agent):
-    class NegotiationState:
-        def __init__(self):
-            self.current_subject = 0
-            self.proposals = []
-            self.negotiation_started = False
-            self.is_cleaning_up = False
-            self.occupied_schedule = {}  # day -> set of blocks
-            self.schedule_json = {
-                "Asignaturas": []
-            }
+    DAYS = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"]
+    TIMEOUT_PROPOSAL = 5  # seconds
+
+    def __init__(self, jid: str, password: str, json_data: dict, order: int):
+        super().__init__(jid, password)
+        # Store initialization data
+        self._order = order
+        self._name = json_data.get("Nombre")
+        self._rut = json_data.get("RUT")
+        self._subjects = []
+        
+        # Process subjects from JSON
+        for subject in json_data.get("Asignaturas", []):
+            self._subjects.append({
+                "nombre": subject["Nombre"],
+                "horas": subject["Horas"],
+                "vacantes": subject["Vacantes"]
+            })
+            
+        self.state = None
 
     async def setup(self):
-        self.state = self.NegotiationState()
-        
-        # Initialize from JSON data
-        if self.json_data:
-            self.name = self.json_data.get("Nombre")
-            self.rut = self.json_data.get("RUT")
-            self.subjects = []
-            
-            for subject in self.json_data.get("Asignaturas", []):
-                self.subjects.append({
-                    "nombre": subject["Nombre"],
-                    "horas": subject["Horas"],
-                    "vacantes": subject["Vacantes"]
-                })
-        
-        print(f"Professor {self.name} (order {self.order}) started")
-        
-        # Register behaviors
-        if self.order == 0:
+        """Initialize the professor agent"""
+        self.state = ProfesorState()
+        print(f"Professor {self._name} (order {self._order}) started")
+
+        # Add behaviors based on order
+        if self._order == 0:
             self.add_behaviour(self.NegotiationBehaviour())
         else:
-            template = Template()
-            template.set_metadata("performative", "inform")
-            self.add_behaviour(self.WaitTurnBehaviour(), template)
-        
-        # Add periodic status check
-        self.add_behaviour(self.StatusCheckBehaviour(period=5))
+            start_template = Template()
+            start_template.set_metadata("performative", "inform")
+            self.add_behaviour(self.WaitTurnBehaviour(), start_template)
+
+        # Add status response behavior
+        status_template = Template()
+        status_template.set_metadata("performative", "query-ref")
+        status_template.set_metadata("ontology", "agent-status")
+        self.add_behaviour(self.StatusResponseBehaviour(), status_template)
+
+        # Add schedule query behavior
+        schedule_template = Template()
+        schedule_template.set_metadata("performative", "query-ref")
+        schedule_template.set_metadata("ontology", "schedule-data")
+        self.add_behaviour(self.ScheduleQueryBehaviour(), schedule_template)
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def rut(self) -> str:
+        return self._rut
+
+    @property
+    def order(self) -> int:
+        return self._order
+
+    @property
+    def subjects(self) -> List[dict]:
+        return self._subjects
 
     class WaitTurnBehaviour(CyclicBehaviour):
         async def run(self):
             msg = await self.receive(timeout=0.5)
-            if msg:
-                if msg.body == "START":
-                    next_order = int(msg.get_metadata("next_order"))
-                    if next_order == self.agent.order:
-                        print(f"Professor {self.agent.name} (order {self.agent.order}) activating on START signal")
-                        self.agent.add_behaviour(self.agent.NegotiationBehaviour())
-                        self.kill()
-                    else:
-                        print(f"[DEBUG] Ignoring START message (not for me)")
+            if not msg:
+                return
+
+            if msg.body == "START":
+                next_order = int(msg.get_metadata("next_order", -1))
+                if next_order == self.agent.order:
+                    print(f"Professor {self.agent.name} (order {self.agent.order}) activating on START signal")
+                    self.agent.add_behaviour(self.agent.NegotiationBehaviour())
+                    self.kill()
+                else:
+                    print(f"[DEBUG] Ignoring START message (not for me)")
 
     class NegotiationBehaviour(CyclicBehaviour):
         async def run(self):
             if self.agent.state.current_subject >= len(self.agent.subjects):
-                await self.cleanup()
+                await self.finish_negotiation()
                 self.kill()
                 return
 
             current_subject = self.agent.subjects[self.agent.state.current_subject]
             
             # Request proposals
-            msg = Message(
-                to="directory@localhost",  # Service discovery would be implemented here
-                body=f"{current_subject['nombre']},{current_subject['vacantes']}",
-                metadata={"performative": "cfp"}
-            )
-            await self.send(msg)
-            
-            # Wait for proposals
-            start_time = datetime.now()
-            while (datetime.now() - start_time).seconds < 5:  # 5 second timeout
-                msg = await self.receive(timeout=0.1)
-                if msg and msg.get_metadata("performative") == "propose":
-                    proposal = self.parse_proposal(msg.body)
-                    proposal["message"] = msg
-                    self.agent.state.proposals.append(proposal)
-            
-            # Evaluate proposals
-            if self.agent.state.proposals:
-                if await self.evaluate_proposals():
-                    self.agent.state.current_subject += 1
-                    self.agent.state.proposals = []
-            else:
-                print(f"Professor {self.agent.name}: No proposals received for {current_subject['nombre']}")
-                self.agent.state.current_subject += 1
-
-        async def evaluate_proposals(self):
-            # Sort proposals by satisfaction
-            proposals = sorted(
-                self.agent.state.proposals,
-                key=lambda p: p["satisfaction"],
-                reverse=True
-            )
-            
-            for proposal in proposals:
-                day = proposal["day"]
-                block = proposal["block"]
-                room = proposal["room"]
-                satisfaction = proposal["satisfaction"]
+            try:
+                # Find available rooms (in real implementation, this would use service discovery)
+                room_agents = ["room_A101@localhost"]  # Example - replace with actual room discovery
                 
-                occupied_blocks = self.agent.state.occupied_schedule.get(day, set())
-                
-                if block not in occupied_blocks:
-                    # Accept proposal
-                    reply = Message(
-                        to=proposal["message"].sender,
-                        body=f"{day},{block},{self.agent.subjects[self.agent.state.current_subject]['nombre']},{satisfaction},{room}",
-                        metadata={"performative": "accept-proposal"}
+                for room_jid in room_agents:
+                    msg = Message(
+                        to=room_jid,
+                        body=f"{current_subject['nombre']},{current_subject['vacantes']}",
+                        metadata={"performative": "cfp"}
                     )
-                    await self.send(reply)
+                    await self.send(msg)
+
+                # Wait for proposals
+                start_time = datetime.now()
+                self.agent.state.proposals = []
+                
+                while (datetime.now() - start_time).total_seconds() < self.agent.TIMEOUT_PROPOSAL:
+                    msg = await self.receive(timeout=0.1)
+                    if msg and msg.get_metadata("performative") == "propose":
+                        proposal = self.parse_proposal(msg.body)
+                        proposal["message"] = msg
+                        self.agent.state.proposals.append(proposal)
+
+                # Evaluate proposals
+                if self.agent.state.proposals:
+                    if await self.evaluate_proposals():
+                        self.agent.state.current_subject += 1
+                else:
+                    print(f"Professor {self.agent.name}: No proposals received for {current_subject['nombre']}")
+                    self.agent.state.current_subject += 1
+
+            except Exception as e:
+                print(f"Error in negotiation for professor {self.agent.name}: {str(e)}")
+
+        async def evaluate_proposals(self) -> bool:
+            """Evaluate received proposals and accept the best one"""
+            try:
+                # Sort proposals by satisfaction
+                proposals = sorted(
+                    self.agent.state.proposals,
+                    key=lambda p: p["satisfaction"],
+                    reverse=True
+                )
+
+                current_subject = self.agent.subjects[self.agent.state.current_subject]
+                
+                for proposal in proposals:
+                    day = proposal["day"]
+                    block = proposal["block"]
+                    room = proposal["room"]
+                    satisfaction = proposal["satisfaction"]
                     
-                    # Wait for confirmation
-                    msg = await self.receive(timeout=5)
-                    if msg and msg.get_metadata("performative") == "inform":
-                        # Update schedule
-                        if day not in self.agent.state.occupied_schedule:
-                            self.agent.state.occupied_schedule[day] = set()
-                        self.agent.state.occupied_schedule[day].add(block)
+                    # Check if time slot is available for professor
+                    occupied_blocks = self.agent.state.occupied_schedule.get(day, set())
+                    
+                    if block not in occupied_blocks:
+                        # Accept proposal
+                        reply = Message(
+                            to=str(proposal["message"].sender),
+                            metadata={"performative": "accept-proposal"}
+                        )
                         
-                        # Update JSON schedule
-                        self.update_schedule_json(day, room, block, satisfaction)
-                        return True
+                        reply.body = f"{day},{block},{current_subject['nombre']},{satisfaction},{room}"
+                        await self.send(reply)
+                        
+                        # Wait for confirmation
+                        confirm_msg = await self.receive(timeout=5)
+                        
+                        if confirm_msg and confirm_msg.body == "CONFIRM":
+                            # Update schedule
+                            if day not in self.agent.state.occupied_schedule:
+                                self.agent.state.occupied_schedule[day] = set()
+                            self.agent.state.occupied_schedule[day].add(block)
+                            
+                            # Update JSON schedule
+                            assignment = {
+                                "Nombre": current_subject["nombre"],
+                                "Sala": room,
+                                "Bloque": block,
+                                "Dia": day,
+                                "Satisfaccion": satisfaction
+                            }
+                            self.agent.state.schedule_json["Asignaturas"].append(assignment)
+                            
+                            print(f"Professor {self.agent.name}: Successfully assigned "
+                                  f"{current_subject['nombre']} in room {room}, day {day}, "
+                                  f"block {block}, satisfaction {satisfaction}")
+                            return True
+            
+            except Exception as e:
+                print(f"Error evaluating proposals for professor {self.agent.name}: {str(e)}")
             
             return False
 
-        def update_schedule_json(self, day, room, block, satisfaction):
-            subject = {
-                "Nombre": self.agent.subjects[self.agent.state.current_subject]["nombre"],
-                "Sala": room,
-                "Bloque": block,
-                "Dia": day,
-                "Satisfaccion": satisfaction
-            }
-            self.agent.state.schedule_json["Asignaturas"].append(subject)
-
-        async def cleanup(self):
+        async def finish_negotiation(self):
+            """Clean up and notify next professor"""
             if not self.agent.state.is_cleaning_up:
-                self.agent.state.is_cleaning_up = True
-                
-                # Save final schedule
-                # Implementation of schedule saving would go here
-                
-                # Notify next professor
-                next_order = self.agent.order + 1
-                msg = Message(
-                    to="directory@localhost",  # Would be replaced with actual next professor address
-                    body="START",
-                    metadata={
-                        "performative": "inform",
-                        "next_order": str(next_order)
-                    }
-                )
-                await self.send(msg)
-                
-                # Final cleanup
-                await self.agent.stop()
+                try:
+                    self.agent.state.is_cleaning_up = True
+                    
+                    # Notify next professor
+                    next_order = self.agent.order + 1
+                    # In real implementation, this would use service discovery
+                    next_professor = f"professor_{next_order}@localhost"
+                    
+                    msg = Message(
+                        to=next_professor,
+                        body="START",
+                        metadata={
+                            "performative": "inform",
+                            "next_order": str(next_order)
+                        }
+                    )
+                    await self.send(msg)
+                    
+                    print(f"Professor {self.agent.name} completed negotiations")
+                    
+                except Exception as e:
+                    print(f"Error in finish_negotiation for professor {self.agent.name}: {str(e)}")
 
-    class StatusCheckBehaviour(PeriodicBehaviour):
+        @staticmethod
+        def parse_proposal(proposal_string: str) -> dict:
+            """Parse proposal string into dictionary"""
+            parts = proposal_string.split(",")
+            return {
+                "day": parts[0],
+                "block": int(parts[1]),
+                "room": parts[2],
+                "capacity": int(parts[3]),
+                "satisfaction": int(parts[4])
+            }
+
+    class StatusResponseBehaviour(CyclicBehaviour):
         async def run(self):
-            print(f"\n=== Status Check for Professor {self.agent.name} ===")
-            print(f"Current subject: {self.agent.state.current_subject}/{len(self.agent.subjects)}")
-            print(f"Occupied schedule: {self.agent.state.occupied_schedule}")
-            print("=============================\n")
+            msg = await self.receive(timeout=0.5)
+            if not msg:
+                return
 
-    @staticmethod
-    def parse_proposal(proposal_string):
-        parts = proposal_string.split(",")
-        return {
-            "day": parts[0],
-            "block": int(parts[1]),
-            "room": parts[2],
-            "capacity": int(parts[3]),
-            "satisfaction": int(parts[4])
-        }
+            try:
+                reply = Message(
+                    to=str(msg.sender),
+                    metadata={"performative": "inform"}
+                )
+                
+                if self.agent.state.is_cleaning_up:
+                    reply.body = "TERMINATED"
+                elif self.agent.state.current_subject >= len(self.agent.subjects):
+                    reply.body = "TERMINATED"
+                else:
+                    reply.body = "ACTIVE"
+                
+                await self.send(reply)
+                
+            except Exception as e:
+                print(f"Error sending status for professor {self.agent.name}: {str(e)}")
 
-    def __init__(self, jid: str, password: str, json_data: dict, order: int):
-        super().__init__(jid, password)
-        self.json_data = json_data
-        self.order = order
+    class ScheduleQueryBehaviour(CyclicBehaviour):
+        async def run(self):
+            msg = await self.receive(timeout=0.5)
+            if not msg:
+                return
+
+            try:
+                reply = Message(
+                    to=str(msg.sender),
+                    metadata={"performative": "inform"}
+                )
+                reply.body = json.dumps(self.agent.state.schedule_json)
+                await self.send(reply)
+                
+            except Exception as e:
+                print(f"Error sending schedule for professor {self.agent.name}: {str(e)}")
