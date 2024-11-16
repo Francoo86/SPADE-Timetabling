@@ -109,6 +109,8 @@ class ProfesorAgent(Agent):
             # Request proposals from all known rooms
             try:
                 for room_jid in self.agent._room_jids:
+                    print(f"Professor {self.agent.name}: Requesting proposals for {current_subject['nombre']} to {room_jid}")
+                    print(f"JID data: ", str(room_jid))
                     msg = Message(
                         to=room_jid,
                         body=f"{current_subject['nombre']},{current_subject['vacantes']}",
@@ -209,7 +211,7 @@ class ProfesorAgent(Agent):
                     
                     if next_professor:
                         msg = Message(
-                            to=next_professor,
+                            to=f"professor_{self.agent.order + 1}@{self.agent.jid.host}",
                             body="START",
                             metadata={
                                 "performative": "inform",

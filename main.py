@@ -24,12 +24,6 @@ class SPADEApplication:
             professors_data = self.load_json("profesores.json")
             rooms_data = self.load_json("salas.json")
 
-            # Calculate total subjects for room request configuration
-            total_subjects = sum(
-                len(prof.get("Asignaturas", [])) 
-                for prof in professors_data
-            )
-
             # Initialize room agents first
             print("Creating room agents...")
             await self.initialize_rooms(rooms_data)
@@ -50,8 +44,11 @@ class SPADEApplication:
             print("Platform initialization complete.")
             
             # Wait until supervisor finishes
-            while self.supervisor_agent.get("system_active", True):
+            while self.running:
                 try:
+                    system_active = self.supervisor_agent.get("system_active")
+                    if not system_active:
+                        break
                     await asyncio.sleep(1)
                 except KeyboardInterrupt:
                     break

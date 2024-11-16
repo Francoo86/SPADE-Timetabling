@@ -6,6 +6,7 @@ from typing import List, Dict
 import json
 from datetime import datetime, timedelta
 import asyncio
+import aioxmpp
 
 class SupervisorState:
     def __init__(self, professor_jids: List[str]):
@@ -56,8 +57,16 @@ class SupervisorAgent(Agent):
             print("[Supervisor] Starting monitoring cycle")
             self.agent.state.state_count = {state: 0 for state in self.agent.state.state_count}
 
+    class MonitorBehaviour(PeriodicBehaviour):
+        def __init__(self, period: float, start_at: datetime | None = None):
+            super().__init__(period, start_at)
+            self.current_iteration = 0
+        
         async def run(self):
-            if not self.agent.get("system_active", True):
+            self.current_iteration += 1
+            # Check system active status
+            system_active = self.agent.get("system_active")
+            if not system_active:
                 self.kill()
                 return
 
@@ -91,7 +100,7 @@ class SupervisorAgent(Agent):
                         inactivity = self.agent.state.inactivity_counters.get(jid, 0)
                         if inactivity >= self.agent.state.MAX_INACTIVITY:
                             print(f"[WARNING] Professor {jid} appears stuck in {current_state} state. "
-                                  f"Inactivity count: {inactivity}")
+                                f"Inactivity count: {inactivity}")
 
                 # Print regular status report every 4 cycles
                 if self.current_iteration % 4 == 0:
@@ -104,11 +113,32 @@ class SupervisorAgent(Agent):
             except Exception as e:
                 print(f"[Supervisor] Error in monitoring: {str(e)}")
 
+        async def finish_system(self):
+            """Clean up and shut down the system"""
+            try:
+                # Update system active status
+                self.agent.set("system_active", False)
+                print("[Supervisor] Generating final JSON files...")
+                
+                # Collect schedules in parallel
+                professor_schedules = await self.collect_all_schedules()
+
+                # Save final schedules
+                with open("professor_schedules.json", "w") as f:
+                    json.dump(professor_schedules, f, indent=2)
+                
+                print("[Supervisor] System shutdown complete.")
+                await self.agent.stop()
+                
+            except Exception as e:
+                print(f"[Supervisor] Error finishing system: {str(e)}")
+
         async def query_all_professors(self) -> Dict[str, Message]:
             """Query all professors in parallel and return their responses"""
-            async def query_professor(jid: str) -> tuple[str, Message]:
+            async def query_professor(jid: aioxmpp.JID) -> tuple[str, Message]:
                 try:
-                    msg = Message(to=jid)
+                    receptor = f"{jid.localpart}@{jid.domain}"
+                    msg = Message(to=receptor)
                     msg.set_metadata("performative", "query-ref")
                     msg.set_metadata("ontology", "agent-status")
                     msg.body = "status_query"
@@ -145,6 +175,8 @@ class SupervisorAgent(Agent):
                 
                 # Collect schedules in parallel
                 professor_schedules = await self.collect_all_schedules()
+                print("AAAAAAAAAAAAAAAA")
+                print(professor_schedules.keys())
 
                 # Save final schedules
                 with open("professor_schedules.json", "w") as f:
@@ -158,9 +190,10 @@ class SupervisorAgent(Agent):
 
         async def collect_all_schedules(self) -> Dict[str, dict]:
             """Collect schedules from all professors in parallel"""
-            async def get_professor_schedule(jid: str) -> tuple[str, dict]:
+            async def get_professor_schedule(jid: aioxmpp.JID) -> tuple[str, dict]:
                 try:
-                    msg = Message(to=jid)
+                    receptor = f"{jid.localpart}@{jid.domain}"
+                    msg = Message(to=receptor)
                     msg.set_metadata("performative", "query-ref")
                     msg.set_metadata("ontology", "schedule-data")
                     msg.body = "schedule_query"
@@ -169,11 +202,13 @@ class SupervisorAgent(Agent):
                     response = await self.receive(timeout=2)
                     
                     if response and response.body:
-                        return jid, json.loads(response.body)
-                    return jid, None
+                        print(f"[Supervisor] Received schedule from {jid}")
+                        print(response.body)
+                        return str(jid), json.loads(response.body)
+                    return str(jid), None
                 except Exception as e:
                     print(f"[Supervisor] Error collecting schedule from {jid}: {str(e)}")
-                    return jid, None
+                    return str(jid), None
 
             # Create tasks for all schedule queries
             tasks = [
