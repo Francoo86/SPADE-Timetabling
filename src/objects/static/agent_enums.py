@@ -2,17 +2,23 @@
 from enum import Enum
 
 class TipoContrato(Enum):
-    JORNADA_COMPLETA = 1
-    MEDIA_JORNADA = 2
-    JORNADA_PARCIAL = 3
+    JORNADA_COMPLETA = 0
+    MEDIA_JORNADA = 1
+    JORNADA_PARCIAL = 2
     
 class Actividad(Enum):
-    TEORIA = 1
-    LABORATORIO = 2
-    PRACTICA = 3
-    TALLER = 4
-    AYUDANTIA = 5
-    TUTORIA = 6
+    TEORIA = 0
+    LABORATORIO = 1
+    PRACTICA = 2
+    TALLER = 3
+    AYUDANTIA = 4
+    TUTORIA = 5
+    
+class NegotiationState(Enum):
+    SETUP = 1
+    COLLECTING_PROPOSALS = 2
+    EVALUATING_PROPOSALS = 3
+    FINISHED = 4
     
 class Day(str, Enum):
     LUNES = "Lunes"
