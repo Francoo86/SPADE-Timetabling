@@ -15,10 +15,10 @@ class Actividad(Enum):
     TUTORIA = 5
     
 class NegotiationState(Enum):
-    SETUP = 1
-    COLLECTING_PROPOSALS = 2
-    EVALUATING_PROPOSALS = 3
-    FINISHED = 4
+    SETUP = 0
+    COLLECTING_PROPOSALS = 1
+    EVALUATING_PROPOSALS = 2
+    FINISHED = 3
     
 class Day(str, Enum):
     LUNES = "Lunes"
