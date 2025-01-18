@@ -16,6 +16,31 @@ class Asignatura:
     def __str__(self) -> str:
         return f"{self.nombre},{self.nivel},{self.paralelo},{self.horas},{self.vacantes},{self.campus},{self.codigo_asignatura}"
 
+    # lets implement getters
+    def get_nombre(self) -> str:
+        return self.nombre
+    
+    def get_nivel(self) -> int:
+        return self.nivel
+    
+    def get_paralelo(self) -> str:
+        return self.paralelo
+    
+    def get_horas(self) -> int:
+        return self.horas
+    
+    def get_vacantes(self) -> int:
+        return self.vacantes
+    
+    def get_campus(self) -> str:
+        return self.campus
+    
+    def get_codigo_asignatura(self) -> str:
+        return self.codigo_asignatura
+    
+    def get_actividad(self) -> Actividad:
+        return self.actividad
+
     @staticmethod
     def from_json(json_obj: dict) -> 'Asignatura':
         return Asignatura(

@@ -99,3 +99,13 @@ class BatchProposal:
         proposal = cls(availability, message)
         proposal.satisfaction_score = data["satisfaction_score"]
         return proposal
+    
+    @classmethod
+    def from_availability(cls, availability: ClassroomAvailability, message: Message):
+        return cls(
+            room_code=availability.codigo,
+            campus=availability.campus,
+            capacity=availability.capacidad,
+            day_proposals=availability.available_blocks,
+            original_message=message
+        )
