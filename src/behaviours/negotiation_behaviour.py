@@ -18,7 +18,7 @@ from agents.profesor_redux import AgenteProfesor
 
 class NegotiationStateBehaviour(CyclicBehaviour):
     MEETING_ROOM_THRESHOLD = 10
-    TIMEOUT_PROPUESTA = 1  # 1 second timeout
+    TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
 
     def __init__(self, profesor : AgenteProfesor, batch_proposals : Queue):
