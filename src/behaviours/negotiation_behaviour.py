@@ -6,6 +6,7 @@ import asyncio
 from typing import Dict, List, Optional
 from collections import defaultdict
 import json
+from queue import Queue
 
 from objects.static.agent_enums import NegotiationState, Day, TipoContrato
 from objects.helper.batch_proposals import BatchProposal, BlockProposal
@@ -13,13 +14,14 @@ from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
 from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
 from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
+from agents.profesor_redux import AgenteProfesor
 
 class NegotiationStateBehaviour(CyclicBehaviour):
     MEETING_ROOM_THRESHOLD = 10
     TIMEOUT_PROPUESTA = 1  # 1 second timeout
     MAX_RETRIES = 3
 
-    def __init__(self, profesor, batch_proposals):
+    def __init__(self, profesor : AgenteProfesor, batch_proposals : Queue):
         """Initialize the negotiation state behaviour."""
         super().__init__()
         self.profesor = profesor
@@ -151,6 +153,16 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 self.current_state = NegotiationState.COLLECTING_PROPOSALS
         else:
             await self.handle_proposal_failure()
+            
+    async def filter_and_sort_proposals(self, proposals: List[BatchProposal]) -> List[BatchProposal]:
+        if len(proposals) == 0:
+            return []
+        
+        
+            
+    async def notify_proposal_received(self):
+        """Notify the behaviour that a proposal was received"""
+        self.proposal_received = True
 
     async def calculate_most_used_room(
         self,
