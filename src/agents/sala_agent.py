@@ -33,7 +33,7 @@ class AgenteSala(Agent):
         
         # Add main behaviors
         self.add_behaviour(ResponderSolicitudesBehaviour())
-        self.add_behaviour(ProfessorMonitorBehaviour())
+        # self.add_behaviour(ProfessorMonitorBehaviour())
         
     def initialize_schedule(self):
         """Initialize empty schedule for all days"""
@@ -194,23 +194,3 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             
         except Exception as e:
             self.agent.log.error(f"Error updating schedule JSON: {str(e)}")
-
-class ProfessorMonitorBehaviour(CyclicBehaviour):
-    """Monitor professor agents to detect when all are done"""
-    
-    async def run(self):
-        try:
-            # Check for active professors
-            active_professors = await self.agent.search_active_professors()
-            
-            if not active_professors:
-                # No professors left, cleanup and terminate
-                if self.agent.is_registered:
-                    await self.agent.deregister_service()
-                    self.agent.is_registered = False
-                    await self.agent.stop()
-            
-            await asyncio.sleep(5)  # Check every 5 seconds
-            
-        except Exception as e:
-            self.agent.log.error(f"Error in professor monitor: {str(e)}")

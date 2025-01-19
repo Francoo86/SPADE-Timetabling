@@ -3,8 +3,8 @@ from typing import Dict, List, Optional
 from enum import Enum
 from spade.message import Message
 from collections import defaultdict
-from static.agent_enums import Day
-from classroom_availability import ClassroomAvailability
+from ..static.agent_enums import Day
+from .classroom_availability import ClassroomAvailability
 
 @dataclass
 class BlockProposal:

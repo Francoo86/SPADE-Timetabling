@@ -2,6 +2,10 @@ from spade.agent import Agent
 from typing import Dict, List, Optional
 from queue import Queue
 import asyncio
+
+import sys
+sys.path.append('src/')
+
 from objects.asignation_data import Asignatura
 from objects.static.agent_enums import TipoContrato, Day
 from behaviours.negotiation_behaviour import NegotiationStateBehaviour

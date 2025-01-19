@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-from static.agent_enums import Day
+from ..static.agent_enums import Day
 
 @dataclass
 class AssignmentRequest:

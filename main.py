@@ -1,18 +1,18 @@
-from spade import quit_spade
 import asyncio
 from typing import Dict, List, Optional
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
-from datetime import datetime, timedelta
 import json
 import logging
+
 import sys
+
 from pathlib import Path
-from agents.profesor_redux import AgenteProfesor
-from agents.sala_agent import AgenteSala
-from agents.supervisor import AgenteSupervisor
+from src.agents.profesor_redux import AgenteProfesor
+from src.agents.sala_agent import AgenteSala
+from src.agents.supervisor import AgenteSupervisor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -254,8 +254,31 @@ class ApplicationRunner:
             
         finally:
             # Ensure proper SPADE shutdown
-            await quit_spade()
+            await self.cleanup()
             logger.info("SPADE platform shutdown complete")
+            
+    async def cleanup(self):
+        # close all the agents
+        """Stop all agents and clean up resources"""
+        print("\nCleaning up platform...")
+        
+        cleanup_tasks = []
+        
+        # Stop all agents in reverse order
+        if self.supervisor_agent:
+            cleanup_tasks.append(self.supervisor_agent.stop())
+            
+        for agent in reversed(self.professor_agents):
+            cleanup_tasks.append(agent.stop())
+            
+        for agent in reversed(list(self.room_agents.values())):
+            cleanup_tasks.append(agent.stop())
+
+        # Wait for all cleanup tasks to complete
+        if cleanup_tasks:
+            await asyncio.gather(*cleanup_tasks)
+        
+        print("Platform shutdown complete.")
 
 def main():
     """Main entry point"""

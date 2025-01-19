@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, List
-from static.agent_enums import Day, Actividad
+from .static.agent_enums import Day, Actividad
 
 @dataclass
 class Asignatura:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Dict
-from enum import Enum
-from static import Day
+
+from ..static.agent_enums import Day
 
 @dataclass
 class ConfirmedAssignment:

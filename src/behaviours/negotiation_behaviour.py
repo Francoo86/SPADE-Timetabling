@@ -14,7 +14,7 @@ from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
 from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
 from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
-from agents.profesor_redux import AgenteProfesor
+# from agents.profesor_redux import AgenteProfesor
 # import dataclass
 from dataclasses import dataclass
 
@@ -29,7 +29,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
     TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
 
-    def __init__(self, profesor : AgenteProfesor, batch_proposals : Queue):
+    def __init__(self, profesor, batch_proposals : Queue):
         """Initialize the negotiation state behaviour."""
         super().__init__()
         self.profesor = profesor
@@ -646,7 +646,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
 
     async def send_batch_assignment(
         self,
-        requests: List[BatchAssignmentRequest.AssignmentRequest],
+        requests: List[AssignmentRequest],
         original_msg: Message
     ) -> bool:
         """Send batch assignment request and wait for confirmation"""
