@@ -24,6 +24,9 @@ class AgentKnowledgeBase:
     A distributed knowledge base for agent discovery and capability management.
     Replaces JADE's Directory Facilitator functionality in SPADE.
     """
+    _instance = None
+    _instance_lock = asyncio.Lock()
+
     def __init__(self, ttl_seconds: int = 300):
         self._agents: Dict[str, AgentInfo] = {}
         self._capabilities: Dict[str, Set[str]] = {}  # service_type -> set of JIDs
@@ -31,9 +34,20 @@ class AgentKnowledgeBase:
         self._lock = asyncio.Lock()
         self._cleanup_task = None
 
+    @classmethod
+    async def get_instance(cls) -> 'AgentKnowledgeBase':
+        """Get or create singleton instance of knowledge base"""
+        if not cls._instance:
+            async with cls._instance_lock:
+                if not cls._instance:
+                    cls._instance = cls()
+                    await cls._instance.start()
+        return cls._instance
+
     async def start(self):
         """Start the knowledge base and its maintenance tasks"""
-        self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+        if not self._cleanup_task:
+            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
 
     async def stop(self):
         """Stop the knowledge base and cleanup"""
@@ -43,6 +57,8 @@ class AgentKnowledgeBase:
                 await self._cleanup_task
             except asyncio.CancelledError:
                 pass
+            finally:
+                self._cleanup_task = None
 
     async def register_agent(self, jid: JID, capabilities: List[AgentCapability]) -> bool:
         """
@@ -71,6 +87,8 @@ class AgentKnowledgeBase:
                     self._capabilities[cap.service_type] = set()
                 self._capabilities[cap.service_type].add(str(jid))
             
+            print(f"Registered agent {jid} with capabilities: {[cap.service_type for cap in capabilities]}")
+            print(f"Current capabilities: {self._capabilities}")
             return True
 
     async def deregister_agent(self, jid: JID) -> bool:
@@ -226,3 +244,10 @@ class AgentKnowledgeBase:
                     kb._capabilities[cap.service_type].add(jid_str)
                     
         return kb
+    
+    @classmethod
+    async def reset_instance(cls):
+        """Reset the singleton instance (useful for testing)"""
+        if cls._instance:
+            await cls._instance.stop()
+            cls._instance = None
