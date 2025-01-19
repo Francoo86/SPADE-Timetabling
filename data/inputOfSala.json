@@ -1,0 +1,440 @@
+[
+  {
+    "Turno": 1,
+    "Codigo": "A106",
+    "Capacidad": 18,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 2,
+    "Codigo": "ANT21",
+    "Capacidad": 22,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 3,
+    "Codigo": "CM3",
+    "Capacidad": 50,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 4,
+    "Codigo": "CM4",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 5,
+    "Codigo": "CM5",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 6,
+    "Codigo": "CM6",
+    "Capacidad": 30,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 7,
+    "Codigo": "CRP33",
+    "Capacidad": 71,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 8,
+    "Codigo": "CRP43",
+    "Capacidad": 71,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 9,
+    "Codigo": "D105",
+    "Capacidad": 34,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 10,
+    "Codigo": "E1",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 11,
+    "Codigo": "E6",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 12,
+    "Codigo": "IC1",
+    "Capacidad": 30,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 13,
+    "Codigo": "IC2",
+    "Capacidad": 44,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 14,
+    "Codigo": "IC3",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 15,
+    "Codigo": "IC4",
+    "Capacidad": 77,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 16,
+    "Codigo": "IC8",
+    "Capacidad": 34,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 17,
+    "Codigo": "IM2",
+    "Capacidad": 20,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 18,
+    "Codigo": "IM3",
+    "Capacidad": 20,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 19,
+    "Codigo": "IM4",
+    "Capacidad": 9,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 20,
+    "Codigo": "IOLAB",
+    "Capacidad": 15,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 21,
+    "Codigo": "K1",
+    "Capacidad": 82,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 22,
+    "Codigo": "K2",
+    "Capacidad": 30,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 23,
+    "Codigo": "K3",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 24,
+    "Codigo": "KAUL1",
+    "Capacidad": 26,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 25,
+    "Codigo": "KAUS1",
+    "Capacidad": 68,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 26,
+    "Codigo": "KAUS2",
+    "Capacidad": 26,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 27,
+    "Codigo": "KAUS3",
+    "Capacidad": 26,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 28,
+    "Codigo": "KAUS5",
+    "Capacidad": 29,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 29,
+    "Codigo": "KAUT1",
+    "Capacidad": 28,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 30,
+    "Codigo": "KAUT2",
+    "Capacidad": 28,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 31,
+    "Codigo": "KAUT3",
+    "Capacidad": 17,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 32,
+    "Codigo": "KAUT4",
+    "Capacidad": 20,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 33,
+    "Codigo": "KAUT5",
+    "Capacidad": 20,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 34,
+    "Codigo": "KAUT6",
+    "Capacidad": 20,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 35,
+    "Codigo": "KAUT7",
+    "Capacidad": 20,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 36,
+    "Codigo": "KAUT8",
+    "Capacidad": 10,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 37,
+    "Codigo": "LAMB",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 38,
+    "Codigo": "LAUT",
+    "Capacidad": 25,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 39,
+    "Codigo": "LC-02",
+    "Capacidad": 30,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 40,
+    "Codigo": "LC-03",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 41,
+    "Codigo": "LC1",
+    "Capacidad": 36,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 42,
+    "Codigo": "LC2",
+    "Capacidad": 29,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 43,
+    "Codigo": "LC3",
+    "Capacidad": 25,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 44,
+    "Codigo": "LC4",
+    "Capacidad": 23,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 45,
+    "Codigo": "LC6",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 46,
+    "Codigo": "LC7",
+    "Capacidad": 25,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 47,
+    "Codigo": "LCOM",
+    "Capacidad": 12,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 48,
+    "Codigo": "LCSI",
+    "Capacidad": 18,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 49,
+    "Codigo": "LELE",
+    "Capacidad": 20,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 50,
+    "Codigo": "LELM",
+    "Capacidad": 28,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 51,
+    "Codigo": "LFIS",
+    "Capacidad": 39,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 52,
+    "Codigo": "LFLO",
+    "Capacidad": 8,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 53,
+    "Codigo": "LMIN",
+    "Capacidad": 28,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 54,
+    "Codigo": "LP",
+    "Capacidad": 29,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 55,
+    "Codigo": "LPIR",
+    "Capacidad": 24,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 56,
+    "Codigo": "LPME",
+    "Capacidad": 28,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 57,
+    "Codigo": "LPOT",
+    "Capacidad": 27,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 58,
+    "Codigo": "LROB",
+    "Capacidad": 21,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 59,
+    "Codigo": "LRSM",
+    "Capacidad": 20,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 60,
+    "Codigo": "LSD",
+    "Capacidad": 15,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 61,
+    "Codigo": "LSO",
+    "Capacidad": 8,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 62,
+    "Codigo": "S209",
+    "Capacidad": 35,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 63,
+    "Codigo": "S210",
+    "Capacidad": 35,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 64,
+    "Codigo": "S314",
+    "Capacidad": 20,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 65,
+    "Codigo": "S316",
+    "Capacidad": 25,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 66,
+    "Codigo": "S318",
+    "Capacidad": 30,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 67,
+    "Codigo": "SRA01",
+    "Capacidad": 15,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 68,
+    "Codigo": "TBD",
+    "Capacidad": 11,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 69,
+    "Codigo": "V102",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 70,
+    "Codigo": "V103",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 71,
+    "Codigo": "V105",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 72,
+    "Codigo": "V205",
+    "Capacidad": 65,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 73,
+    "Codigo": "V207",
+    "Capacidad": 60,
+    "Campus": "Playa Brava"
+  }
+]
