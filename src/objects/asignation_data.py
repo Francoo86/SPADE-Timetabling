@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional, Dict, List
-from .static.agent_enums import Day, Actividad
+from .static.agent_enums import Day, Actividad, translate_actividad
 
 @dataclass
 class Asignatura:
@@ -51,7 +51,7 @@ class Asignatura:
             vacantes=int(json_obj["Vacantes"]),
             campus=json_obj["Campus"],
             codigo_asignatura=json_obj["CodigoAsignatura"],
-            actividad=Actividad[json_obj["Actividad"].upper()]
+            actividad=translate_actividad(json_obj["Actividad"])
         )
 
 @dataclass
