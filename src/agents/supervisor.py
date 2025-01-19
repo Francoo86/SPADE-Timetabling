@@ -25,7 +25,7 @@ class SupervisorState:
             "UNKNOWN": 0
         }
 
-class SupervisorAgent(Agent):
+class AgenteSupervisor(Agent):
     CHECK_INTERVAL = 5  # seconds
 
     def __init__(self, jid: str, password: str, professor_jids: List[str]):

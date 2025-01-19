@@ -13,13 +13,13 @@ class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
     SERVICE_NAME = AGENT_NAME.lower()
     
-    def __init__(self, jid: str, password: str, nombre: str, asignaturas: List[Asignatura]):
+    def __init__(self, jid: str, password: str, nombre: str, asignaturas: List[Asignatura], orden: int):
         super().__init__(jid, password)
         self.nombre = nombre
         self.asignaturas = asignaturas
         self.asignatura_actual = 0
         self.horario_ocupado = {}  # dia -> set(bloques)
-        self.orden = None  # Will be set during setup
+        self.orden = orden  # Will be set during setup
         self.horario_json = {}
         self.bloques_asignados_por_dia = {}  # dia -> {asignatura -> List[bloques]}
         self.instance_counter = 0
