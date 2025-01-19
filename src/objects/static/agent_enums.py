@@ -14,28 +14,19 @@ class Actividad(Enum):
     AYUDANTIA = 4
     TUTORIA = 5
     
-    MAPPED_ACTIVITIES = {
-        "teo" : TEORIA,
-        "lab" : LABORATORIO,
-        "pra" : PRACTICA,
-        "tal" : TALLER,
-        "ayu" : AYUDANTIA,
-        "tut" : TUTORIA
-    }
-    
-    # create an static method to get the enum from a string
-    @staticmethod
-    def translate_from_actividad(activity : str):
-        try:
-            found_act = Actividad.MAPPED_ACTIVITIES.get(activity.lower(), None)
-            
-            if found_act is None:
-                return Actividad.TEORIA
-            
-            return Actividad[found_act.name]
-        except KeyError:
-            raise ValueError(f"No matching activity found for: {activity}")
-    
+ACTIVIDAD_MAPPING = {
+    "teo": Actividad.TEORIA,
+    "lab": Actividad.LABORATORIO,
+    "pra": Actividad.PRACTICA,
+    "tal": Actividad.TALLER,
+    "ayu": Actividad.AYUDANTIA,
+    "tut": Actividad.TUTORIA
+}
+
+# Move the translation function outside the Enum
+def translate_actividad(activity: str) -> Actividad:
+    return ACTIVIDAD_MAPPING.get(activity.lower(), Actividad.TEORIA)
+
 class NegotiationState(Enum):
     SETUP = 0
     COLLECTING_PROPOSALS = 1
