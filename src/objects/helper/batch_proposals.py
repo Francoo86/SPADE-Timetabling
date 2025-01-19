@@ -16,6 +16,12 @@ class BlockProposal:
             "block": self.block,
             "day": self.day.name
         }
+        
+    def get_block(self) -> int:
+        return self.block
+    
+    def get_day(self) -> Day:
+        return self.day
 
     @classmethod
     def from_dict(cls, data: dict) -> "BlockProposal":

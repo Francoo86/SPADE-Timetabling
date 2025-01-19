@@ -10,6 +10,22 @@ class ConfirmedAssignment:
     block: int
     classroom_code: str
     satisfaction: int
+    
+    def get_block(self) -> int:
+        """Get the assigned block number."""
+        return self.block
+    
+    def get_day(self) -> Day:
+        """Get the assigned day."""
+        return self.day
+    
+    def get_classroom_code(self) -> str:
+        """Get the assigned classroom code."""
+        return self.classroom_code
+    
+    def get_satisfaction(self) -> int:
+        """Get the satisfaction score for the assignment."""
+        return self.satisfaction
 
     def to_dict(self) -> Dict:
         """Convert the assignment to a dictionary for serialization."""

@@ -15,6 +15,14 @@ from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequ
 from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
 from agents.profesor_redux import AgenteProfesor
+# import dataclass
+from dataclasses import dataclass
+
+@dataclass
+class BatchProposalScore:
+    """Helper class to store proposal with its score"""
+    proposal: BatchProposal
+    score: int
 
 class NegotiationStateBehaviour(CyclicBehaviour):
     MEETING_ROOM_THRESHOLD = 10
@@ -153,11 +161,216 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 self.current_state = NegotiationState.COLLECTING_PROPOSALS
         else:
             await self.handle_proposal_failure()
-            
+
     async def filter_and_sort_proposals(self, proposals: List[BatchProposal]) -> List[BatchProposal]:
-        if len(proposals) == 0:
+        """Filter and sort batch proposals based on multiple criteria"""
+        if not proposals:
             return []
-        
+
+        current_subject = self.profesor.get_current_subject()
+        current_campus = current_subject.get_campus()
+        current_nivel = current_subject.get_nivel()
+        current_asignatura_nombre = current_subject.get_nombre()
+        needs_meeting_room = current_subject.get_vacantes() < self.MEETING_ROOM_THRESHOLD
+
+        # Get current schedule info
+        current_schedule = self.profesor.get_blocks_by_subject(current_asignatura_nombre)
+        room_usage = {}
+        blocks_per_day = {}
+        most_used_room = await self.calculate_most_used_room(current_schedule, blocks_per_day, room_usage)
+
+        scored_proposals = []
+
+        # Process each proposal
+        for proposal in proposals:
+            if not await self.is_valid_proposal(proposal, current_subject, current_nivel, 
+                                            needs_meeting_room, current_asignatura_nombre):
+                continue
+
+            total_score = await self.calculate_total_score(
+                proposal, current_subject, current_campus, current_nivel,
+                needs_meeting_room, blocks_per_day, most_used_room, room_usage,
+                current_schedule
+            )
+
+            if total_score > 0:
+                scored_proposals.append(BatchProposalScore(proposal, total_score))
+
+        if not scored_proposals:
+            return []
+
+        # Sort by final scores (descending)
+        scored_proposals.sort(key=lambda ps: ps.score, reverse=True)
+        return [ps.proposal for ps in scored_proposals]
+
+    async def calculate_total_score(
+        self,
+        proposal: BatchProposal,
+        current_subject: Asignatura,
+        current_campus: str,
+        current_nivel: int,
+        needs_meeting_room: bool,
+        blocks_per_day: Dict[Day, int],
+        most_used_room: Optional[str],
+        room_usage: Dict[str, int],
+        current_schedule: Dict[Day, List[int]]
+    ) -> int:
+        """Calculate total score for a proposal considering all factors"""
+        # Calculate base scores
+        await self.calculate_satisfaction_scores(
+            proposal, current_subject, current_campus,
+            current_nivel, current_schedule
+        )
+
+        total_score = await self.calculate_proposal_score(
+            proposal, current_campus, current_nivel, current_subject
+        )
+
+        # Apply room type scoring
+        total_score = await self.apply_meeting_room_score(
+            total_score, proposal, needs_meeting_room, current_subject
+        )
+
+        # Apply day-based scoring
+        total_score = await self.apply_day_based_scoring(
+            total_score, proposal, current_campus,
+            blocks_per_day, most_used_room, room_usage
+        )
+
+        # Ensure minimum viable score
+        return max(total_score, 1)
+
+    async def apply_meeting_room_score(
+        self,
+        total_score: int,
+        proposal: BatchProposal,
+        needs_meeting_room: bool,
+        current_subject: Asignatura
+    ) -> int:
+        """Apply scoring adjustments for meeting room requirements"""
+        is_meeting_room = proposal.get_capacity() < self.MEETING_ROOM_THRESHOLD
+
+        if needs_meeting_room:
+            if is_meeting_room:
+                # Perfect match - high bonus
+                total_score += 15000
+
+                # Additional bonus for optimal size match
+                size_diff = abs(proposal.get_capacity() - current_subject.get_vacantes())
+                if size_diff <= 2:
+                    total_score += 5000
+            else:
+                # Using regular room for small class - apply penalty but don't reject
+                oversize = proposal.get_capacity() - current_subject.get_vacantes()
+                total_score -= oversize * 500  # Progressive penalty for oversized rooms
+
+        return total_score
+
+    async def apply_day_based_scoring(
+        self,
+        total_score: int,
+        proposal: BatchProposal,
+        current_campus: str,
+        blocks_per_day: Dict[Day, int],
+        most_used_room: Optional[str],
+        room_usage: Dict[str, int]
+    ) -> int:
+        """Apply scoring adjustments based on daily schedule patterns"""
+        for day, block_proposals in proposal.get_day_proposals().items():
+            day_usage = blocks_per_day.get(day, 0)
+
+            # Day-based scoring
+            total_score -= day_usage * 6000  # Penalty for same-day assignments
+
+            if day not in blocks_per_day:
+                total_score += 8000  # Bonus for new days
+
+            # Room consistency scoring
+            if proposal.get_room_code() == most_used_room:
+                total_score += 7000
+
+            # Apply campus and block penalties
+            total_score = await self.apply_campus_and_block_penalties(
+                total_score, proposal, day, current_campus,
+                day_usage, room_usage
+            )
+
+        return total_score
+
+    async def apply_campus_and_block_penalties(
+        self,
+        total_score: int,
+        proposal: BatchProposal,
+        day: Day,
+        current_campus: str,
+        day_usage: int,
+        room_usage: Dict[str, int]
+    ) -> int:
+        """Apply penalties for campus transitions and block assignments"""
+        if not proposal.get_room_code().startswith(current_campus[0:1]):
+            total_score -= 10000
+
+            for block in proposal.get_day_proposals()[day]:
+                prev_block = self.profesor.get_bloque_info(day, block.get_block() - 1)
+                next_block = self.profesor.get_bloque_info(day, block.get_block() + 1)
+
+                if ((prev_block and prev_block.get_campus() != current_campus) or
+                    (next_block and next_block.get_campus() != current_campus)):
+                    total_score -= 8000
+
+        room_count = room_usage.get(proposal.get_room_code(), 0)
+        total_score -= room_count * 1500
+
+        if day_usage >= 2:
+            total_score -= 6000
+
+        return total_score
+
+    async def calculate_proposal_score(
+        self,
+        proposal: BatchProposal,
+        current_campus: str,
+        nivel: int,
+        subject: Asignatura
+    ) -> int:
+        """Calculate base proposal score"""
+        score = 0
+
+        # Campus consistency (high priority)
+        if proposal.get_campus() == current_campus:
+            score += 10000
+        else:
+            score -= 10000
+
+        # Time preference based on year
+        is_odd_year = nivel % 2 == 1
+        for day, blocks in proposal.get_day_proposals().items():
+            for block in blocks:
+                if is_odd_year:
+                    if block.get_block() <= 4:
+                        score += 3000
+                else:
+                    if block.get_block() >= 5:
+                        score += 3000
+
+            if self.profesor.get_tipo_contrato() != TipoContrato.JORNADA_PARCIAL:
+                if len(blocks) > 1:
+                    sorted_blocks = sorted(blocks, key=lambda b: b.get_block())
+                    for i in range(1, len(sorted_blocks)):
+                        gap = sorted_blocks[i].get_block() - sorted_blocks[i-1].get_block()
+                        if gap <= 2:  # Consecutive blocks or one block gap
+                            score += 5000  # High bonus for compact schedules
+                        else:
+                            score -= 8000  # Penalty for large gaps
+
+        # Base satisfaction score
+        score += proposal.get_satisfaction_score() * 10
+
+        # Capacity score - prefer rooms that closely match needed capacity
+        capacity_diff = abs(proposal.get_capacity() - subject.get_vacantes())
+        score -= capacity_diff * 100
+
+        return score
         
             
     async def notify_proposal_received(self):
@@ -392,7 +605,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                     if not self.profesor.is_block_available(day, block.get_block()):
                         continue
 
-                    requests.append(BatchAssignmentRequest.AssignmentRequest(
+                    requests.append(AssignmentRequest(
                         day=day,
                         block=block.get_block(),
                         subject_name=current_subject.get_nombre(),
