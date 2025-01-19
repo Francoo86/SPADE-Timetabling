@@ -1,5 +1,6 @@
-from spade.behaviour import CyclicBehaviour
+from spade.behaviour import CyclicBehaviour, OneShotBehaviour
 from spade.template import Template
+from spade.message import Message
 import asyncio
 # from .negotiation_behaviour import NegotiationStateBehaviour
 # from .message_collector import MessageCollectorBehaviour
@@ -19,19 +20,16 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
             message_collector: The message collector behaviour to add when it's our turn
         """
         super().__init__()
+        
         self.profesor = profesor_agent
         self.state_behaviour = state_behaviour
         self.message_collector = message_collector
+        
 
     async def run(self):
         """Main behaviour loop - checks for START messages."""
         # Create message template for INFORM messages with START content
-        template = Template()
-        template.performative = "inform"
-        template.body = "START"
-        
-        # Wait for a message matching our template
-        msg = await self.receive(timeout=10)  # 10 second timeout
+        msg = await self.receive(timeout=10)  # Pass the template
         
         if msg:
             try:
@@ -63,3 +61,53 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
     async def on_end(self):
         """Cleanup when behaviour ends."""
         self.profesor.log.info(f"Wait turn behaviour ended for professor {self.profesor.nombre}")
+
+class NotifyNextProfessorBehaviour(OneShotBehaviour):
+    """One-shot behaviour to notify the next professor to start negotiations"""
+    
+    def __init__(self, profesor, next_orden):
+        """
+        Initialize the notification behaviour
+        
+        Args:
+            profesor: The professor agent instance
+            next_orden: Order number of the next professor
+        """
+        super().__init__()
+        self.profesor = profesor
+        self.next_orden = next_orden
+        
+    async def run(self):
+        """Execute the notification"""
+        try:
+            # Get the next professor's JID
+            next_professor_jid = self.profesor.get(f"professor_{self.next_orden}")
+            
+            if next_professor_jid:
+                # Create START message
+                msg = Message(
+                    to=next_professor_jid,
+                    metadata={
+                        "performative": "inform",
+                        "ontology": "professor-chain",
+                        "nextOrden": str(self.next_orden)
+                    },
+                    body="START"
+                )
+                
+                await self.send(msg)
+                self.profesor.log.info(
+                    f"Successfully notified next professor {next_professor_jid} "
+                    f"with order: {self.next_orden}"
+                )
+            else:
+                self.profesor.log.info(
+                    f"No next professor found with order {self.next_orden}"
+                )
+                
+        except Exception as e:
+            self.profesor.log.error(f"Error notifying next professor: {str(e)}")
+            
+    async def on_end(self):
+        """Cleanup after notification is sent"""
+        await super().on_end()
