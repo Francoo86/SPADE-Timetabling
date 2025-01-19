@@ -8,6 +8,7 @@ from behaviours.negotiation_behaviour import NegotiationStateBehaviour
 from behaviours.message_collector import MessageCollectorBehaviour
 from behaviours.requests_behaviour import EsperarTurnoBehaviour
 from objects.asignation_data import BloqueInfo
+from spade.message import Message
 
 class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
@@ -174,3 +175,76 @@ class AgenteProfesor(Agent):
         }
         
         self.horario_json["Asignaturas"].append(asignatura)
+        
+    @staticmethod
+    def inferir_tipo_contrato(asignaturas: List[Asignatura]) -> TipoContrato:
+        total_hours = sum(asig.get_horas() for asig in asignaturas)
+        if 16 <= total_hours <= 18:
+            return TipoContrato.JORNADA_COMPLETA
+        elif 12 <= total_hours <= 14:
+            return TipoContrato.MEDIA_JORNADA
+        return TipoContrato.JORNADA_PARCIAL
+
+    async def finalizar_negociaciones(self):
+        try:
+            if hasattr(self, '_cleaning_up') and self._cleaning_up:
+                return
+            self._cleaning_up = True
+            
+            # Save final schedule
+            await self.export_schedule_json()
+            
+            # Notify next professor
+            await self.notify_next_professor()
+            
+            # Cleanup
+            await self.cleanup()
+        except Exception as e:
+            self.log.error(f"Error finalizing negotiations: {str(e)}")
+
+    @staticmethod
+    def sanitize_subject_name(name: str) -> str:
+        return ''.join(c for c in name if c.isalnum())
+
+    async def cleanup(self):
+        try:
+            # Cleanup resources and deregister
+            await self.stop()
+        finally:
+            self._cleaning_up = False
+
+    async def export_schedule_json(self) -> Dict:
+        return {
+            "nombre": self.nombre,
+            "asignaturas": self.horario_json["Asignaturas"],
+            "completadas": len(self.horario_json["Asignaturas"]),
+            "total": len(self.asignaturas)
+        }
+        
+    async def notify_next_professor(self):
+        """Notify the next professor to start their negotiations"""
+        try:
+            next_orden = self.orden + 1
+            
+            # Get the next professor's JID that we stored during initialization
+            next_professor_jid = self.get(f"professor_{next_orden}")
+            
+            if next_professor_jid:
+                # Create START message
+                msg = Message(
+                    to=next_professor_jid,
+                    metadata={
+                        "performative": "inform",
+                        "ontology": "professor-chain",
+                        "nextOrden": str(next_orden)
+                    },
+                    body="START"
+                )
+                
+                await self.send(msg)
+                self.log.info(f"Successfully notified next professor {next_professor_jid} with order: {next_orden}")
+            else:
+                self.log.info(f"No next professor found with order {next_orden}")
+                
+        except Exception as e:
+            self.log.error(f"Error notifying next professor: {str(e)}")
