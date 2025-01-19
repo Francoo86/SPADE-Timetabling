@@ -51,6 +51,7 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
                     
                     # Remove this waiting behavior
                     self.agent.remove_behaviour(self)
+                    self.kill()
                     
             except (KeyError, ValueError) as e:
                 self.profesor.log.error(f"Error processing START message: {str(e)}")

@@ -1,5 +1,4 @@
 from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from typing import Dict, List, Optional
 from queue import Queue
 import asyncio
@@ -7,8 +6,8 @@ from objects.asignation_data import Asignatura
 from objects.static.agent_enums import TipoContrato, Day
 from behaviours.negotiation_behaviour import NegotiationStateBehaviour
 from behaviours.message_collector import MessageCollectorBehaviour
+from behaviours.requests_behaviour import EsperarTurnoBehaviour
 from objects.asignation_data import BloqueInfo
-
 
 class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
@@ -40,12 +39,15 @@ class AgenteProfesor(Agent):
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
-        batch_proposals = asyncio.Queue()
+        batch_proposals = Queue()
         state_behaviour = NegotiationStateBehaviour(self, batch_proposals)
         
-        # Add behaviors
-        self.add_behaviour(state_behaviour)
-        self.add_behaviour(MessageCollectorBehaviour(self, batch_proposals, state_behaviour))
+        if self.orden == 0:
+            self.add_behaviour(state_behaviour)
+            self.add_behaviour(MessageCollectorBehaviour(self, batch_proposals, state_behaviour))
+        else:
+            self.add_behaviour(EsperarTurnoBehaviour(self, state_behaviour, MessageCollectorBehaviour(self, batch_proposals, state_behaviour)))    
+    
 
     def can_use_more_subjects(self) -> bool:
         """Check if there are more subjects to process."""
