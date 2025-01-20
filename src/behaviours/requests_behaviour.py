@@ -81,7 +81,7 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
         """Execute the notification"""
         try:
             # Get the next professor's JID
-            next_professor_jid = self.profesor.get(f"professor_{self.next_orden}")
+            next_professor_jid = self.profesor.get(f"Profesor{self.next_orden}")
             
             if next_professor_jid:
                 # Create START message
