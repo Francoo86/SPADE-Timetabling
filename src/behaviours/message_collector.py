@@ -30,13 +30,15 @@ class MessageCollectorBehaviour(CyclicBehaviour):
         """Main behaviour loop"""
         try:
             # Create message template for PROPOSE and REFUSE
+            """
             template = Template()
-            template.performative = ['propose', 'refuse']
+            template.set_metadata("performative", "propose")
+            template.set_metadata("ontology", "classroom-availability") """
             
             # Wait for a message
             msg = await self.receive(timeout=10)
             
-            if msg:
+            if msg and msg.get_metadata("ontology") == "classroom-availability":
                 if msg.performative == "propose":
                     await self.handle_proposal(msg)
                 # We can ignore REFUSE messages as they don't require processing
