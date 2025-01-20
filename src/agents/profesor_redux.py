@@ -1,6 +1,7 @@
 from spade.agent import Agent
 from typing import Dict, List, Optional
 from queue import Queue
+from spade.template import Template
 import asyncio
 
 import sys
@@ -10,9 +11,16 @@ from objects.asignation_data import Asignatura
 from objects.static.agent_enums import TipoContrato, Day
 from behaviours.negotiation_behaviour import NegotiationStateBehaviour
 from behaviours.message_collector import MessageCollectorBehaviour
-from behaviours.requests_behaviour import EsperarTurnoBehaviour
+from behaviours.requests_behaviour import EsperarTurnoBehaviour, NotifyNextProfessorBehaviour
 from objects.asignation_data import BloqueInfo
 from spade.message import Message
+from .agent_logger import AgentLogger
+from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from behaviours.monitoring import StatusResponseBehaviour
+
+from datetime import datetime
+
+import logging
 
 class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
@@ -29,12 +37,16 @@ class AgenteProfesor(Agent):
         self.bloques_asignados_por_dia = {}  # dia -> {asignatura -> List[bloques]}
         self.instance_counter = 0
         self.current_instance_index = 0
+        self.log =  AgentLogger(f"Professor_{self.nombre}")
         self._initialize_data_structures()
 
     def _initialize_data_structures(self):
         """Initialize all data structures needed for the agent."""
         # Initialize schedule tracking
         self.horario_ocupado = {day: set() for day in Day}
+        
+        # convert asignaturas dict to object
+        self.asignaturas = [Asignatura.from_json(asig) for asig in self.asignaturas]
         
         # Initialize JSON structures
         self.horario_json = {"Asignaturas": []}
@@ -44,15 +56,101 @@ class AgenteProfesor(Agent):
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
-        batch_proposals = Queue()
-        state_behaviour = NegotiationStateBehaviour(self, batch_proposals)
-        
-        if self.orden == 0:
-            self.add_behaviour(state_behaviour)
-            self.add_behaviour(MessageCollectorBehaviour(self, batch_proposals, state_behaviour))
-        else:
-            self.add_behaviour(EsperarTurnoBehaviour(self, state_behaviour, MessageCollectorBehaviour(self, batch_proposals, state_behaviour)))    
+        try:
+            # Initialize agent capabilities
+            professor_capability = AgentCapability(
+                service_type="profesor",
+                properties={
+                    "nombre": self.nombre,
+                    "orden": self.orden  # Make sure order is registered
+                },
+                last_updated=datetime.now()
+            )
+            
+            # Register with knowledge base
+            kb = await AgentKnowledgeBase.get_instance()
+            success = await kb.register_agent(
+                self.jid,
+                [professor_capability]
+            )
+            
+            if not success:
+                self.log.error("Failed to register professor in knowledge base")
+                return
+                
+            self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
+            
+            # Create behaviours
+            batch_proposals = Queue()
+            state_behaviour = NegotiationStateBehaviour(self, batch_proposals)
+            message_collector = MessageCollectorBehaviour(self, batch_proposals, state_behaviour)
+            
+            # Add status response behavior
+            template = Template()
+            template.set_metadata("performative", "query-ref")
+            template.set_metadata("ontology", "agent-status")
+            self.add_behaviour(StatusResponseBehaviour(), template)
+            
+            # Discover rooms
+            await self.discover_rooms()
+            
+            message_template = Template()
+            message_template.set_metadata("performative", "propose")
+            message_template.set_metadata("ontology", "classroom-availability")
+            
+            # Add appropriate behaviour based on order
+            if self.orden == 0:
+                self.log.info("Starting as first professor")
+                self.add_behaviour(state_behaviour)
+                self.add_behaviour(message_collector, message_template)
+            else:
+                self.log.info(f"Waiting for turn (order: {self.orden})")
+                wait_behaviour = EsperarTurnoBehaviour(
+                    self, 
+                    state_behaviour,
+                    message_collector
+                )
+                template = Template()
+                template.set_metadata("performative", "inform")
+                self.add_behaviour(wait_behaviour, template)
+                
+        except Exception as e:
+            self.log.error(f"Error in professor setup: {str(e)}")
     
+    async def discover_rooms(self):
+        """Discover available rooms through knowledge base"""
+        try:
+            kb = await AgentKnowledgeBase.get_instance()
+            
+            # First ensure the knowledge base is properly initialized
+            if not kb._capabilities:
+                self.log.warning("Knowledge base has no capabilities registered")
+                return
+                
+            # Search for room agents
+            rooms = await kb.search(service_type="sala")
+            
+            if not rooms:
+                self.log.warning("No rooms found in knowledge base")
+                return
+                
+            # Debug log the discovered rooms
+            self.log.info(f"Found {len(rooms)} rooms in knowledge base:")
+            for room in rooms:
+                room_code = None
+                for cap in room.capabilities:
+                    if cap.service_type == "sala":
+                        room_code = cap.properties.get("codigo")
+                        break
+                        
+                if room_code:
+                    room_jid = str(room.jid)
+                    self.set(f"room_{room_code}", room_jid)
+                    self.log.info(f"  - Room {room_code} at {room_jid}")
+            
+        except Exception as e:
+            self.log.error(f"Error discovering rooms: {str(e)}")
+            self.log.error(f"Knowledge base state: {kb._capabilities}")  # Debug log
 
     def can_use_more_subjects(self) -> bool:
         """Check if there are more subjects to process."""
@@ -62,12 +160,12 @@ class AgenteProfesor(Agent):
                 
             current = self.asignaturas[self.asignatura_actual]
             if current is None:
-                self.log.warning(f"Warning: Null subject at index {self.asignatura_actual}")
+                logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
                 return False
                 
             return True
         except IndexError:
-            self.log.error(f"Index out of bounds checking for more subjects: "
+            logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
                           f"{self.asignatura_actual}/{len(self.asignaturas)}")
             return False
 
@@ -79,11 +177,11 @@ class AgenteProfesor(Agent):
 
     def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
+        logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving from subject index {self.asignatura_actual} "
                      f"(total: {len(self.asignaturas)})")
         
         if self.asignatura_actual >= len(self.asignaturas):
-            self.log.info("[MOVE] Already at last subject")
+            logging.info(f"Agente Profesor{self.orden}: [MOVE] Already at last subject")
             return
             
         current = self.get_current_subject()
@@ -96,13 +194,13 @@ class AgenteProfesor(Agent):
             if (next_subject.get_nombre() == current_name and 
                 next_subject.get_codigo_asignatura() == current_code):
                 self.current_instance_index += 1
-                self.log.info(f"[MOVE] Moving to next instance ({self.current_instance_index}) "
+                logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to next instance ({self.current_instance_index}) "
                             f"of {current_name}")
             else:
                 self.current_instance_index = 0
-                self.log.info(f"[MOVE] Moving to new subject {next_subject.get_nombre()}")
+                logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to new subject {next_subject.get_nombre()}")
         else:
-            self.log.info("[MOVE] Reached end of subjects")
+            logging.info(f"Agente Profesor{self.orden}: [MOVE] Reached end of subjects")
 
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
@@ -204,7 +302,7 @@ class AgenteProfesor(Agent):
             # Cleanup
             await self.cleanup()
         except Exception as e:
-            self.log.error(f"Error finalizing negotiations: {str(e)}")
+            logging.error(f"Agente Profesor{self.orden}: Error finalizing negotiations: {str(e)}")
 
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
@@ -230,25 +328,12 @@ class AgenteProfesor(Agent):
         try:
             next_orden = self.orden + 1
             
-            # Get the next professor's JID that we stored during initialization
-            next_professor_jid = self.get(f"professor_{next_orden}")
+            # Create and start the notification behaviour
+            notify_behaviour = NotifyNextProfessorBehaviour(self, next_orden)
+            self.add_behaviour(notify_behaviour)
             
-            if next_professor_jid:
-                # Create START message
-                msg = Message(
-                    to=next_professor_jid,
-                    metadata={
-                        "performative": "inform",
-                        "ontology": "professor-chain",
-                        "nextOrden": str(next_orden)
-                    },
-                    body="START"
-                )
-                
-                await self.send(msg)
-                self.log.info(f"Successfully notified next professor {next_professor_jid} with order: {next_orden}")
-            else:
-                self.log.info(f"No next professor found with order {next_orden}")
-                
+            # Wait for the behaviour to complete
+            await notify_behaviour.join()
+            
         except Exception as e:
-            self.log.error(f"Error notifying next professor: {str(e)}")
+            self.log.error(f"Error setting up notification behaviour: {str(e)}")
