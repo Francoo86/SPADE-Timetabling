@@ -39,6 +39,10 @@ class AgenteProfesor(Agent):
         self.current_instance_index = 0
         self.log =  AgentLogger(f"Professor_{self.nombre}")
         self._initialize_data_structures()
+        self._kb = None
+        
+    def set_knowledge_base(self, kb: AgentKnowledgeBase):
+        self._kb = kb
 
     def _initialize_data_structures(self):
         """Initialize all data structures needed for the agent."""
@@ -68,8 +72,7 @@ class AgenteProfesor(Agent):
             )
             
             # Register with knowledge base
-            kb = await AgentKnowledgeBase.get_instance()
-            success = await kb.register_agent(
+            success = await self._kb.register_agent(
                 self.jid,
                 [professor_capability]
             )
@@ -120,15 +123,14 @@ class AgenteProfesor(Agent):
     async def discover_rooms(self):
         """Discover available rooms through knowledge base"""
         try:
-            kb = await AgentKnowledgeBase.get_instance()
             
             # First ensure the knowledge base is properly initialized
-            if not kb._capabilities:
+            if not self._kb._capabilities:
                 self.log.warning("Knowledge base has no capabilities registered")
                 return
                 
             # Search for room agents
-            rooms = await kb.search(service_type="sala")
+            rooms = await self._kb.search(service_type="sala")
             
             if not rooms:
                 self.log.warning("No rooms found in knowledge base")
@@ -150,7 +152,7 @@ class AgenteProfesor(Agent):
             
         except Exception as e:
             self.log.error(f"Error discovering rooms: {str(e)}")
-            self.log.error(f"Knowledge base state: {kb._capabilities}")  # Debug log
+            self.log.error(f"Knowledge base state: {self._kb._capabilities}")  # Debug log
 
     def can_use_more_subjects(self) -> bool:
         """Check if there are more subjects to process."""

@@ -90,6 +90,7 @@ class ApplicationAgent(Agent):
                         capacidad=room_data.get("Capacidad"),
                         turno=room_data.get("Turno")
                     )
+                    room.set_knowledge_base(self.agent._kb)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
@@ -113,6 +114,7 @@ class ApplicationAgent(Agent):
                         asignaturas=prof_data.get("Asignaturas"),
                         orden=i
                     )
+                    professor.set_knowledge_base(self.agent._kb)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
                     logger.info(f"Professor agent started: {prof_jid}")

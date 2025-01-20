@@ -544,9 +544,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 self.profesor.log.error(f"No current subject available for professor {self.profesor.nombre}")
                 return
 
-            # Get room information from knowledge base
-            kb = await AgentKnowledgeBase.get_instance()
-            rooms = await kb.search(service_type="sala")
+            rooms = await self.profesor._kb.search(service_type="sala")
             
             if not rooms:
                 self.profesor.log.error("No rooms found in knowledge base")

@@ -72,10 +72,9 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
         """Execute the notification"""
         try:
             # Get the knowledge base
-            kb = await AgentKnowledgeBase.get_instance()
             
             # Search for professor with next order
-            professors = await kb.search(
+            professors = await self.agent._kb.search(
                 service_type="profesor",
                 properties={"orden": self.next_orden}
             )

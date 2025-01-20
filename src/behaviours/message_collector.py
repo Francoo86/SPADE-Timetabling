@@ -39,7 +39,7 @@ class MessageCollectorBehaviour(CyclicBehaviour):
             msg = await self.receive(timeout=10)
             
             if msg and msg.get_metadata("ontology") == "classroom-availability":
-                if msg.performative == "propose":
+                if msg.get_metadata("performative") == "propose":
                     await self.handle_proposal(msg)
                 # We can ignore REFUSE messages as they don't require processing
                 

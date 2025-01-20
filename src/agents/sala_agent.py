@@ -30,6 +30,10 @@ class AgenteSala(Agent):
         self.is_registered = False
         self.MEETING_ROOM_THRESHOLD = 10
         self.log = AgentLogger("Sala" + self.codigo)
+        self._kb = None
+        
+    def set_knowledge_base(self, kb: AgentKnowledgeBase):
+        self._kb = kb
 
     async def setup(self):
         """Initialize agent setup"""
@@ -81,11 +85,8 @@ class AgenteSala(Agent):
                 last_updated=datetime.now()
             )
             
-            # Get knowledge base instance
-            kb = await AgentKnowledgeBase.get_instance()
-            
             # Register agent
-            success = await kb.register_agent(
+            success = await self._kb.register_agent(
                 self.jid,
                 [room_capability]
             )
@@ -107,8 +108,7 @@ class AgenteSala(Agent):
             
         async def run(self):
             try:
-                kb = await AgentKnowledgeBase.get_instance()
-                await kb.update_heartbeat(self.agent.jid)
+                await self.agent._kb.update_heartbeat(self.agent.jid)
             except Exception as e:
                 self.agent.log.error(f"Error sending heartbeat: {str(e)}")
 
@@ -116,8 +116,7 @@ class AgenteSala(Agent):
         """Deregister from directory during cleanup"""
         try:
             if self.is_registered:
-                kb = await AgentKnowledgeBase.get_instance()
-                await kb.deregister_agent(self.jid)
+                await self.agent._kb.deregister_agent(self.jid)
                 self.is_registered = False
                 logging.info(f"Room {self.agent.codigo} deregistered from directory")
         except Exception as e:
