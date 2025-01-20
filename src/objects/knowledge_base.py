@@ -26,6 +26,7 @@ class AgentKnowledgeBase:
     """
     _instance = None
     _instance_lock = asyncio.Lock()
+    _initialized = False
 
     def __init__(self, ttl_seconds: int = 300):
         self._agents: Dict[str, AgentInfo] = {}
@@ -36,12 +37,18 @@ class AgentKnowledgeBase:
 
     @classmethod
     async def get_instance(cls) -> 'AgentKnowledgeBase':
-        """Get or create singleton instance of knowledge base"""
         if not cls._instance:
             async with cls._instance_lock:
                 if not cls._instance:
                     cls._instance = cls()
-                    await cls._instance.start()
+                    if not cls._initialized:
+                        await cls._instance.start()
+                        cls._initialized = True
+        return cls._instance
+    
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     async def start(self):
