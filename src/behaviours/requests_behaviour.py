@@ -5,6 +5,8 @@ import asyncio
 # from .negotiation_behaviour import NegotiationStateBehaviour
 # from .message_collector import MessageCollectorBehaviour
 # from agents.profesor_redux import AgenteProfesor
+from spade.agent import Agent
+from objects.knowledge_base import AgentKnowledgeBase
 
 class EsperarTurnoBehaviour(CyclicBehaviour):
     """Behaviour that waits for the agent's turn before starting negotiations."""
@@ -12,45 +14,41 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
     def __init__(self, profesor_agent,
                  state_behaviour,
                  message_collector):
-        """Initialize the wait turn behaviour.
-        
-        Args:
-            profesor_agent: The professor agent instance
-            state_behaviour: The negotiation state behaviour to add when it's our turn
-            message_collector: The message collector behaviour to add when it's our turn
-        """
         super().__init__()
-        
         self.profesor = profesor_agent
         self.state_behaviour = state_behaviour
         self.message_collector = message_collector
-        
 
     async def run(self):
         """Main behaviour loop - checks for START messages."""
-        # Create message template for INFORM messages with START content
-        msg = await self.receive(timeout=10)  # Pass the template
+        msg = await self.receive(timeout=10)
         
         if msg:
             try:
-                # Get the next order from user-defined parameters
-                next_orden = int(msg.get_metadata("nextOrden"))
-                
-                # Check if it's our turn
-                if next_orden == self.profesor.orden:
-                    self.profesor.log.info(
-                        f"Professor {self.profesor.nombre} received START signal. "
-                        f"My order={self.profesor.orden}, requested order={next_orden}"
-                    )
+                # Check if this is a START message
+                if msg.body == "START":
+                    # Get the next order from metadata
+                    next_orden_str = msg.get_metadata("nextOrden")
+                    if next_orden_str is None:
+                        self.profesor.log.warning("Received START message without nextOrden metadata")
+                        return
+                        
+                    next_orden = int(next_orden_str)
                     
-                    # Add negotiation behaviors when it's our turn
-                    self.agent.add_behaviour(self.state_behaviour)
-                    self.agent.add_behaviour(self.message_collector)
-                    
-                    # Remove this waiting behavior
-                    await self.agent.remove_behaviour(self)
-                    # self.kill()
-                    
+                    # Check if it's our turn
+                    if next_orden == self.profesor.orden:
+                        self.profesor.log.info(
+                            f"Professor {self.profesor.nombre} received START signal. "
+                            f"My order={self.profesor.orden}, requested order={next_orden}"
+                        )
+                        
+                        # Add negotiation behaviors when it's our turn
+                        self.agent.add_behaviour(self.state_behaviour)
+                        self.agent.add_behaviour(self.message_collector)
+                        
+                        # Remove this waiting behavior
+                        await self.agent.remove_behaviour(self)
+                        
             except (KeyError, ValueError) as e:
                 self.profesor.log.error(f"Error processing START message: {str(e)}")
                 
@@ -66,13 +64,6 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
     """One-shot behaviour to notify the next professor to start negotiations"""
     
     def __init__(self, profesor, next_orden):
-        """
-        Initialize the notification behaviour
-        
-        Args:
-            profesor: The professor agent instance
-            next_orden: Order number of the next professor
-        """
         super().__init__()
         self.profesor = profesor
         self.next_orden = next_orden
@@ -80,29 +71,33 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
     async def run(self):
         """Execute the notification"""
         try:
-            # Get the next professor's JID
-            next_professor_jid = self.profesor.get(f"Profesor{self.next_orden}")
+            # Get the knowledge base
+            kb = await AgentKnowledgeBase.get_instance()
             
-            if next_professor_jid:
+            # Search for professor with next order
+            professors = await kb.search(
+                service_type="profesor",
+                properties={"orden": self.next_orden}
+            )
+            
+            if professors:
+                next_professor = professors[0]
                 # Create START message
                 msg = Message(
-                    to=next_professor_jid,
-                    metadata={
-                        "performative": "inform",
-                        "ontology": "professor-chain",
-                        "nextOrden": str(self.next_orden)
-                    },
-                    body="START"
+                    to=str(next_professor.jid)
                 )
+                msg.set_metadata("performative", "inform")
+                msg.set_metadata("nextOrden", str(self.next_orden))
+                msg.body = "START"
                 
                 await self.send(msg)
                 self.profesor.log.info(
-                    f"Successfully notified next professor {next_professor_jid} "
+                    f"Successfully notified next professor {next_professor.jid} "
                     f"with order: {self.next_orden}"
                 )
             else:
-                self.profesor.log.info(
-                    f"No next professor found with order {self.next_orden}"
+                self.profesor.log.warning(
+                    f"No professor found with order {self.next_orden}"
                 )
                 
         except Exception as e:
