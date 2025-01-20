@@ -1,15 +1,21 @@
 from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour
+from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
 from typing import Dict, List, Optional
 import json
 import asyncio
+from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from datetime import datetime
 
 from objects.asignation_data import AsignacionSala
 from objects.helper.batch_proposals import BatchProposal
 from objects.helper.confirmed_assignments import BatchAssignmentConfirmation, ConfirmedAssignment
 from objects.static.agent_enums import Day
+
+from .agent_logger import AgentLogger
+
+import logging
 
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
@@ -23,6 +29,7 @@ class AgenteSala(Agent):
         self.horario_ocupado: Dict[Day, List[Optional[AsignacionSala]]] = {}
         self.is_registered = False
         self.MEETING_ROOM_THRESHOLD = 10
+        self.log = AgentLogger("Sala" + self.codigo)
 
     async def setup(self):
         """Initialize agent setup"""
@@ -44,18 +51,11 @@ class AgenteSala(Agent):
     async def register_service(self):
         """Register agent service in directory"""
         try:
-            service_info = {
-                "agent_type": self.SERVICE_NAME,
-                "codigo": self.codigo,
-                "campus": self.campus,
-                "capacidad": self.capacidad,
-                "turno": self.turno
-            }
-            await self.register_to_directory(service_info)
+            await self.register_service()
             self.is_registered = True
-            self.log.info(f"Room {self.codigo} registered successfully")
+            logging.info(f"Room {self.codigo} registered successfully")
         except Exception as e:
-            self.log.error(f"Error registering room {self.codigo}: {str(e)}")
+            logging.error(f"Error registering room {self.codigo}: {str(e)}")
 
     def is_meeting_room(self) -> bool:
         """Check if room is a meeting room based on capacity"""
@@ -65,6 +65,63 @@ class AgenteSala(Agent):
     def sanitize_subject_name(name: str) -> str:
         """Sanitize subject name by removing special characters"""
         return ''.join(c for c in name if c.isalnum())
+    
+    async def register_service(self):
+        """Register room service in knowledge base"""
+        try:
+            # Create capability
+            room_capability = AgentCapability(
+                service_type="sala",
+                properties={
+                    "codigo": self.codigo,
+                    "campus": self.campus,
+                    "capacidad": self.capacidad,
+                    "turno": self.turno
+                },
+                last_updated=datetime.now()
+            )
+            
+            # Get knowledge base instance
+            kb = await AgentKnowledgeBase.get_instance()
+            
+            # Register agent
+            success = await kb.register_agent(
+                self.jid,
+                [room_capability]
+            )
+            
+            if not success:
+                raise Exception(f"Failed to register room {self.codigo}")
+                
+            self.is_registered = True
+            
+        except Exception as e:
+            self.log.error(f"Error registering room: {str(e)}")
+            raise
+
+    class HeartbeatBehaviour(PeriodicBehaviour):
+        """Send periodic heartbeats to maintain registration"""
+        
+        def __init__(self):
+            super().__init__(period=30)  # 30 seconds between heartbeats
+            
+        async def run(self):
+            try:
+                kb = await AgentKnowledgeBase.get_instance()
+                await kb.update_heartbeat(self.agent.jid)
+            except Exception as e:
+                self.agent.log.error(f"Error sending heartbeat: {str(e)}")
+
+    async def cleanup(self):
+        """Deregister from directory during cleanup"""
+        try:
+            if self.is_registered:
+                kb = await AgentKnowledgeBase.get_instance()
+                await kb.deregister_agent(self.jid)
+                self.is_registered = False
+                logging.info(f"Room {self.agent.codigo} deregistered from directory")
+        except Exception as e:
+            logging.error(f"Agent Sala{self.agent.codigo}:Error during cleanup: {str(e)}")
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
     """Main behavior for handling room allocation requests"""
@@ -103,17 +160,20 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 
                 # Send proposal
                 reply = msg.make_reply()
-                reply.metadata["performative"] = "propose"
+                reply.set_metadata("performative", "propose")
+                reply.set_metadata("ontology", "classroom-availability")
                 reply.body = json.dumps(availability)
                 await self.send(reply)
             else:
                 # Send refuse if no blocks available
                 reply = msg.make_reply()
-                reply.metadata["performative"] = "refuse"
+                reply.set_metadata("performative", "refuse")
+                reply.set_metadata("ontology", "classroom-availability")
+                reply.body = "No blocks available"
                 await self.send(reply)
                 
         except Exception as e:
-            self.agent.log.error(f"Error processing request: {str(e)}")
+            logging.error(f"Agent Sala{self.agent.codigo}: Error processing request: {str(e)}")
 
     def get_available_blocks(self, vacancies: int) -> Dict[str, List[int]]:
         """Get available blocks for each day"""
@@ -172,7 +232,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 await self.update_schedule_json()
                 
         except Exception as e:
-            self.agent.log.error(f"Error confirming assignment: {str(e)}")
+            logging.error(f"Agent Sala{self.agent.codigo}:Error confirming assignment: {str(e)}")
 
     async def update_schedule_json(self):
         """Update JSON schedule record"""
@@ -193,4 +253,4 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             await self.agent.update_schedule_storage(schedule_data)
             
         except Exception as e:
-            self.agent.log.error(f"Error updating schedule JSON: {str(e)}")
+            logging.error(f"Agent Sala{self.agent.codigo}: Error updating schedule JSON: {str(e)}")
