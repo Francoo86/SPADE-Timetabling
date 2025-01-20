@@ -13,6 +13,7 @@ from pathlib import Path
 from src.agents.profesor_redux import AgenteProfesor
 from src.agents.sala_agent import AgenteSala
 from src.agents.supervisor import AgenteSupervisor
+from src.objects.knowledge_base import AgentKnowledgeBase
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -32,10 +33,12 @@ class ApplicationAgent(Agent):
         self.professor_agents: List[Agent] = []
         self.supervisor_agent: Optional[Agent] = None
         self.is_running = True
+        self._kb = None
         
     async def setup(self):
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
+        self._kb = await AgentKnowledgeBase.get_instance()
         
         # Add startup coordinator behavior
         startup_template = Template()
@@ -125,10 +128,10 @@ class ApplicationAgent(Agent):
             
             try:
                 supervisor_jid = f"Supervisor@{self.agent.jid.domain}"  # Match the original JADE name
-                supervisor = AgenteSupervisor(  # Changed to match original name
+                supervisor = AgenteSupervisor(  
                     jid=supervisor_jid,
                     password=self.agent.password,
-                    profesores_controllers=self.agent.professor_agents  # Match original constructor
+                    professor_jids=[agent.jid for agent in self.agent.professor_agents]  # Pass JIDs list
                 )
                 await supervisor.start(auto_register=True)
                 logger.info(f"Supervisor agent started: {supervisor_jid}")
@@ -222,8 +225,8 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("profesores.json")
-            rooms_data = self.load_json("salas.json")
+            professors_data = self.load_json("inputOfProfesores.json")
+            rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:
                 logger.error("Failed to load required data files")
