@@ -30,7 +30,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
     TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
 
-    def __init__(self, profesor, batch_proposals : Queue):
+    def __init__(self, profesor, batch_proposals : asyncio.Queue):
         """Initialize the negotiation state behaviour."""
         super().__init__()
         self.profesor = profesor
@@ -627,7 +627,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                     daily_assignments[day] += 1
 
             # Send batch assignment if we have requests
-            if requests:
+            if len(requests) > 0:
                 try:
                     if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
                         self.profesor.log.info(
@@ -662,53 +662,66 @@ class NegotiationStateBehaviour(CyclicBehaviour):
         if self.bloques_pendientes - len(requests) < 0:
             self.profesor.log.warning("Assignment would exceed required hours")
             return False
+        
+        MAX_RETRIES = 3
+        retry_count = 0
 
-        try:
-            # Create batch request message
-            msg = Message()
-            msg.to = str(original_msg.sender)
-            msg.set_metadata("performative", "accept-proposal")
-            msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
+        while retry_count < MAX_RETRIES:
+            try:
+                # Create batch request message
+                msg = Message()
+                msg.to = str(original_msg.sender)
+                msg.set_metadata("performative", "accept-proposal")
+                msg.set_metadata("ontology", "room-assignment")
+                msg.set_metadata("conversation-id", original_msg.get_metadata("conversation-id"))
+                msg.set_metadata("protocol", "fipa-contract-net")
+                
+                msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
 
-            # Send message and wait for confirmation
-            await self.send(msg)
+                # Send message and wait for confirmation
+                await self.send(msg)
+                
+                # Wait for confirmation with timeout
+                start_time = datetime.now()
+                timeout = timedelta(seconds=1)
+
+                while datetime.now() - start_time < timeout:
+                    confirmation_msg = await self.receive(timeout=0.1)
+                    if confirmation_msg and confirmation_msg.get_metadata("performative") == "inform":
+                        confirmation_data = json.loads(confirmation_msg.body)
+                        confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
+
+                        # Process confirmed assignments
+                        for assignment in confirmation.get_confirmed_assignments():
+                            await self.profesor.update_schedule_info(
+                                day=assignment.get_day(),
+                                classroom_code=assignment.get_classroom_code(),
+                                block=assignment.get_block(),
+                                subject_name=self.profesor.get_current_subject().get_nombre(),
+                                satisfaction=assignment.get_satisfaction()
+                            )
+
+                            self.bloques_pendientes -= 1
+                            self.assignation_data.assign(
+                                assignment.get_day(),
+                                assignment.get_classroom_code(),
+                                assignment.get_block()
+                            )
+
+                        return True
+
+                    await asyncio.sleep(0.05)
+                    
+                retry_count += 1
+
+                # return False
+
+            except Exception as e:
+                self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
+                # return False
+                retry_count += 1
             
-            # Wait for confirmation with timeout
-            start_time = datetime.now()
-            timeout = timedelta(seconds=1)
-
-            while datetime.now() - start_time < timeout:
-                confirmation_msg = await self.profesor.receive(timeout=0.1)
-                if confirmation_msg and confirmation_msg.get_metadata("performative") == "inform":
-                    confirmation_data = json.loads(confirmation_msg.body)
-                    confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
-
-                    # Process confirmed assignments
-                    for assignment in confirmation.get_confirmed_assignments():
-                        await self.profesor.update_schedule_info(
-                            day=assignment.get_day(),
-                            classroom_code=assignment.get_classroom_code(),
-                            block=assignment.get_block(),
-                            subject_name=self.profesor.get_current_subject().get_nombre(),
-                            satisfaction=assignment.get_satisfaction()
-                        )
-
-                        self.bloques_pendientes -= 1
-                        self.assignation_data.assign(
-                            assignment.get_day(),
-                            assignment.get_classroom_code(),
-                            assignment.get_block()
-                        )
-
-                    return True
-
-                await asyncio.sleep(0.05)
-
-            return False
-
-        except Exception as e:
-            self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
-            return False
+        return False
 
     @staticmethod
     def sanitize_subject_name(name: str) -> str:

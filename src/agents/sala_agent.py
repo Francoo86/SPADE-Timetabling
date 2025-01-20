@@ -223,7 +223,9 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             if assignments:
                 confirmation = BatchAssignmentConfirmation(assignments)
                 reply = msg.make_reply()
-                reply.metadata["performative"] = "inform"
+                reply.set_metadata("performative", "inform")
+                reply.set_metadata("ontology", "room-assignment")
+                reply.set_metadata("protocol", "fipa-contract-net")
                 reply.body = json.dumps(confirmation.to_dict())
                 await self.send(reply)
                 

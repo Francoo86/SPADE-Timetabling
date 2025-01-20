@@ -86,6 +86,7 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
                     to=str(next_professor.jid)
                 )
                 msg.set_metadata("performative", "inform")
+                msg.set_metadata("conversation_id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(self.next_orden))
                 msg.body = "START"
                 

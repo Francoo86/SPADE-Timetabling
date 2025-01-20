@@ -40,6 +40,7 @@ class AgenteProfesor(Agent):
         self.log =  AgentLogger(f"Professor_{self.nombre}")
         self._initialize_data_structures()
         self._kb = None
+        self.batch_proposals = asyncio.Queue()
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -84,9 +85,9 @@ class AgenteProfesor(Agent):
             self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
             
             # Create behaviours
-            batch_proposals = Queue()
-            state_behaviour = NegotiationStateBehaviour(self, batch_proposals)
-            message_collector = MessageCollectorBehaviour(self, batch_proposals, state_behaviour)
+            # batch_proposals = Queue()
+            state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
+            message_collector = MessageCollectorBehaviour(self, self.batch_proposals, state_behaviour)
             
             # Add status response behavior
             template = Template()
@@ -113,8 +114,12 @@ class AgenteProfesor(Agent):
                     state_behaviour,
                     message_collector
                 )
+                
+                # ESTA TEMPLATE ES IMPORTANTE!!!!!
                 template = Template()
                 template.set_metadata("performative", "inform")
+                template.set_metadata("content", "START")
+                template.set_metadata("conversation-id", "negotiation-start")
                 self.add_behaviour(wait_behaviour, template)
                 
         except Exception as e:
@@ -326,16 +331,30 @@ class AgenteProfesor(Agent):
         }
         
     async def notify_next_professor(self):
-        """Notify the next professor to start their negotiations"""
         try:
             next_orden = self.orden + 1
             
-            # Create and start the notification behaviour
-            notify_behaviour = NotifyNextProfessorBehaviour(self, next_orden)
-            self.add_behaviour(notify_behaviour)
+            # Search for next professor
+            professors = await self._kb.search(
+                service_type="profesor",
+                properties={"orden": next_orden}
+            )
             
-            # Wait for the behaviour to complete
-            await notify_behaviour.join()
-            
+            if professors:
+                next_professor = professors[0]
+                
+                # Create START message
+                msg = Message(to=str(next_professor.jid))
+                msg.set_metadata("performative", "inform")
+                msg.set_metadata("content", "START")
+                msg.set_metadata("conversation-id", "negotiation-start")
+                msg.set_metadata("nextOrden", str(next_orden))
+                
+                await self.send(msg)
+                self.log.info(f"Successfully notified next professor with order: {next_orden}")
+                
+            else:
+                self.log.info(f"No next professor found with order {next_orden}")
+                
         except Exception as e:
-            self.log.error(f"Error setting up notification behaviour: {str(e)}")
+            self.log.error(f"Error notifying next professor: {str(e)}")

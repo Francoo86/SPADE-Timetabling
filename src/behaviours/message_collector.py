@@ -1,7 +1,6 @@
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
-from queue import Queue
 import json
 import asyncio
 # from agents.profesor_redux import AgenteProfesor
@@ -12,7 +11,7 @@ from objects.helper.classroom_availability import ClassroomAvailability
 from .negotiation_behaviour import NegotiationStateBehaviour
 
 class MessageCollectorBehaviour(CyclicBehaviour):
-    def __init__(self, professor_agent, batch_proposals: Queue, state_behaviour : NegotiationStateBehaviour):
+    def __init__(self, professor_agent, batch_proposals: asyncio.Queue, state_behaviour : NegotiationStateBehaviour):
         """
         Initialize the message collector behaviour.
         
