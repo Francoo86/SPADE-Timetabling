@@ -14,6 +14,7 @@ from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
 from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
 from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
+from objects.knowledge_base import AgentKnowledgeBase
 # from agents.profesor_redux import AgenteProfesor
 # import dataclass
 from dataclasses import dataclass
@@ -543,11 +544,14 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 self.profesor.log.error(f"No current subject available for professor {self.profesor.nombre}")
                 return
 
-            # Create CFP message
-            msg = Message()
-            msg.set_metadata("protocol", "fipa-contract-net")
-            msg.set_metadata("performative", "cfp")
+            # Get room information from knowledge base
+            kb = await AgentKnowledgeBase.get_instance()
+            rooms = await kb.search(service_type="sala")
             
+            if not rooms:
+                self.profesor.log.error("No rooms found in knowledge base")
+                return
+
             # Build request info
             solicitud_info = {
                 "nombre": self.sanitize_subject_name(current_subject.get_nombre()),
@@ -559,12 +563,19 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 "ultimo_dia": self.assignation_data.get_ultimo_dia_asignado().name if self.assignation_data.get_ultimo_dia_asignado() else "",
                 "ultimo_bloque": self.assignation_data.get_ultimo_bloque_asignado()
             }
-            
-            msg.body = json.dumps(solicitud_info)
-            msg.set_metadata("conversation-id", f"neg-{self.profesor.nombre}-{self.bloques_pendientes}")
 
-            # Send to all classroom agents
-            await self.profesor.send(msg)
+            # Send CFP to each room
+            for room in rooms:
+                msg = Message(
+                    to=str(room.jid)  # Set the recipient JID
+                )
+                msg.set_metadata("protocol", "fipa-contract-net")
+                msg.set_metadata("performative", "cfp")
+                msg.set_metadata("conversation-id", f"neg-{self.profesor.nombre}-{self.bloques_pendientes}")
+                msg.body = json.dumps(solicitud_info)
+                
+                await self.send(msg)  # Using behaviour's send method
+                self.profesor.log.debug(f"Sent CFP to room {room.jid}")
 
         except Exception as e:
             self.profesor.log.error(f"Error sending proposal requests: {str(e)}")
@@ -662,7 +673,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
             msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
 
             # Send message and wait for confirmation
-            await self.profesor.send(msg)
+            await self.send(msg)
             
             # Wait for confirmation with timeout
             start_time = datetime.now()
