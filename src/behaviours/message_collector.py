@@ -1,6 +1,6 @@
 from spade.behaviour import CyclicBehaviour
 from spade.message import Message
-from spade.template import Template
+from spade.template import Template, ORTemplate
 import json
 import asyncio
 # from agents.profesor_redux import AgenteProfesor
@@ -27,6 +27,10 @@ class MessageCollectorBehaviour(CyclicBehaviour):
 
     async def run(self):
         """Main behaviour loop"""
+        if self.professor.is_cleaning_up:
+            self.kill()
+            return
+        
         try:
             # Create message template for PROPOSE and REFUSE
             """
@@ -35,7 +39,7 @@ class MessageCollectorBehaviour(CyclicBehaviour):
             template.set_metadata("ontology", "classroom-availability") """
             
             # Wait for a message
-            msg = await self.receive(timeout=10)
+            msg = await self.receive(timeout=5)
             
             if msg and msg.get_metadata("ontology") == "classroom-availability":
                 if msg.get_metadata("performative") == "propose":

@@ -1,14 +1,16 @@
 from spade.behaviour import CyclicBehaviour
 from spade.template import Template
 from spade.message import Message
+from fipa.common_templates import CommonTemplates
 
 class StatusResponseBehaviour(CyclicBehaviour):
     """Handles status queries from supervisor"""
     
     async def run(self):
+        """
         template = Template()
         template.set_metadata("performative", "query-ref")
-        template.set_metadata("ontology", "agent-status")
+        template.set_metadata("ontology", "agent-status")"""
         
         msg = await self.receive(timeout=10)
         if not msg:
@@ -31,3 +33,20 @@ class StatusResponseBehaviour(CyclicBehaviour):
             
         except Exception as e:
             self.agent.log.error(f"Error sending status: {str(e)}")
+            
+class InitialWaitBehaviour(CyclicBehaviour):
+    """Special wait behaviour for first professor"""
+    def __init__(self, state_behaviour, message_collector):
+        super().__init__()
+        self.state_behaviour = state_behaviour
+        self.message_collector = message_collector
+        
+    async def run(self):
+        msg = await self.receive(timeout=10)
+        if msg:
+            message_template = CommonTemplates.get_classroom_availability_template()
+            
+            # Only start if explicitly told by application agent
+            self.agent.add_behaviour(self.state_behaviour)
+            self.agent.add_behaviour(self.message_collector, message_template)
+            self.kill()
