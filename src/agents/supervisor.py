@@ -82,6 +82,8 @@ class AgenteSupervisor(Agent):
             self.agent.state.state_count = {state: 0 for state in self.agent.state.state_count}
         
         async def run(self):
+            pass
+            """
             self.current_iteration += 1
             system_active = self.agent.get("system_active")
             if not system_active:
@@ -115,18 +117,20 @@ class AgenteSupervisor(Agent):
                         all_terminated = False
                         inactivity = self.agent.state.inactivity_counters.get(jid, 0)
                         if inactivity >= self.agent.state.MAX_INACTIVITY:
-                            print(f"[WARNING] Professor {jid} appears stuck in {current_state} state. "
-                                f"Inactivity count: {inactivity}")
+                            pass
+                            # print(f"[WARNING] Professor {jid} appears stuck in {current_state} state. "
+                                # f"Inactivity count: {inactivity}")
 
                 if self.current_iteration % 4 == 0:
-                    await self.print_status_report()
+                    pass
+                    # await self.print_status_report()
 
                 if all_terminated or self.agent.state.state_count["TERMINATED"] == len(self.agent.state.professor_jids):
                     print("[Supervisor] All professors have completed their work.")
                     await self.finish_system()
 
             except Exception as e:
-                print(f"[Supervisor] Error in monitoring: {str(e)}")
+                print(f"[Supervisor] Error in monitoring: {str(e)}") """
 
         async def finish_system(self):
             """Clean up and shut down the system"""
