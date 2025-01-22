@@ -663,63 +663,64 @@ class NegotiationStateBehaviour(CyclicBehaviour):
             self.profesor.log.warning("Assignment would exceed required hours")
             return False
         
-        MAX_RETRIES = 3
-        retry_count = 0
+        #MAX_RETRIES = 3
+        # retry_count = 0
 
-        while retry_count < MAX_RETRIES:
-            try:
-                # Create batch request message
-                msg = Message()
-                msg.to = str(original_msg.sender)
-                msg.set_metadata("performative", "accept-proposal")
-                msg.set_metadata("ontology", "room-assignment")
-                msg.set_metadata("conversation-id", original_msg.get_metadata("conversation-id"))
-                msg.set_metadata("protocol", "fipa-contract-net")
+        # while retry_count < MAX_RETRIES:
+        try:
+            conv_id = original_msg.get_metadata("conversation-id")
+            # Create batch request message
+            msg = Message()
+            msg.to = str(original_msg.sender)
+            msg.set_metadata("performative", "accept-proposal")
+            msg.set_metadata("ontology", "room-assignment")
+            msg.set_metadata("conversation-id", conv_id)
+            msg.set_metadata("protocol", "fipa-contract-net")
+            
+            msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
+
+            # Send message and wait for confirmation
+            await self.send(msg)
+            
+            # Wait for confirmation with timeout
+            start_time = datetime.now()
+            timeout = timedelta(seconds=1)
+
+            while datetime.now() - start_time < timeout:
+                confirmation_msg = await self.receive(timeout=0.1)
+                if confirmation_msg and confirmation_msg.get_metadata("performative") == "inform" and confirmation_msg.get_metadata("conversation-id") == conv_id:
+                    confirmation_data = json.loads(confirmation_msg.body)
+                    confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
+
+                    # Process confirmed assignments
+                    for assignment in confirmation.get_confirmed_assignments():
+                        self.profesor.update_schedule_info(
+                            dia=assignment.get_day(),
+                            sala=assignment.get_classroom_code(),
+                            bloque=assignment.get_block(),
+                            nombre_asignatura=self.profesor.get_current_subject().get_nombre(),
+                            satisfaccion=assignment.get_satisfaction()
+                        )
+
+                        self.bloques_pendientes -= 1
+                        self.assignation_data.assign(
+                            assignment.get_day(),
+                            assignment.get_classroom_code(),
+                            assignment.get_block()
+                        )
+
+                    return True
+
+                await asyncio.sleep(0.05)
                 
-                msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
+            # retry_count += 1
 
-                # Send message and wait for confirmation
-                await self.send(msg)
-                
-                # Wait for confirmation with timeout
-                start_time = datetime.now()
-                timeout = timedelta(seconds=1)
+            # return False
 
-                while datetime.now() - start_time < timeout:
-                    confirmation_msg = await self.receive(timeout=0.1)
-                    if confirmation_msg and confirmation_msg.get_metadata("performative") == "inform":
-                        confirmation_data = json.loads(confirmation_msg.body)
-                        confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
-
-                        # Process confirmed assignments
-                        for assignment in confirmation.get_confirmed_assignments():
-                            await self.profesor.update_schedule_info(
-                                day=assignment.get_day(),
-                                classroom_code=assignment.get_classroom_code(),
-                                block=assignment.get_block(),
-                                subject_name=self.profesor.get_current_subject().get_nombre(),
-                                satisfaction=assignment.get_satisfaction()
-                            )
-
-                            self.bloques_pendientes -= 1
-                            self.assignation_data.assign(
-                                assignment.get_day(),
-                                assignment.get_classroom_code(),
-                                assignment.get_block()
-                            )
-
-                        return True
-
-                    await asyncio.sleep(0.05)
-                    
-                retry_count += 1
-
+        except Exception as e:
+            self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
                 # return False
-
-            except Exception as e:
-                self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
-                # return False
-                retry_count += 1
+                # retry_count += 1
             
         return False
 
