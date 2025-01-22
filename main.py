@@ -35,7 +35,51 @@ class ApplicationAgent(Agent):
         self.is_running = True
         self._kb = None
         
+        self._rooms_ready = False
+        self._professors_ready = False
+        self._supervisor_ready = False
+    
+    async def get_system_status(self, request):
+        """Web endpoint to get overall system status"""
+        return {
+            "rooms_ready": self._rooms_ready,
+            "professors_ready": self._professors_ready,
+            "supervisor_ready": self._supervisor_ready,
+            "active_professors": len([p for p in self.professor_agents if p.is_alive()]),
+            "active_rooms": len([r for r in self.room_agents.values() if r.is_alive()])
+        }
+
+    async def get_agent_status(self, request):
+        """Web endpoint to get detailed agent status"""
+        status = {
+            "professors": {},
+            "rooms": {}
+        }
+        
+        # Collect professor status
+        for prof in self.professor_agents:
+            status["professors"][str(prof.jid)] = {
+                "alive": prof.is_alive(),
+                "current_subject": prof.get_current_subject().get_nombre() if prof.get_current_subject() else None,
+                "pending_blocks": getattr(prof, "bloques_pendientes", 0),
+                "order": prof.orden
+            }
+            
+        # Collect room status  
+        for code, room in self.room_agents.items():
+            status["rooms"][code] = {
+                "alive": room.is_alive(),
+                "assignments": len([a for day in room.horario_ocupado.values() 
+                                for a in day if a is not None])
+            }
+            
+        return status
+        
     async def setup(self):
+        self.web.start(hostname="127.0.0.1", port=20000)
+        self.web.add_get("/status", self.get_system_status, template=None)
+        self.web.add_get("/agents", self.get_agent_status, template=None)
+    
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
         self._kb = await AgentKnowledgeBase.get_instance()
@@ -64,17 +108,47 @@ class ApplicationAgent(Agent):
             ]
             
         async def run(self):
-            """Execute startup stages sequentially"""
-            if self.current_stage < len(self.stages):
-                try:
-                    await self.stages[self.current_stage]()
-                    self.current_stage += 1
-                except Exception as e:
-                    logger.error(f"Error in startup stage {self.current_stage}: {e}")
-                    await self.cleanup()
+            try:
+                # 1. Initialize rooms first
+                if not self.agent._rooms_ready:
+                    await self.initialize_rooms()
+                    self.agent._rooms_ready = True
+                    print("All room agents initialized")
+                    return
+
+                # 2. Initialize professors after rooms are ready
+                if not self.agent._professors_ready:
+                    await self.initialize_professors()
+                    self.agent._professors_ready = True 
+                    print("All professor agents initialized")
+                    return
+
+                # 3. Initialize supervisor after professors
+                if not self.agent._supervisor_ready:
+                    await self.initialize_supervisor()
+                    self.agent._supervisor_ready = True
+                    print("Supervisor agent initialized")
+                    return
+
+                # 4. Only start negotiations when everything is ready
+                if self.agent._rooms_ready and self.agent._professors_ready and self.agent._supervisor_ready:
+                    # Start first professor
+                    first_prof = self.agent.professor_agents[0]
+                    msg = Message(to=str(first_prof.jid))
+                    msg.set_metadata("performative", "inform")
+                    msg.set_metadata("content", "START")
+                    msg.set_metadata("conversation-id", "negotiation-start-base")
+                    msg.set_metadata("nextOrden", "0")
                     
-            await asyncio.sleep(0.1)
-            
+                    await self.send(msg)
+                    
+                    print("[GOOD] System initialization complete - Starting negotiations")
+                    # await self.agent.remove_behaviour(self)
+                    self.kill()
+                    
+            except Exception as e:
+               print(f"[FATAL] Error in startup sequence: {str(e)}")
+
         async def initialize_rooms(self):
             """Initialize and start room agents"""
             logger.info("Initializing room agents...")
