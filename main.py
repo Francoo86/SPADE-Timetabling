@@ -4,6 +4,7 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
+from spade.container import Container
 import json
 import logging
 
@@ -26,7 +27,7 @@ class ApplicationAgent(Agent):
     """
     def __init__(self, jid: str, password: str, room_data: List[dict], 
                  professor_data: List[dict]):
-        super().__init__(jid, password)
+        super().__init__(jid, password, verify_security=False)
         self.room_data = room_data
         self.professor_data = professor_data
         self.room_agents: Dict[str, Agent] = {}
