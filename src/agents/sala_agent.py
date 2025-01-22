@@ -2,7 +2,8 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
+from json_stuff.json_salas import SalaScheduleStorage
 import json
 import asyncio
 from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
@@ -99,6 +100,28 @@ class AgenteSala(Agent):
         except Exception as e:
             self.log.error(f"Error registering room: {str(e)}")
             raise
+        
+    async def update_schedule_storage(self, schedule_data: Dict[str, Any]) -> None:
+        """
+        Update the room's schedule in persistent storage
+        
+        Args:
+            schedule_data: Dictionary containing the schedule information
+        """
+        try:
+            # Get storage instance
+            storage = await SalaScheduleStorage.get_instance()
+            
+            # Update schedule
+            await storage.update_schedule(
+                codigo=self.codigo,
+                campus=self.campus,
+                schedule_data=schedule_data
+            )
+            
+        except Exception as e:
+            self.log.error(f"Error updating schedule storage: {str(e)}")
+            raise
 
     class HeartbeatBehaviour(PeriodicBehaviour):
         """Send periodic heartbeats to maintain registration"""
@@ -131,10 +154,12 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         if not msg:
             await asyncio.sleep(0.1)
             return
+        
+        performative = msg.get_metadata("performative")
 
-        if msg.metadata["performative"] == "cfp":
+        if performative == "cfp":
             await self.process_request(msg)
-        elif msg.metadata["performative"] == "accept":
+        elif performative == "accept-proposal":
             await self.confirm_assignment(msg)
 
     async def process_request(self, msg: Message):
@@ -226,6 +251,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 reply.set_metadata("performative", "inform")
                 reply.set_metadata("ontology", "room-assignment")
                 reply.set_metadata("protocol", "fipa-contract-net")
+                reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
                 reply.body = json.dumps(confirmation.to_dict())
                 await self.send(reply)
                 
