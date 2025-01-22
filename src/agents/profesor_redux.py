@@ -16,7 +16,7 @@ from objects.asignation_data import BloqueInfo
 from spade.message import Message
 from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
-from behaviours.monitoring import StatusResponseBehaviour
+from behaviours.monitoring import StatusResponseBehaviour, InitialWaitBehaviour
 
 from datetime import datetime
 
@@ -41,6 +41,7 @@ class AgenteProfesor(Agent):
         self._initialize_data_structures()
         self._kb = None
         self.batch_proposals = asyncio.Queue()
+        self.is_cleaning_up = False
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -58,10 +59,25 @@ class AgenteProfesor(Agent):
         
         # Initialize daily block assignments
         self.bloques_asignados_por_dia = {day: {} for day in Day}
+    
+    async def get_professor_status(self, request):
+        current = self.get_current_subject()
+        return {
+            "name": self.nombre,
+            "order": self.orden,
+            "current_subject": current.get_nombre() if current else None,
+            "total_subjects": len(self.asignaturas),
+            "completed_subjects": self.asignatura_actual,
+            "negotiation_state": self.current_state.name if hasattr(self, "current_state") else None,
+            "pending_blocks": self.bloques_pendientes if hasattr(self, "bloques_pendientes") else 0,
+            "schedule": self.horario_json
+        }
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
         try:
+            # self.web.start(hostname="127.0.0.1", port=10000 + self.orden)
+            # self.web.add_get("/status", self.get_professor_status, template=None)
             # Initialize agent capabilities
             professor_capability = AgentCapability(
                 service_type="profesor",
@@ -98,15 +114,21 @@ class AgenteProfesor(Agent):
             # Discover rooms
             await self.discover_rooms()
             
+            """
             message_template = Template()
             message_template.set_metadata("performative", "propose")
-            message_template.set_metadata("ontology", "classroom-availability")
+            message_template.set_metadata("ontology", "classroom-availability") """
             
             # Add appropriate behaviour based on order
             if self.orden == 0:
                 self.log.info("Starting as first professor")
-                self.add_behaviour(state_behaviour)
-                self.add_behaviour(message_collector, message_template)
+                template = Template()
+                template.set_metadata("performative", "inform")
+                template.set_metadata("content", "START")
+                template.set_metadata("conversation-id", "negotiation-start-base")
+                # self.add_behaviour(state_behaviour)
+                # self.add_behaviour(message_collector, message_template)
+                self.add_behaviour(InitialWaitBehaviour(state_behaviour, message_collector), template)
             else:
                 self.log.info(f"Waiting for turn (order: {self.orden})")
                 wait_behaviour = EsperarTurnoBehaviour(
@@ -296,9 +318,9 @@ class AgenteProfesor(Agent):
 
     async def finalizar_negociaciones(self):
         try:
-            if hasattr(self, '_cleaning_up') and self._cleaning_up:
+            if self.is_cleaning_up:
                 return
-            self._cleaning_up = True
+            self.is_cleaning_up = True
             
             # Save final schedule
             await self.export_schedule_json()
@@ -317,10 +339,21 @@ class AgenteProfesor(Agent):
 
     async def cleanup(self):
         try:
+            behaviours = self.behaviours
+            for behaviour in behaviours:
+                if not behaviour: continue
+                behaviour.kill()
+            
+            
+            if self._kb:
+                await self._kb.deregister_agent(self.jid)
+                
+            # Short delay to allow messages to be sent
+            await asyncio.sleep(0.1)
             # Cleanup resources and deregister
             await self.stop()
         finally:
-            self._cleaning_up = False
+            self.is_cleaning_up = False
 
     async def export_schedule_json(self) -> Dict:
         return {
@@ -350,7 +383,11 @@ class AgenteProfesor(Agent):
                 msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(next_orden))
                 
-                await self.send(msg)
+                notify_behaviour = NotifyNextProfessorBehaviour(self, next_orden)
+                self.add_behaviour(notify_behaviour, msg)
+                
+                # await self.send(msg)
+                await notify_behaviour.join()
                 self.log.info(f"Successfully notified next professor with order: {next_orden}")
                 
             else:
