@@ -1,4 +1,5 @@
 from spade.template import Template, ORTemplate
+from aioxmpp import JID
 
 class CommonTemplates:
     """Common templates for message matching"""
@@ -23,3 +24,16 @@ class CommonTemplates:
         template.set_metadata("performative", "query-ref")
         template.set_metadata("ontology", "agent-status")
         return template
+    
+    @staticmethod
+    def get_notify_next_professor_template(is_base = False):
+        """Get a template for notifying the next professor"""
+        base_name = "negotiation-start" if is_base else "negotiation-start-base"
+    
+        template = Template()
+        template.set_metadata("performative", "inform")
+        template.set_metadata("conversation-id", base_name)
+        template.set_metadata("content", "START")
+        
+        return template
+        
