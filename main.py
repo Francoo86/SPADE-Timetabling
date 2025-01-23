@@ -16,6 +16,9 @@ from src.agents.sala_agent import AgenteSala
 from src.agents.supervisor import AgenteSupervisor
 from src.objects.knowledge_base import AgentKnowledgeBase
 
+from json_stuff.json_salas import SalaScheduleStorage
+from json_stuff.json_profesores import ProfesorScheduleStorage
+
 # Configure logging
 logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -39,6 +42,9 @@ class ApplicationAgent(Agent):
         self._rooms_ready = False
         self._professors_ready = False
         self._supervisor_ready = False
+        
+        self.prof_storage = None
+        self.room_storage = None
     
     async def get_system_status(self, request):
         """Web endpoint to get overall system status"""
@@ -84,6 +90,10 @@ class ApplicationAgent(Agent):
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
         self._kb = await AgentKnowledgeBase.get_instance()
+        
+        # Initialize storage instances
+        self.prof_storage = await ProfesorScheduleStorage.get_instance()
+        self.room_storage = await SalaScheduleStorage.get_instance()
         
         # Add startup coordinator behavior
         startup_template = Template()
@@ -164,6 +174,7 @@ class ApplicationAgent(Agent):
                         capacidad=room_data.get("Capacidad"),
                         turno=room_data.get("Turno")
                     )
+                    room.set_storage(self.agent.room_storage)
                     room.set_knowledge_base(self.agent._kb)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
@@ -188,6 +199,7 @@ class ApplicationAgent(Agent):
                         asignaturas=prof_data.get("Asignaturas"),
                         orden=i
                     )
+                    professor.set_storage(self.agent.prof_storage)
                     professor.set_knowledge_base(self.agent._kb)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
@@ -209,6 +221,8 @@ class ApplicationAgent(Agent):
                     password=self.agent.password,
                     professor_jids=[agent.jid for agent in self.agent.professor_agents]  # Pass JIDs list
                 )
+                supervisor.set_storages(self.agent.room_storage, self.agent.prof_storage)
+                supervisor.set_knowledge_base(self.agent._kb)
                 await supervisor.start(auto_register=True)
                 logger.info(f"Supervisor agent started: {supervisor_jid}")
                 
@@ -379,7 +393,7 @@ def main():
         
     # Run the application
     runner = ApplicationRunner(xmpp_server, password)
-    asyncio.run(runner.run())
+    asyncio.run(runner.run(), debug=True)
 
 if __name__ == "__main__":
     main()
