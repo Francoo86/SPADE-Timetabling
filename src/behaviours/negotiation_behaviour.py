@@ -19,8 +19,6 @@ from objects.knowledge_base import AgentKnowledgeBase
 # import dataclass
 from dataclasses import dataclass
 
-JADE_BASE_PERIOD = 500
-
 @dataclass
 class BatchProposalScore:
     """Helper class to store proposal with its score"""
@@ -31,10 +29,12 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
     MEETING_ROOM_THRESHOLD = 10
     TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
+    # En JADE teniamos 500 ms
+    JADE_BASE_PERIOD = 0.5
 
     def __init__(self, profesor, batch_proposals : asyncio.Queue):
         """Initialize the negotiation state behaviour."""
-        super().__init__(period=JADE_BASE_PERIOD)
+        super().__init__(period=self.JADE_BASE_PERIOD)
         self.profesor = profesor
         self.propuestas = batch_proposals
         self.current_state = NegotiationState.SETUP

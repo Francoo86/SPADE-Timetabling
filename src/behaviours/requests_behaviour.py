@@ -25,8 +25,9 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
         
         if msg:
             try:
+                content = msg.get_metadata("content")
                 # Check if this is a START message
-                if msg.body == "START":
+                if content == "START":
                     # Get the next order from metadata
                     next_orden_str = msg.get_metadata("nextOrden")
                     if next_orden_str is None:
@@ -86,9 +87,9 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
                     to=str(next_professor.jid)
                 )
                 msg.set_metadata("performative", "inform")
-                msg.set_metadata("conversation_id", "negotiation-start")
+                msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(self.next_orden))
-                msg.body = "START"
+                msg.set_metadata("content", "START")
                 
                 await self.send(msg)
                 self.profesor.log.info(

@@ -32,12 +32,6 @@ class MessageCollectorBehaviour(CyclicBehaviour):
             return
         
         try:
-            # Create message template for PROPOSE and REFUSE
-            """
-            template = Template()
-            template.set_metadata("performative", "propose")
-            template.set_metadata("ontology", "classroom-availability") """
-            
             # Wait for a message
             msg = await self.receive(timeout=5)
             

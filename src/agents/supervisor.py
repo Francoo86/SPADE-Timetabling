@@ -163,7 +163,7 @@ class AgenteSupervisor(Agent):
                     msg = Message(to=receptor)
                     msg.set_metadata("performative", "query-ref")
                     msg.set_metadata("ontology", "agent-status")
-                    msg.body = "status_query"
+                    msg.set_metadata("content", "status_query")
                     
                     await self.send(msg)
                     response = await self.receive(timeout=2)
@@ -191,7 +191,7 @@ class AgenteSupervisor(Agent):
                     msg = Message(to=str(jid))
                     msg.set_metadata("performative", "query-ref")
                     msg.set_metadata("ontology", "schedule-data")
-                    msg.body = "schedule_query"
+                    msg.set_metadata("content", "schedule_query")
                     
                     await self.send(msg)
                     response = await self.receive(timeout=2)
