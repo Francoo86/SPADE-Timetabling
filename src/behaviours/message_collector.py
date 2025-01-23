@@ -33,7 +33,7 @@ class MessageCollectorBehaviour(CyclicBehaviour):
         
         try:
             # Wait for a message
-            msg = await self.receive(timeout=5)
+            msg = await self.receive(timeout=0.05)
             
             if msg and msg.get_metadata("ontology") == "classroom-availability":
                 if msg.get_metadata("performative") == "propose":

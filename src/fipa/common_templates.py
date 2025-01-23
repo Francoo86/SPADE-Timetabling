@@ -27,8 +27,7 @@ class CommonTemplates:
     
     @staticmethod
     def get_notify_next_professor_template(is_base = False):
-        """Get a template for notifying the next professor"""
-        base_name = "negotiation-start" if is_base else "negotiation-start-base"
+        base_name = "negotiation-start-base" if is_base else "negotiation-start"
     
         template = Template()
         template.set_metadata("performative", "inform")

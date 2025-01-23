@@ -44,9 +44,5 @@ class InitialWaitBehaviour(CyclicBehaviour):
     async def run(self):
         msg = await self.receive(timeout=10)
         if msg:
-            message_template = CommonTemplates.get_classroom_availability_template()
-            
-            # Only start if explicitly told by application agent
-            self.agent.add_behaviour(self.state_behaviour)
-            self.agent.add_behaviour(self.message_collector, message_template)
+            self.agent.prepare_behaviours()
             self.kill()

@@ -41,7 +41,7 @@ class AgenteSala(Agent):
         self.initialize_schedule()
         await self.register_service()
         template = Template()
-        template.metadata = {"protocol": "contract_net"}
+        template.metadata = {"protocol": "contract-net"}
         
         # Add main behaviors
         self.add_behaviour(ResponderSolicitudesBehaviour())

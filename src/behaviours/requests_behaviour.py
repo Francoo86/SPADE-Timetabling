@@ -11,13 +11,9 @@ from objects.knowledge_base import AgentKnowledgeBase
 class EsperarTurnoBehaviour(CyclicBehaviour):
     """Behaviour that waits for the agent's turn before starting negotiations."""
     
-    def __init__(self, profesor_agent,
-                 state_behaviour,
-                 message_collector):
+    def __init__(self, profesor_agent):
         super().__init__()
         self.profesor = profesor_agent
-        self.state_behaviour = state_behaviour
-        self.message_collector = message_collector
 
     async def run(self):
         """Main behaviour loop - checks for START messages."""
@@ -44,11 +40,12 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
                         )
                         
                         # Add negotiation behaviors when it's our turn
-                        self.agent.add_behaviour(self.state_behaviour)
-                        self.agent.add_behaviour(self.message_collector)
+                        self.agent.prepare_behaviours()
                         
                         # Remove this waiting behavior
-                        await self.agent.remove_behaviour(self)
+                        # WORKAROUND: For some reason remove_behaviour doesn't work
+                        # kill it anyways because we don't need it anymore
+                        self.kill()
                         
             except (KeyError, ValueError) as e:
                 self.profesor.log.error(f"Error processing START message: {str(e)}")
