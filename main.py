@@ -139,12 +139,11 @@ class ApplicationAgent(Agent):
                     msg.set_metadata("performative", "inform")
                     msg.set_metadata("content", "START")
                     msg.set_metadata("conversation-id", "negotiation-start-base")
-                    msg.set_metadata("nextOrden", "0")
+                    # msg.set_metadata("nextOrden", "0") No lo necesitamos
                     
                     await self.send(msg)
                     
                     print("[GOOD] System initialization complete - Starting negotiations")
-                    # await self.agent.remove_behaviour(self)
                     self.kill()
                     
             except Exception as e:
@@ -227,8 +226,8 @@ class ApplicationAgent(Agent):
                 if self.agent.professor_agents:
                     msg = Message(to=str(self.agent.professor_agents[0].jid))
                     msg.set_metadata("performative", "inform")
-                    msg.body = "START"
-                    msg.set_metadata("conversation-id", "negotiation-start")
+                    msg.set_metadata("content", "START")
+                    msg.set_metadata("conversation-id", "negotiation-start-base")
                     await self.send(msg)
                     logger.info("Sent START signal to first professor")
                     
@@ -302,7 +301,7 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("inputOfProfesores.json")
+            professors_data = self.load_json("last_half_profesores.json")
             rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:
