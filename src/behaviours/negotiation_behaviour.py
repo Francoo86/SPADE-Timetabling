@@ -1,4 +1,4 @@
-from spade.behaviour import CyclicBehaviour
+from spade.behaviour import PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
 from datetime import datetime, timedelta
@@ -19,20 +19,22 @@ from objects.knowledge_base import AgentKnowledgeBase
 # import dataclass
 from dataclasses import dataclass
 
+JADE_BASE_PERIOD = 500
+
 @dataclass
 class BatchProposalScore:
     """Helper class to store proposal with its score"""
     proposal: BatchProposal
     score: int
 
-class NegotiationStateBehaviour(CyclicBehaviour):
+class NegotiationStateBehaviour(PeriodicBehaviour):
     MEETING_ROOM_THRESHOLD = 10
     TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
 
     def __init__(self, profesor, batch_proposals : asyncio.Queue):
         """Initialize the negotiation state behaviour."""
-        super().__init__()
+        super().__init__(period=JADE_BASE_PERIOD)
         self.profesor = profesor
         self.propuestas = batch_proposals
         self.current_state = NegotiationState.SETUP
