@@ -17,6 +17,7 @@ from spade.message import Message
 from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from behaviours.monitoring import StatusResponseBehaviour, InitialWaitBehaviour
+from fipa.common_templates import CommonTemplates
 
 from datetime import datetime
 
@@ -42,6 +43,13 @@ class AgenteProfesor(Agent):
         self._kb = None
         self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
+        
+        # inicializar una fuente de verdad de los behaviors
+        self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
+        self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
+        
+    def get_relevant_behaviours(self):
+        return self.negotiation_state_behaviour, self.message_collector_behaviour
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -99,12 +107,7 @@ class AgenteProfesor(Agent):
                 return
                 
             self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
-            
-            # Create behaviours
-            # batch_proposals = Queue()
-            state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
-            message_collector = MessageCollectorBehaviour(self, self.batch_proposals, state_behaviour)
-            
+    
             # Add status response behavior
             template = Template()
             template.set_metadata("performative", "query-ref")
@@ -114,34 +117,19 @@ class AgenteProfesor(Agent):
             # Discover rooms
             await self.discover_rooms()
             
-            """
-            message_template = Template()
-            message_template.set_metadata("performative", "propose")
-            message_template.set_metadata("ontology", "classroom-availability") """
-            
             # Add appropriate behaviour based on order
             if self.orden == 0:
                 self.log.info("Starting as first professor")
-                template = Template()
-                template.set_metadata("performative", "inform")
-                template.set_metadata("content", "START")
-                template.set_metadata("conversation-id", "negotiation-start-base")
-                # self.add_behaviour(state_behaviour)
-                # self.add_behaviour(message_collector, message_template)
-                self.add_behaviour(InitialWaitBehaviour(state_behaviour, message_collector), template)
+                template = CommonTemplates.get_notify_next_professor_template(is_base=True)
+                self.add_behaviour(InitialWaitBehaviour(*self.get_relevant_behaviours()), template)
             else:
                 self.log.info(f"Waiting for turn (order: {self.orden})")
                 wait_behaviour = EsperarTurnoBehaviour(
                     self, 
-                    state_behaviour,
-                    message_collector
+                    *self.get_relevant_behaviours()
                 )
                 
-                # ESTA TEMPLATE ES IMPORTANTE!!!!!
-                template = Template()
-                template.set_metadata("performative", "inform")
-                template.set_metadata("content", "START")
-                template.set_metadata("conversation-id", "negotiation-start")
+                template = CommonTemplates.get_notify_next_professor_template()
                 self.add_behaviour(wait_behaviour, template)
                 
         except Exception as e:
