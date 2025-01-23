@@ -286,6 +286,7 @@ class ApplicationRunner:
     def __init__(self, xmpp_server: str, password: str):
         self.xmpp_server = xmpp_server
         self.password = password
+        self.app_agent: Optional[ApplicationAgent] = None
         
     def load_json(self, filename: str) -> List[dict]:
         """Load JSON data from file"""
@@ -301,7 +302,7 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("last_half_profesores.json")
+            professors_data = self.load_json("LastStraw.json")
             rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:
@@ -316,6 +317,8 @@ class ApplicationRunner:
                 rooms_data,
                 professors_data
             )
+            
+            self.app_agent = app_agent
             
             await app_agent.start(auto_register=True)
             logger.info("Application agent started successfully")
@@ -344,13 +347,13 @@ class ApplicationRunner:
         cleanup_tasks = []
         
         # Stop all agents in reverse order
-        if self.supervisor_agent:
-            cleanup_tasks.append(self.supervisor_agent.stop())
+        if self.app_agent.supervisor_agent:
+            cleanup_tasks.append(self.app_agent.supervisor_agent.stop())
             
-        for agent in reversed(self.professor_agents):
+        for agent in reversed(self.app_agent.professor_agents):
             cleanup_tasks.append(agent.stop())
             
-        for agent in reversed(list(self.room_agents.values())):
+        for agent in reversed(list(self.app_agent.room_agents.values())):
             cleanup_tasks.append(agent.stop())
 
         # Wait for all cleanup tasks to complete
