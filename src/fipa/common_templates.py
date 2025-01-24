@@ -1,6 +1,6 @@
 from spade.template import Template, ORTemplate
 from aioxmpp import JID
-from acl_message import FIPAPerformatives
+from .acl_message import FIPAPerformatives
 
 class CommonTemplates:
     """Common templates for message matching"""

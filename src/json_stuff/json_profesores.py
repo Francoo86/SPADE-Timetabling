@@ -24,6 +24,7 @@ class ProfesorScheduleStorage:
         self._all_professor_names = set()
         self._update_count = 0
         self._write_lock = asyncio.Lock()
+        self._update_lock = asyncio.Lock()
         self._output_path = Path(os.getcwd()) / "agent_output"
         self._output_path.mkdir(exist_ok=True)
 
@@ -39,60 +40,62 @@ class ProfesorScheduleStorage:
         """Add or update a professor's schedule"""
         try:
             print(f"[DEBUG] Adding/updating schedule for professor {nombre}")
-
-            # Count assignments
             assignment_count = len(schedule_data.get("Asignaturas", []))
             print(f"[DEBUG] Professor {nombre} has {assignment_count} total assignments")
 
-            # Store update in memory with timestamp
             update = ProfessorScheduleUpdate(nombre, schedule_data, asignaturas)
             
-            async with self._write_lock:
+            # Use update lock instead of write lock for updates
+            async with self._update_lock:
                 self._pending_updates[nombre] = update
                 self._all_professor_names.add(nombre)
                 self._update_count += 1
 
-                # Check if we should write to disk
-                if self._update_count >= self.WRITE_THRESHOLD:
-                    await self._flush_updates()
+            # Move flush check outside of lock
+            if self._update_count >= self.WRITE_THRESHOLD:
+                await self._try_flush_updates()
 
         except Exception as e:
             print(f"[ERROR] Error adding professor schedule for {nombre}: {str(e)}")
             raise
 
-    async def _flush_updates(self) -> None:
-        """Write pending updates to file"""
-        if not await self._write_lock.acquire():
-            return
+    async def _try_flush_updates(self) -> None:
+        """Try to flush updates without blocking if lock is taken"""
+        if await self._write_lock.acquire():
+            try:
+                await self._flush_updates()
+            finally:
+                self._write_lock.release()
 
+    async def _flush_updates(self) -> None:
+        """Write pending updates to file with timeout"""
         try:
             if not self._pending_updates:
                 return
 
-            json_array = []
-            for update in self._pending_updates.values():
-                profesor_json = {
-                    "Nombre": update.nombre,
-                    "Asignaturas": update.schedule_data.get("Asignaturas", []),
-                    "Solicitudes": len(update.asignaturas),
-                    "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
-                }
-                json_array.append(profesor_json)
+            async with asyncio.timeout(5):  # 5 second timeout
+                json_array = []
+                for update in self._pending_updates.values():
+                    profesor_json = {
+                        "Nombre": update.nombre,
+                        "Asignaturas": update.schedule_data.get("Asignaturas", []),
+                        "Solicitudes": len(update.asignaturas),
+                        "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
+                    }
+                    json_array.append(profesor_json)
 
-            if json_array:
-                output_file = self._output_path / "Horarios_asignados.json"
-                async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
-                    await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
-                print(f"Successfully wrote {len(self._pending_updates)} professor schedules to file")
+                if json_array:
+                    output_file = self._output_path / "Horarios_asignados.json"
+                    async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
+                        await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
 
-            self._pending_updates.clear()
-            self._update_count = 0
+                self._pending_updates.clear()
+                self._update_count = 0
 
+        except asyncio.TimeoutError:
+            print(f"[WARNING] Flush operation timed out - will retry later")
         except Exception as e:
             print(f"Error writing professor schedules to file: {str(e)}")
-            raise
-        finally:
-            self._write_lock.release()
 
     async def generate_json_file(self) -> None:
         """Generate final JSON file with all professor schedules"""

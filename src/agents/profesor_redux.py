@@ -289,16 +289,20 @@ class AgenteProfesor(Agent):
         try:
             current_instance_key = self.get_current_instance_key()
             
-            # Update local structures
+            # Update local structures first
             self.horario_ocupado.setdefault(dia, set()).add(bloque)
             self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(current_instance_key, []).append(bloque)
+            
+            # Update JSON before storage
             await self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
             
-            # Update global storage
-            await self.storage.update_schedule(
-                self.nombre,
-                self.horario_json,
-                self.asignaturas
+            # Use asyncio.shield to prevent cancellation during storage update
+            await asyncio.shield(
+                self.storage.update_schedule(
+                    self.nombre,
+                    self.horario_json,
+                    self.asignaturas
+                )
             )
             
         except Exception as e:

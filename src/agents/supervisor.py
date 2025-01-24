@@ -53,7 +53,6 @@ class AgenteSupervisor(Agent):
     async def setup(self):
         """Initialize the supervisor agent"""
         self.state = SupervisorState(self.professor_jids)
-        print(f"[Supervisor] Monitoring {len(self.professor_jids)} professors")
         
         # Store initial state in knowledge base
         self.set("system_active", True)
@@ -65,13 +64,6 @@ class AgenteSupervisor(Agent):
         )
         
         await self._kb.register_agent(self.jid, [capability])
-        
-        self.monitor = self.MonitorBehaviour(period=self.CHECK_INTERVAL)
-        
-        # Add monitoring behavior
-        self.add_behaviour(self.monitor)
-
-        print("[Supervisor] Monitoring behavior started")
         
         # Add shutdown behavior
         shutdown_template = Template()

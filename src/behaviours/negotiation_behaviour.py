@@ -845,10 +845,6 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             
             # Kill this behavior
             self.kill()
-            
-            # Clear any pending messages before cleanup
-            while await self.receive(timeout=0.1):
-                pass
                 
             # Start cleanup with small delay to allow next prof to start
             await asyncio.sleep(0.5)
