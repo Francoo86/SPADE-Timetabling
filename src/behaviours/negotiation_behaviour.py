@@ -45,6 +45,8 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
         self.proposal_received = False
         self.bloques_pendientes = 0
         self.subject_negotiation_times = {}
+        
+        self.cleanup_lock = asyncio.Lock()
 
     async def run(self):
         """Main behaviour loop"""
@@ -73,7 +75,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             for subject, time in self.subject_negotiation_times.items():
                 self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
             
-            await self.profesor.finalizar_negociaciones()
+            await self.finish_negotiations()
             return
 
         current_subject = self.profesor.get_current_subject()
@@ -798,24 +800,25 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
     async def finish_negotiations(self):
         """Handle finished state and cleanup"""
-        try:
-            # Record completion time
-            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
-            self.profesor.log.info(
-                f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
-            )
-            
-            for subject, time in self.subject_negotiation_times.items():
-                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
+        with await self.cleanup_lock:
+            try:
+                # Record completion time
+                total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
+                self.profesor.log.info(
+                    f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
+                )
+                
+                for subject, time in self.subject_negotiation_times.items():
+                    self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
 
-            # Notify next professor
-            await self.notify_next_professor()
+                # Notify next professor
+                await self.notify_next_professor()
 
-            # Kill behaviors and cleanup
-            self.kill()
-            await self.profesor.cleanup()
-        except Exception as e:
-            self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
+                # Kill behaviors and cleanup
+                self.kill()
+                await self.profesor.cleanup()
+            except Exception as e:
+                self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
             
     async def notify_next_professor(self):
         try:
