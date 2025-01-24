@@ -16,13 +16,19 @@ from objects.asignation_data import BloqueInfo
 from spade.message import Message
 from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
-from behaviours.monitoring import StatusResponseBehaviour, InitialWaitBehaviour
+from behaviours.monitoring import InitialWaitBehaviour
 from fipa.common_templates import CommonTemplates
 from json_stuff.json_profesores import ProfesorScheduleStorage
 
 from datetime import datetime
 
 import logging
+
+class CleanupState:
+    """Track cleanup state to avoid deadlocks"""
+    is_cleaning: bool = False
+    negotiation_done: bool = False
+    message_collector_done: bool = False
 
 # TODO: Usar la clase TimetableAgent en lugar de Agent
 class AgenteProfesor(Agent):
@@ -40,7 +46,7 @@ class AgenteProfesor(Agent):
         self.bloques_asignados_por_dia = {}  # dia -> {asignatura -> List[bloques]}
         self.instance_counter = 0
         self.current_instance_index = 0
-        self.log =  AgentLogger(f"Professor_{self.nombre}")
+        self.log =  AgentLogger(f"Profesor{self.orden}")
         self._initialize_data_structures()
         self._kb = None
         self.batch_proposals = asyncio.Queue()
@@ -48,6 +54,8 @@ class AgenteProfesor(Agent):
         
         # Lock para replicar el synchronized de Java
         self.prof_lock = asyncio.Lock()
+        self.cleanup_lock = asyncio.Lock()
+        self.cleanup_state = CleanupState()
         
         # inicializar una fuente de verdad de los behaviors
         self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
@@ -55,6 +63,15 @@ class AgenteProfesor(Agent):
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
+        
+    def mark_collector_done(self):
+        self.cleanup_state.message_collector_done = True
+        
+    def mark_negotiation_done(self):
+        self.cleanup_state.negotiation_done = True
+        
+    def mark_as_done(self):
+        self.cleanup_state.is_cleaning = True
 
     def _initialize_data_structures(self):
         """Initialize all data structures needed for the agent."""
@@ -115,12 +132,6 @@ class AgenteProfesor(Agent):
                 return
                 
             self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
-    
-            # Add status response behavior
-            template = Template()
-            template.set_metadata("performative", "query-ref")
-            template.set_metadata("ontology", "agent-status")
-            self.add_behaviour(StatusResponseBehaviour(), template)
             
             # Discover rooms
             await self.discover_rooms()
@@ -179,34 +190,34 @@ class AgenteProfesor(Agent):
             self.log.error(f"Error discovering rooms: {str(e)}")
             self.log.error(f"Knowledge base state: {self._kb._capabilities}")  # Debug log
 
-    async def can_use_more_subjects(self) -> bool:
+    def can_use_more_subjects(self) -> bool:
         """Check if there are more subjects to process."""
-        with await self.prof_lock:
-            try:
-                if self.asignatura_actual >= len(self.asignaturas):
-                    return False
-                    
-                current = self.asignaturas[self.asignatura_actual]
-                if current is None:
-                    logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
-                    return False
-                    
-                return True
-            except IndexError:
-                logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
-                            f"{self.asignatura_actual}/{len(self.asignaturas)}")
+        # async with self.prof_lock:
+        try:
+            if self.asignatura_actual >= len(self.asignaturas):
                 return False
+                
+            current = self.asignaturas[self.asignatura_actual]
+            if current is None:
+                logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
+                return False
+                
+            return True
+        except IndexError:
+            logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
+                        f"{self.asignatura_actual}/{len(self.asignaturas)}")
+            return False
 
-    async def get_current_subject(self) -> Optional[Asignatura]:
+    def get_current_subject(self) -> Optional[Asignatura]:
         """Get the current subject being processed."""
-        with await self.prof_lock:
-            if not self.can_use_more_subjects():
-                return None
-            return self.asignaturas[self.asignatura_actual]
+        # async with self.prof_lock:
+        if not self.can_use_more_subjects():
+            return None
+        return self.asignaturas[self.asignatura_actual]
 
     async def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        with await self.prof_lock:
+        async with self.prof_lock:
             logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving from subject index {self.asignatura_actual} "
                         f"(total: {len(self.asignaturas)})")
             
@@ -281,7 +292,7 @@ class AgenteProfesor(Agent):
             # Update local structures
             self.horario_ocupado.setdefault(dia, set()).add(bloque)
             self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(current_instance_key, []).append(bloque)
-            self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
+            await self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
             
             # Update global storage
             await self.storage.update_schedule(
@@ -300,7 +311,7 @@ class AgenteProfesor(Agent):
     def set_storage(self, storage : ProfesorScheduleStorage):
         self.storage = storage
 
-    def _actualizar_horario_json(self, dia: Day, sala: str, bloque: int, satisfaccion: int):
+    async def _actualizar_horario_json(self, dia: Day, sala: str, bloque: int, satisfaccion: int):
         """Update the JSON schedule with new assignment."""
         current_subject = self.get_current_subject()
         
@@ -331,21 +342,44 @@ class AgenteProfesor(Agent):
         return ''.join(c for c in name if c.isalnum())
 
     async def cleanup(self):
+        """Coordinated cleanup with timeout protection"""
         try:
-            behaviours = self.behaviours
-            for behaviour in behaviours:
-                if not behaviour: continue
-                behaviour.kill()
-            
-            if self._kb:
-                await self._kb.deregister_agent(self.jid)
+            async with self.cleanup_lock:
+                if self.cleanup_state.is_cleaning:
+                    return
+                    
+                self.cleanup_state.is_cleaning = True
                 
-            # Short delay to allow messages to be sent
-            await asyncio.sleep(0.1)
-            # Cleanup resources and deregister
-            await self.stop()
+                # Kill behaviors immediately rather than waiting
+                behaviours = list(self.behaviours)
+                for behaviour in behaviours:
+                    try:
+                        if behaviour:
+                            behaviour.kill()
+                    except Exception as e:
+                        self.log.error(f"Error killing behavior: {str(e)}")
+                    
+                try:
+                    if self._kb:
+                        await self._kb.deregister_agent(self.jid)
+                        
+                    # Force final storage update
+                    if hasattr(self, 'storage') and self.storage:
+                        await self.storage.force_flush()
+                        
+                    await asyncio.sleep(0.5)  # Brief delay before stop
+                    await self.stop()
+                    
+                except Exception as e:
+                    self.log.error(f"Error during agent stop: {str(e)}")
+                    # Force stop on error
+                    await self.stop()
+                    
+        except Exception as e:
+            self.log.error(f"Error in cleanup: {str(e)}")
         finally:
-            self.is_cleaning_up = False
+            async with self.cleanup_lock:
+                self.cleanup_state.is_cleaning = False
 
     async def export_schedule_json(self) -> Dict:
         return {
