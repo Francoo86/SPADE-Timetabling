@@ -65,7 +65,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
     async def handle_setup_state(self):
         """Handle the SETUP state"""
-        if not self.profesor.can_use_more_subjects():
+        if not await self.profesor.can_use_more_subjects():
             self.current_state = NegotiationState.FINISHED
             total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
             self.profesor.log.info(f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms")
@@ -795,3 +795,72 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
     def get_campus_sala(codigo_sala: str) -> str:
         """Get campus name from classroom code"""
         return "Kaufmann" if codigo_sala.startswith("KAU") else "Playa Brava"
+
+    async def finish_negotiations(self):
+        """Handle finished state and cleanup"""
+        try:
+            # Record completion time
+            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
+            self.profesor.log.info(
+                f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
+            )
+            
+            for subject, time in self.subject_negotiation_times.items():
+                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
+
+            # Notify next professor
+            await self.notify_next_professor()
+
+            # Kill behaviors and cleanup
+            self.kill()
+            await self.profesor.cleanup()
+        except Exception as e:
+            self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
+            
+    async def notify_next_professor(self):
+        try:
+            next_orden = self.profesor.orden + 1
+            
+            # Search for next professor
+            professors = await self.agent._kb.search(
+                service_type="profesor",
+                properties={"orden": next_orden}
+            )
+            
+            if professors:
+                next_professor = professors[0]
+                
+                # Create START message
+                msg = Message(to=str(next_professor.jid))
+                msg.set_metadata("performative", "inform")
+                msg.set_metadata("content", "START")
+                msg.set_metadata("conversation-id", "negotiation-start")
+                msg.set_metadata("nextOrden", str(next_orden))
+                
+                await self.send(msg)
+                self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
+                
+            else:
+                # No next professor means we're done - trigger system shutdown
+                self.agent.log.info("No next professor found - all professors completed")
+                
+                # Notify supervisor to begin shutdown
+                supervisor_agents = await self.agent._kb.search(service_type="supervisor")
+                if supervisor_agents:
+                    supervisor = supervisor_agents[0]
+                    shutdown_msg = Message(to=str(supervisor.jid))
+                    shutdown_msg.set_metadata("performative", "inform")
+                    shutdown_msg.set_metadata("ontology", "system-control")
+                    shutdown_msg.set_metadata("content", "SHUTDOWN")
+                    
+                    await self.send(shutdown_msg)
+                    self.agent.log.info("Sent shutdown signal to supervisor")
+                else:
+                    self.agent.log.error("Could not find supervisor agent for shutdown")
+                    # Even without supervisor, proceed with cleanup
+                    await self.agent.cleanup()
+                
+        except Exception as e:
+            self.agent.log.error(f"Error in notify_next_professor: {str(e)}")
+            # On error, attempt cleanup to avoid stuck state
+            await self.agent.cleanup()
