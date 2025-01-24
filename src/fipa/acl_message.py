@@ -5,3 +5,4 @@ class FIPAPerformatives:
     INFORM = "inform"
     PROPOSE = "propose"
     REFUSE = "refuse"
+    QUERY_REF = "query-ref"

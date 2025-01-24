@@ -204,101 +204,10 @@ class AgenteSupervisor(Agent):
                 print(f"- {state}: {count}")
             print(f"Total Agents: {len(self.agent.state.professor_jids)}\n")
 
-        async def collect_all_schedules(self) -> List[dict]:
-            """Collect and transform schedules from all professors"""
-            async def get_professor_schedule(jid: aioxmpp.JID) -> tuple[str, dict]:
-                jid_str = str(jid)
-                try:
-                    msg = Message(to=str(jid))
-                    msg.set_metadata("performative", "query-ref")
-                    msg.set_metadata("ontology", "schedule-data")
-                    # msg.set_metadata("content", "schedule_query")
-                    
-                    await self.send(msg)
-                    response = await self.receive(timeout=2)
-                    
-                    if response and response.body:
-                        return jid_str, json.loads(response.body)
-                    return jid_str, None
-                except Exception as e:
-                    print(f"[Supervisor] Error collecting schedule from {jid}: {str(e)}")
-                    return jid_str, None
-
-            tasks = [get_professor_schedule(jid) for jid in self.agent.state.professor_jids]
-            raw_schedules = await asyncio.gather(*tasks)
-            
-            transformed_schedules = []
-            for jid, schedule in raw_schedules:
-                if schedule is not None:
-                    prof_data = self.agent.get(f"professor_data_{jid}")
-                    if prof_data:
-                        transformed_schedule = {
-                            "Nombre": prof_data["name"],
-                            "AsignaturasCompletadas": len(schedule["Asignaturas"]),
-                            "Solicitudes": len(prof_data["subjects"]),
-                            "Asignaturas": schedule["Asignaturas"]
-                        }
-                        transformed_schedules.append(transformed_schedule)
-
-            transformed_schedules.sort(key=lambda x: x["Nombre"])
-            return transformed_schedules
-
-        async def collect_room_schedules(self) -> List[dict]:
-            """Collect all room schedules and format them"""
-            room_schedules = []
-            room_jids = self.agent.get("room_jids") or []
-            print(f"[Supervisor] Collecting schedules from {len(room_jids)} rooms")
-            
-            for room_jid in room_jids:
-                try:
-                    print(f"[Supervisor] Requesting schedule from room: {room_jid}")
-                    msg = Message(
-                        to=str(room_jid),
-                        metadata={
-                            "performative": "query-ref",
-                            "ontology": "room-schedule"
-                        }
-                    )
-                    await self.send(msg)
-                    response = await self.receive(timeout=2)
-                    
-                    if response and response.body:
-                        schedule_data = json.loads(response.body)
-                        room_schedule = {
-                            "Codigo": schedule_data["code"],
-                            "Asignaturas": []
-                        }
-                        
-                        for day, assignments in schedule_data["schedule"].items():
-                            for block_idx, assignment in enumerate(assignments, 1):
-                                if assignment:
-                                    room_schedule["Asignaturas"].append({
-                                        "Nombre": assignment["subject_name"],
-                                        "Valoracion": assignment["satisfaction"],
-                                        "Bloque": block_idx,
-                                        "Dia": day
-                                    })
-                        
-                        room_schedules.append(room_schedule)
-                        print(f"[Supervisor] Successfully collected schedule from room: {schedule_data['code']}")
-                    else:
-                        print(f"[Supervisor] No response received from room: {room_jid}")
-                
-                except Exception as e:
-                    print(f"[Supervisor] Error collecting room schedule from {room_jid}: {str(e)}")
-            
-            return room_schedules
-
     class ShutdownBehaviour(CyclicBehaviour):
         """Handles system shutdown signals from professors"""
         
-        async def run(self):
-            # Template is set when adding behavior to agent:
-            # template = Template()
-            # template.set_metadata("performative", "inform")
-            # template.set_metadata("ontology", "system-control")
-            # template.set_metadata("content", "SHUTDOWN")
-            
+        async def run(self):            
             msg = await self.receive(timeout=0.1)
             if msg:
                 try:

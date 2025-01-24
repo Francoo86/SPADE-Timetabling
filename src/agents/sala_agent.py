@@ -16,6 +16,7 @@ from objects.static.agent_enums import Day
 
 from .agent_logger import AgentLogger
 from fipa.common_templates import CommonTemplates
+from fipa.acl_message import FIPAPerformatives
 
 import logging
 
@@ -159,9 +160,9 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         
         performative = msg.get_metadata("performative")
 
-        if performative == "cfp":
+        if performative == FIPAPerformatives.CFP:
             await self.process_request(msg)
-        elif performative == "accept-proposal":
+        elif performative == FIPAPerformatives.ACCEPT_PROPOSAL:
             await self.confirm_assignment(msg)
 
     async def process_request(self, msg: Message):
@@ -186,14 +187,14 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 
                 # Send proposal
                 reply = msg.make_reply()
-                reply.set_metadata("performative", "propose")
+                reply.set_metadata("performative", FIPAPerformatives.PROPOSE)
                 reply.set_metadata("ontology", "classroom-availability")
                 reply.body = json.dumps(availability)
                 await self.send(reply)
             else:
                 # Send refuse if no blocks available
                 reply = msg.make_reply()
-                reply.set_metadata("performative", "refuse")
+                reply.set_metadata("performative", FIPAPerformatives.REFUSE)
                 reply.set_metadata("ontology", "classroom-availability")
                 reply.body = "No blocks available"
                 await self.send(reply)
@@ -250,7 +251,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             if assignments:
                 confirmation = BatchAssignmentConfirmation(assignments)
                 reply = msg.make_reply()
-                reply.set_metadata("performative", "inform")
+                reply.set_metadata("performative", FIPAPerformatives.INFORM)
                 reply.set_metadata("ontology", "room-assignment")
                 reply.set_metadata("protocol", "contract-net")
                 reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
