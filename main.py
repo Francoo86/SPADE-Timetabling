@@ -18,6 +18,7 @@ from src.objects.knowledge_base import AgentKnowledgeBase
 
 from json_stuff.json_salas import SalaScheduleStorage
 from json_stuff.json_profesores import ProfesorScheduleStorage
+from src.fipa.acl_message import FIPAPerformatives
 
 # Configure logging
 logging.basicConfig(level=logging.INFO,
@@ -65,9 +66,11 @@ class ApplicationAgent(Agent):
         
         # Collect professor status
         for prof in self.professor_agents:
+            subject = prof.get_current_subject()
+            
             status["professors"][str(prof.jid)] = {
                 "alive": prof.is_alive(),
-                "current_subject": prof.get_current_subject().get_nombre() if prof.get_current_subject() else None,
+                "current_subject": subject.get_nombre() if subject else None,
                 "pending_blocks": getattr(prof, "bloques_pendientes", 0),
                 "order": prof.orden
             }
@@ -146,14 +149,16 @@ class ApplicationAgent(Agent):
                     # Start first professor
                     first_prof = self.agent.professor_agents[0]
                     msg = Message(to=str(first_prof.jid))
-                    msg.set_metadata("performative", "inform")
-                    msg.set_metadata("content", "START")
+                    msg.set_metadata("performative", FIPAPerformatives.INFORM)
                     msg.set_metadata("conversation-id", "negotiation-start-base")
+                    
+                    msg.body = "START"
                     # msg.set_metadata("nextOrden", "0") No lo necesitamos
                     
                     await self.send(msg)
                     
                     print("[GOOD] System initialization complete - Starting negotiations")
+                    await asyncio.sleep(0.1)
                     self.kill()
                     
             except Exception as e:
@@ -239,9 +244,9 @@ class ApplicationAgent(Agent):
                 # Send start signal to first professor
                 if self.agent.professor_agents:
                     msg = Message(to=str(self.agent.professor_agents[0].jid))
-                    msg.set_metadata("performative", "inform")
-                    msg.set_metadata("content", "START")
+                    msg.set_metadata("performative", FIPAPerformatives.INFORM)
                     msg.set_metadata("conversation-id", "negotiation-start-base")
+                    msg.body = "START"
                     await self.send(msg)
                     logger.info("Sent START signal to first professor")
                     
@@ -316,7 +321,7 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("LastStraw.json")
+            professors_data = self.load_json("10profs_sample.json")
             rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:
@@ -393,7 +398,7 @@ def main():
         
     # Run the application
     runner = ApplicationRunner(xmpp_server, password)
-    asyncio.run(runner.run(), debug=True)
+    asyncio.run(runner.run())
 
 if __name__ == "__main__":
     main()
