@@ -24,6 +24,7 @@ from datetime import datetime
 
 import logging
 
+# TODO: Usar la clase TimetableAgent en lugar de Agent
 class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
     SERVICE_NAME = AGENT_NAME.lower()
@@ -44,6 +45,9 @@ class AgenteProfesor(Agent):
         self._kb = None
         self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
+        
+        # Lock para replicar el synchronized de Java
+        self.prof_lock = asyncio.Lock()
         
         # inicializar una fuente de verdad de los behaviors
         self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
@@ -175,55 +179,58 @@ class AgenteProfesor(Agent):
             self.log.error(f"Error discovering rooms: {str(e)}")
             self.log.error(f"Knowledge base state: {self._kb._capabilities}")  # Debug log
 
-    def can_use_more_subjects(self) -> bool:
+    async def can_use_more_subjects(self) -> bool:
         """Check if there are more subjects to process."""
-        try:
-            if self.asignatura_actual >= len(self.asignaturas):
+        with await self.prof_lock:
+            try:
+                if self.asignatura_actual >= len(self.asignaturas):
+                    return False
+                    
+                current = self.asignaturas[self.asignatura_actual]
+                if current is None:
+                    logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
+                    return False
+                    
+                return True
+            except IndexError:
+                logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
+                            f"{self.asignatura_actual}/{len(self.asignaturas)}")
                 return False
-                
-            current = self.asignaturas[self.asignatura_actual]
-            if current is None:
-                logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
-                return False
-                
-            return True
-        except IndexError:
-            logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
-                          f"{self.asignatura_actual}/{len(self.asignaturas)}")
-            return False
 
-    def get_current_subject(self) -> Optional[Asignatura]:
+    async def get_current_subject(self) -> Optional[Asignatura]:
         """Get the current subject being processed."""
-        if not self.can_use_more_subjects():
-            return None
-        return self.asignaturas[self.asignatura_actual]
+        with await self.prof_lock:
+            if not self.can_use_more_subjects():
+                return None
+            return self.asignaturas[self.asignatura_actual]
 
-    def move_to_next_subject(self):
+    async def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving from subject index {self.asignatura_actual} "
-                     f"(total: {len(self.asignaturas)})")
-        
-        if self.asignatura_actual >= len(self.asignaturas):
-            logging.info(f"Agente Profesor{self.orden}: [MOVE] Already at last subject")
-            return
+        with await self.prof_lock:
+            logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving from subject index {self.asignatura_actual} "
+                        f"(total: {len(self.asignaturas)})")
             
-        current = self.get_current_subject()
-        current_name = current.get_nombre()
-        current_code = current.get_codigo_asignatura()
-        self.asignatura_actual += 1
-        
-        if self.asignatura_actual < len(self.asignaturas):
-            next_subject = self.asignaturas[self.asignatura_actual]
-            if (next_subject.get_nombre() == current_name and 
-                next_subject.get_codigo_asignatura() == current_code):
-                self.current_instance_index += 1
-                logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to next instance ({self.current_instance_index}) "
-                            f"of {current_name}")
+            if self.asignatura_actual >= len(self.asignaturas):
+                logging.info(f"Agente Profesor{self.orden}: [MOVE] Already at last subject")
+                return
+                
+            current = self.get_current_subject()
+            current_name = current.get_nombre()
+            current_code = current.get_codigo_asignatura()
+            self.asignatura_actual += 1
+            
+            if self.asignatura_actual < len(self.asignaturas):
+                next_subject = self.asignaturas[self.asignatura_actual]
+                if (next_subject.get_nombre() == current_name and 
+                    next_subject.get_codigo_asignatura() == current_code):
+                    self.current_instance_index += 1
+                    logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to next instance ({self.current_instance_index}) "
+                                f"of {current_name}")
+                else:
+                    self.current_instance_index = 0
+                    logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to new subject {next_subject.get_nombre()}")
             else:
-                self.current_instance_index = 0
-                logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to new subject {next_subject.get_nombre()}")
-        else:
-            logging.info(f"Agente Profesor{self.orden}: [MOVE] Reached end of subjects")
+                logging.info(f"Agente Profesor{self.orden}: [MOVE] Reached end of subjects")
 
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
@@ -319,23 +326,6 @@ class AgenteProfesor(Agent):
             return TipoContrato.MEDIA_JORNADA
         return TipoContrato.JORNADA_PARCIAL
 
-    async def finalizar_negociaciones(self):
-        try:
-            if self.is_cleaning_up:
-                return
-            self.is_cleaning_up = True
-            
-            # Save final schedule
-            await self.export_schedule_json()
-            
-            # Notify next professor
-            await self.notify_next_professor()
-            
-            # Cleanup
-            await self.cleanup()
-        except Exception as e:
-            logging.error(f"Agente Profesor{self.orden}: Error finalizing negotiations: {str(e)}")
-
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
         return ''.join(c for c in name if c.isalnum())
@@ -346,7 +336,6 @@ class AgenteProfesor(Agent):
             for behaviour in behaviours:
                 if not behaviour: continue
                 behaviour.kill()
-            
             
             if self._kb:
                 await self._kb.deregister_agent(self.jid)
@@ -365,36 +354,3 @@ class AgenteProfesor(Agent):
             "completadas": len(self.horario_json["Asignaturas"]),
             "total": len(self.asignaturas)
         }
-        
-    async def notify_next_professor(self):
-        try:
-            next_orden = self.orden + 1
-            
-            # Search for next professor
-            professors = await self._kb.search(
-                service_type="profesor",
-                properties={"orden": next_orden}
-            )
-            
-            if professors:
-                next_professor = professors[0]
-                
-                # Create START message
-                msg = Message(to=str(next_professor.jid))
-                msg.set_metadata("performative", "inform")
-                msg.set_metadata("content", "START")
-                msg.set_metadata("conversation-id", "negotiation-start")
-                msg.set_metadata("nextOrden", str(next_orden))
-                
-                notify_behaviour = NotifyNextProfessorBehaviour(self, next_orden)
-                self.add_behaviour(notify_behaviour, msg)
-                
-                # await self.send(msg)
-                await notify_behaviour.join()
-                self.log.info(f"Successfully notified next professor with order: {next_orden}")
-                
-            else:
-                self.log.info(f"No next professor found with order {next_orden}")
-                
-        except Exception as e:
-            self.log.error(f"Error notifying next professor: {str(e)}")
