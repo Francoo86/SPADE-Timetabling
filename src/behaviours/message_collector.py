@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from objects.helper.batch_proposals import BatchProposal
 from objects.helper.classroom_availability import ClassroomAvailability
 from .negotiation_behaviour import NegotiationStateBehaviour
+from fipa.acl_message import FIPAPerformatives
 
 class MessageCollectorBehaviour(CyclicBehaviour):
     def __init__(self, professor_agent, batch_proposals: asyncio.Queue, state_behaviour : NegotiationStateBehaviour):
@@ -27,22 +28,18 @@ class MessageCollectorBehaviour(CyclicBehaviour):
 
     async def run(self):
         """Main behaviour loop"""
-        if self.professor.is_cleaning_up:
-            self.kill()
-            return
-        
         try:
             # Wait for a message
             msg = await self.receive(timeout=0.05)
             
             if msg and msg.get_metadata("ontology") == "classroom-availability":
-                if msg.get_metadata("performative") == "propose":
+                if msg.get_metadata("performative") == FIPAPerformatives.PROPOSE:
                     await self.handle_proposal(msg)
                 # We can ignore REFUSE messages as they don't require processing
                 
-            else:
+            # else:
                 # No message received, wait a bit before next check
-                await asyncio.sleep(0.05)
+                # await asyncio.sleep(0.05)
 
         except Exception as e:
             self.professor.log.error(f"Error in MessageCollector: {str(e)}")
@@ -83,6 +80,10 @@ class MessageCollectorBehaviour(CyclicBehaviour):
             self.professor.log.error(f"Error processing proposal: {str(e)}")
 
     async def on_end(self):
-        """Cleanup when behaviour ends"""
-        self.professor.log.info("MessageCollector behaviour finished")
-        
+        """Immediate behavior cleanup"""
+        try:
+            # Clear pending messages                
+            self.agent.mark_collector_done()
+            self.agent.log.info("MessageCollector behaviour finished")
+        except Exception as e:
+            self.agent.log.error(f"Error in collector cleanup: {str(e)}")
