@@ -43,6 +43,11 @@ class AgenteSupervisor(Agent):
         self.room_storage = None
         self.prof_storage = None
         
+        self.finalizer : asyncio.Event = None
+        
+    def add_finalizer_event(self, finalizer : asyncio.Event):
+        self.finalizer = finalizer
+        
     def set_knowledge_base(self, kb : AgentKnowledgeBase):
         self._kb = kb
         
@@ -103,6 +108,8 @@ class AgenteSupervisor(Agent):
             
             await self.agent._kb.deregister_agent(self.agent.jid)
             await self.agent.stop()
+            
+            await self.finalizer.set()
             
         except Exception as e:
             print(f"[Supervisor] Error finishing system: {str(e)}")

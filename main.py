@@ -46,6 +46,9 @@ class ApplicationAgent(Agent):
         
         self.prof_storage = None
         self.room_storage = None
+        
+        # ULTIMATUM
+        self.end_event = asyncio.Event()
     
     async def get_system_status(self, request):
         """Web endpoint to get overall system status"""
@@ -226,6 +229,7 @@ class ApplicationAgent(Agent):
                     password=self.agent.password,
                     professor_jids=[agent.jid for agent in self.agent.professor_agents]  # Pass JIDs list
                 )
+                supervisor.add_finalizer_event(self.agent.end_event)
                 supervisor.set_storages(self.agent.room_storage, self.agent.prof_storage)
                 supervisor.set_knowledge_base(self.agent._kb)
                 await supervisor.start(auto_register=True)
@@ -342,14 +346,12 @@ class ApplicationRunner:
             await app_agent.start(auto_register=True)
             logger.info("Application agent started successfully")
             
-            # Wait for completion
-            while app_agent.is_running:
-                try:
-                    await asyncio.sleep(1)
-                except KeyboardInterrupt:
-                    logger.info("Received shutdown signal")
-                    break
-                    
+            # Wait for completion using the end_event
+            try:
+                await self.app_agent.end_event.wait()
+            except KeyboardInterrupt:
+                logger.info("Received shutdown signal")
+                
         except Exception as e:
             logger.error(f"Application error: {e}")
             
