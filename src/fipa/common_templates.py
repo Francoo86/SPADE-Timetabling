@@ -32,7 +32,8 @@ class CommonTemplates:
         template = Template()
         template.set_metadata("performative", "inform")
         template.set_metadata("conversation-id", base_name)
-        template.set_metadata("content", "START")
+        # template.set_metadata("content", "START")
+        # template.body = "START"
         
         return template
         
