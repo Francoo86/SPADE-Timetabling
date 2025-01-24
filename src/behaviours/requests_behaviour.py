@@ -7,6 +7,7 @@ import asyncio
 # from agents.profesor_redux import AgenteProfesor
 from spade.agent import Agent
 from objects.knowledge_base import AgentKnowledgeBase
+from fipa.acl_message import FIPAPerformatives
 
 class EsperarTurnoBehaviour(CyclicBehaviour):
     """Behaviour that waits for the agent's turn before starting negotiations."""
@@ -21,7 +22,7 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
         
         if msg:
             try:
-                content = msg.get_metadata("content")
+                content = msg.body
                 # Check if this is a START message
                 if content == "START":
                     # Get the next order from metadata
@@ -83,10 +84,11 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
                 msg = Message(
                     to=str(next_professor.jid)
                 )
-                msg.set_metadata("performative", "inform")
+                msg.set_metadata("performative", FIPAPerformatives.INFORM)
                 msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(self.next_orden))
-                msg.set_metadata("content", "START")
+
+                msg.body = "START"
                 
                 await self.send(msg)
                 self.profesor.log.info(
