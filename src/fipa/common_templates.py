@@ -36,3 +36,15 @@ class CommonTemplates:
         
         return template
         
+    @staticmethod
+    def get_room_assigment_template():
+        """Get a template for room assignment"""
+        cfp = Template()
+        cfp.set_metadata("performative", "cfp")
+        cfp.set_metadata("protocol", "contract-net")
+        
+        inform = Template()
+        inform.set_metadata("performative", "accept-proposal")
+        inform.set_metadata("protocol", "contract-net")
+        
+        return cfp | inform
