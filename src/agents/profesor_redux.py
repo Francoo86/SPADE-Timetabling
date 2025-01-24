@@ -18,6 +18,7 @@ from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from behaviours.monitoring import StatusResponseBehaviour, InitialWaitBehaviour
 from fipa.common_templates import CommonTemplates
+from json_stuff.json_profesores import ProfesorScheduleStorage
 
 from datetime import datetime
 
@@ -265,23 +266,32 @@ class AgenteProfesor(Agent):
         current = self.get_current_subject()
         return f"{current.get_nombre()}-{current.get_codigo_asignatura()}-{self.current_instance_index}"
 
-    def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, 
-                           satisfaccion: int):
+    async def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, satisfaccion: int):
         """Update the schedule information with a new assignment."""
-        current_instance_key = self.get_current_instance_key()
-        
-        # Update occupied schedule
-        self.horario_ocupado.setdefault(dia, set()).add(bloque)
-        
-        # Update blocks by day with instance information
-        self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(current_instance_key, []).append(bloque)
-        
-        # Update JSON schedule
-        self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
+        try:
+            current_instance_key = self.get_current_instance_key()
+            
+            # Update local structures
+            self.horario_ocupado.setdefault(dia, set()).add(bloque)
+            self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(current_instance_key, []).append(bloque)
+            self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
+            
+            # Update global storage
+            await self.storage.update_schedule(
+                self.nombre,
+                self.horario_json,
+                self.asignaturas
+            )
+            
+        except Exception as e:
+            self.log.error(f"Error updating schedule: {str(e)}")
 
     def get_tipo_contrato(self) -> TipoContrato:
         """Get the contract type based on total teaching hours."""
         return self.inferir_tipo_contrato(self.asignaturas)
+    
+    def set_storage(self, storage : ProfesorScheduleStorage):
+        self.storage = storage
 
     def _actualizar_horario_json(self, dia: Day, sala: str, bloque: int, satisfaccion: int):
         """Update the JSON schedule with new assignment."""
