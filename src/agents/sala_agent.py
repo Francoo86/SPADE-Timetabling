@@ -15,6 +15,7 @@ from objects.helper.confirmed_assignments import BatchAssignmentConfirmation, Co
 from objects.static.agent_enums import Day
 
 from .agent_logger import AgentLogger
+from fipa.common_templates import CommonTemplates
 
 import logging
 
@@ -32,6 +33,7 @@ class AgenteSala(Agent):
         self.MEETING_ROOM_THRESHOLD = 10
         self.log = AgentLogger("Sala" + self.codigo)
         self._kb = None
+        self.storage = None
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -40,12 +42,9 @@ class AgenteSala(Agent):
         """Initialize agent setup"""
         self.initialize_schedule()
         await self.register_service()
-        template = Template()
-        template.metadata = {"protocol": "contract-net"}
         
-        # Add main behaviors
-        self.add_behaviour(ResponderSolicitudesBehaviour())
-        # self.add_behaviour(ProfessorMonitorBehaviour())
+        template = CommonTemplates.get_room_assigment_template()
+        self.add_behaviour(ResponderSolicitudesBehaviour(), template)
         
     def initialize_schedule(self):
         """Initialize empty schedule for all days"""
@@ -101,6 +100,9 @@ class AgenteSala(Agent):
             self.log.error(f"Error registering room: {str(e)}")
             raise
         
+    def set_storage(self, storage: SalaScheduleStorage):
+        self.storage = storage
+        
     async def update_schedule_storage(self, schedule_data: Dict[str, Any]) -> None:
         """
         Update the room's schedule in persistent storage
@@ -110,10 +112,10 @@ class AgenteSala(Agent):
         """
         try:
             # Get storage instance
-            storage = await SalaScheduleStorage.get_instance()
+            # storage = await SalaScheduleStorage.get_instance()
             
             # Update schedule
-            await storage.update_schedule(
+            await self.storage.update_schedule(
                 codigo=self.codigo,
                 campus=self.campus,
                 schedule_data=schedule_data
@@ -250,7 +252,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 reply = msg.make_reply()
                 reply.set_metadata("performative", "inform")
                 reply.set_metadata("ontology", "room-assignment")
-                reply.set_metadata("protocol", "fipa-contract-net")
+                reply.set_metadata("protocol", "contract-net")
                 reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
                 reply.body = json.dumps(confirmation.to_dict())
                 await self.send(reply)
