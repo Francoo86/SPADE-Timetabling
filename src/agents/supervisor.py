@@ -7,6 +7,11 @@ import json
 from datetime import datetime, timedelta
 import asyncio
 import aioxmpp
+from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from .agent_logger import AgentLogger
+from pathlib import Path
+import os
+
 
 class SupervisorState:
     def __init__(self, professor_jids: List[str]):
@@ -32,6 +37,18 @@ class AgenteSupervisor(Agent):
         super().__init__(jid, password)
         self.professor_jids = professor_jids
         self.state = None
+        self._kb : AgentKnowledgeBase = None
+        self.log = AgentLogger("Supervisor")
+        self.monitor = None
+        self.room_storage = None
+        self.prof_storage = None
+        
+    def set_knowledge_base(self, kb : AgentKnowledgeBase):
+        self._kb = kb
+        
+    def set_storages(self, room_storage, professor_storage):
+        self.room_storage = room_storage
+        self.prof_storage = professor_storage
 
     async def setup(self):
         """Initialize the supervisor agent"""
@@ -41,35 +58,28 @@ class AgenteSupervisor(Agent):
         # Store initial state in knowledge base
         self.set("system_active", True)
         
-        # Add monitoring behavior
-        self.add_behaviour(self.MonitorBehaviour(period=self.CHECK_INTERVAL))
+        capability = AgentCapability(
+            service_type="supervisor",
+            properties={"professor_jids": self.professor_jids},
+            last_updated=datetime.now()
+        )
         
-        # Add message handling behavior
-        template = Template()
-        template.set_metadata("performative", "inform")
-        self.add_behaviour(self.MessageHandlerBehaviour(), template)
+        await self._kb.register_agent(self.jid, [capability])
+        
+        self.monitor = self.MonitorBehaviour(period=self.CHECK_INTERVAL)
+        
+        # Add monitoring behavior
+        self.add_behaviour(self.monitor)
 
         print("[Supervisor] Monitoring behavior started")
         
-        # Add message handling behavior for room schedules
-        room_template = Template()
-        room_template.set_metadata("performative", "query-ref")
-        room_template.set_metadata("ontology", "room-schedule")
-        self.add_behaviour(self.RoomScheduleCollectorBehaviour(), room_template)
-
-    class RoomScheduleCollectorBehaviour(CyclicBehaviour):
-        async def run(self):
-            msg = await self.receive(timeout=0.5)
-            if not msg:
-                return
-
-            try:
-                if msg.get_metadata("ontology") == "room-schedule-data":
-                    room_code = msg.get_metadata("room-code")
-                    schedule_data = json.loads(msg.body)
-                    self.agent.set(f"room_schedule_{room_code}", schedule_data)
-            except Exception as e:
-                print(f"[Supervisor] Error handling room schedule: {str(e)}")
+        # Add shutdown behavior
+        shutdown_template = Template()
+        shutdown_template.set_metadata("performative", "inform")
+        shutdown_template.set_metadata("ontology", "system-control")
+        shutdown_template.set_metadata("content", "SHUTDOWN")
+        
+        self.add_behaviour(self.ShutdownBehaviour(), shutdown_template)
 
     class MonitorBehaviour(PeriodicBehaviour):
         def __init__(self, period: float, start_at: datetime | None = None):
@@ -138,18 +148,29 @@ class AgenteSupervisor(Agent):
                 self.agent.set("system_active", False)
                 print("[Supervisor] Generating final JSON files...")
                 
-                # Collect professor schedules
-                professor_schedules = await self.collect_all_schedules()
-                with open("professor_schedules.json", "w", encoding="utf-8") as f:
-                    json.dump(professor_schedules, f, indent=2, ensure_ascii=False)
-
-                # Collect and save room schedules
-                room_schedules = await self.collect_room_schedules()
-                print("[Supervisor] Room schedules collected:", room_schedules)
-                with open("rooms_output.json", "w", encoding="utf-8") as f:
-                    json.dump(room_schedules, f, indent=2, ensure_ascii=False)
+                # Generate final files using both storage systems
                 
-                print("[Supervisor] System shutdown complete.")
+                await self.agent.room_storage.generate_json_file()
+                await self.agent.prof_storage.generate_json_file()
+                
+                # Verify files were generated
+                output_path = Path(os.getcwd()) / "agent_output"
+                sala_file = output_path / "Horarios_salas.json"
+                prof_file = output_path / "Horarios_asignados.json"
+                
+                if sala_file.exists() and sala_file.stat().st_size > 0:
+                    print("[Supervisor] Horarios_salas.json generated correctly")
+                else:
+                    print("[Supervisor] ERROR: Horarios_salas.json is empty or does not exist")
+                    
+                if prof_file.exists() and prof_file.stat().st_size > 0:
+                    print("[Supervisor] Horarios_asignados.json generated correctly")
+                else:
+                    print("[Supervisor] ERROR: Horarios_asignados.json is empty or does not exist")
+                
+                print("[Supervisor] System finalized.")
+                
+                await self.agent._kb.deregister_agent(self.agent.jid)
                 await self.agent.stop()
                 
             except Exception as e:
@@ -191,7 +212,7 @@ class AgenteSupervisor(Agent):
                     msg = Message(to=str(jid))
                     msg.set_metadata("performative", "query-ref")
                     msg.set_metadata("ontology", "schedule-data")
-                    msg.set_metadata("content", "schedule_query")
+                    # msg.set_metadata("content", "schedule_query")
                     
                     await self.send(msg)
                     response = await self.receive(timeout=2)
@@ -268,26 +289,29 @@ class AgenteSupervisor(Agent):
             
             return room_schedules
 
-    class MessageHandlerBehaviour(CyclicBehaviour):
+    class ShutdownBehaviour(CyclicBehaviour):
+        """Handles system shutdown signals from professors"""
+        
         async def run(self):
-            msg = await self.receive(timeout=0.5)
-            if not msg:
-                return
-
-            try:
-                if msg.get_metadata("ontology") == "schedule-update":
-                    await self.handle_schedule_update(msg)
-                elif msg.get_metadata("ontology") == "status-update":
-                    await self.handle_status_update(msg)
-            except Exception as e:
-                print(f"[Supervisor] Error handling message: {str(e)}")
-
-        async def handle_schedule_update(self, msg: Message):
-            """Handle schedule update messages"""
-            # Implement if needed
-            pass
-
-        async def handle_status_update(self, msg: Message):
-            """Handle status update messages"""
-            # Implement if needed
-            pass
+            # Template is set when adding behavior to agent:
+            # template = Template()
+            # template.set_metadata("performative", "inform")
+            # template.set_metadata("ontology", "system-control")
+            # template.set_metadata("content", "SHUTDOWN")
+            
+            msg = await self.receive(timeout=0.1)
+            if msg:
+                try:
+                    self.agent.log.info("Received shutdown signal - initiating system shutdown")
+                    
+                    # Set system inactive to stop monitoring
+                    self.agent.set("system_active", False)
+                    
+                    # Generate final JSON files
+                    await self.agent.monitor.finish_system()
+                    
+                    # Clean up and stop all agents
+                    # await self.agent.stop()
+                    
+                except Exception as e:
+                    self.agent.log.error(f"Error during shutdown: {str(e)}")
