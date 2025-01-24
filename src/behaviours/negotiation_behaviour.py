@@ -15,9 +15,11 @@ from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequ
 from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
 from objects.knowledge_base import AgentKnowledgeBase
+from objects.helper.quick_rejector import RoomQuickRejectFilter
 # from agents.profesor_redux import AgenteProfesor
 # import dataclass
 from dataclasses import dataclass
+from fipa.acl_message import FIPAPerformatives
 
 @dataclass
 class BatchProposalScore:
@@ -47,6 +49,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
         self.subject_negotiation_times = {}
         
         self.cleanup_lock = asyncio.Lock()
+        self.room_filter = RoomQuickRejectFilter()
 
     async def run(self):
         """Main behaviour loop"""
@@ -64,10 +67,17 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
         except Exception as e:
             self.profesor.log.error(f"Error in NegotiationState: {str(e)}")
-
+    
+    async def on_end(self):
+        """Safe behavior cleanup"""
+        try:
+            self.profesor.mark_negotiation_done()
+        except Exception as e:
+            self.profesor.log.error(f"Error in negotiation cleanup: {str(e)}")
+    
     async def handle_setup_state(self):
         """Handle the SETUP state"""
-        if not await self.profesor.can_use_more_subjects():
+        if not self.profesor.can_use_more_subjects():
             self.current_state = NegotiationState.FINISHED
             total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
             self.profesor.log.info(f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms")
@@ -115,7 +125,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
         if self.retry_count >= self.MAX_RETRIES:
             if self.bloques_pendientes == self.profesor.get_current_subject().get_horas():
                 # If no blocks assigned yet for this subject, move to next subject
-                self.profesor.move_to_next_subject()
+                await self.profesor.move_to_next_subject()
             else:
                 # If some blocks assigned, try different room
                 self.assignation_data.set_sala_asignada(None)
@@ -136,7 +146,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
                 self.assignation_data.set_sala_asignada(None)
             else:
                 # If we've tried different rooms without success, move on
-                self.profesor.move_to_next_subject()
+                await self.profesor.move_to_next_subject()
             self.retry_count = 0
             self.current_state = NegotiationState.SETUP
         else:
@@ -158,7 +168,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
         if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
             self.retry_count = 0
             if self.bloques_pendientes == 0:
-                self.profesor.move_to_next_subject()
+                await self.profesor.move_to_next_subject()
                 self.current_state = NegotiationState.SETUP
             else:
                 await self.send_proposal_requests()
@@ -566,18 +576,47 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
                 "ultimo_bloque": self.assignation_data.get_ultimo_bloque_asignado()
             }
 
-            # Send CFP to each room
+            # Filter rooms before sending CFPs
+            filtered_rooms = []
             for room in rooms:
-                msg = Message(
-                    to=str(room.jid)  # Set the recipient JID
+                # Extract room properties from capabilities
+                room_caps = next((cap for cap in room.capabilities if cap.service_type == "sala"), None)
+                if not room_caps:
+                    continue
+                
+                room_props = room_caps.properties
+                
+                should_reject = await self.room_filter.can_quick_reject(
+                    subject_name=current_subject.get_nombre(),
+                    subject_code=current_subject.get_codigo_asignatura(),
+                    subject_campus=current_subject.get_campus(),
+                    subject_vacancies=current_subject.get_vacantes(),
+                    room_code=room_props["codigo"],
+                    room_campus=room_props["campus"],
+                    room_capacity=room_props["capacidad"]
                 )
-                msg.set_metadata("protocol", "fipa-contract-net")
-                msg.set_metadata("performative", "cfp")
+                
+                if not should_reject:
+                    filtered_rooms.append(room)
+
+            if not filtered_rooms:
+                self.profesor.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
+                return
+
+            # Send CFP only to filtered rooms
+            for room in filtered_rooms:
+                msg = Message(
+                    to=str(room.jid)
+                )
+                msg.set_metadata("protocol", "contract-net")
+                msg.set_metadata("performative", FIPAPerformatives.CFP)
                 msg.set_metadata("conversation-id", f"neg-{self.profesor.nombre}-{self.bloques_pendientes}")
                 msg.body = json.dumps(solicitud_info)
                 
                 await self.send(msg)  # Using behaviour's send method
-                self.profesor.log.debug(f"Sent CFP to room {room.jid}")
+                self.profesor.log.debug(f"Sent CFP to filtered room {room.jid}")
+
+            self.profesor.log.info(f"Sent CFPs to {len(filtered_rooms)} rooms out of {len(rooms)} total rooms")
 
         except Exception as e:
             self.profesor.log.error(f"Error sending proposal requests: {str(e)}")
@@ -667,19 +706,15 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             self.profesor.log.warning("Assignment would exceed required hours")
             return False
         
-        #MAX_RETRIES = 3
-        # retry_count = 0
-
-        # while retry_count < MAX_RETRIES:
         try:
             conv_id = original_msg.get_metadata("conversation-id")
             # Create batch request message
             msg = Message()
             msg.to = str(original_msg.sender)
-            msg.set_metadata("performative", "accept-proposal")
+            msg.set_metadata("performative", FIPAPerformatives.ACCEPT_PROPOSAL)
             msg.set_metadata("ontology", "room-assignment")
             msg.set_metadata("conversation-id", conv_id)
-            msg.set_metadata("protocol", "fipa-contract-net")
+            msg.set_metadata("protocol", "contract-net")
             
             msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
 
@@ -698,7 +733,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
                     # Process confirmed assignments
                     for assignment in confirmation.get_confirmed_assignments():
-                        self.profesor.update_schedule_info(
+                        await self.profesor.update_schedule_info(
                             dia=assignment.get_day(),
                             sala=assignment.get_classroom_code(),
                             bloque=assignment.get_block(),
@@ -716,15 +751,9 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
                     return True
 
                 await asyncio.sleep(0.05)
-                
-            # retry_count += 1
-
-            # return False
 
         except Exception as e:
             self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
-                # return False
-                # retry_count += 1
             
         return False
 
@@ -800,25 +829,33 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
     async def finish_negotiations(self):
         """Handle finished state and cleanup"""
-        with await self.cleanup_lock:
-            try:
-                # Record completion time
-                total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
-                self.profesor.log.info(
-                    f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
-                )
+        try:
+            # Record completion time
+            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
+            self.profesor.log.info(
+                f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
+            )
+            
+            # Log individual subject times 
+            for subject, time in self.subject_negotiation_times.items():
+                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
+
+            # Notify next professor first
+            await self.notify_next_professor()
+            
+            # Kill this behavior
+            self.kill()
+            
+            # Clear any pending messages before cleanup
+            while await self.receive(timeout=0.1):
+                pass
                 
-                for subject, time in self.subject_negotiation_times.items():
-                    self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
-
-                # Notify next professor
-                await self.notify_next_professor()
-
-                # Kill behaviors and cleanup
-                self.kill()
-                await self.profesor.cleanup()
-            except Exception as e:
-                self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
+            # Start cleanup with small delay to allow next prof to start
+            await asyncio.sleep(0.5)
+            await self.profesor.cleanup()
+            
+        except Exception as e:
+            self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
             
     async def notify_next_professor(self):
         try:
@@ -835,10 +872,11 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
                 
                 # Create START message
                 msg = Message(to=str(next_professor.jid))
-                msg.set_metadata("performative", "inform")
-                msg.set_metadata("content", "START")
+                msg.set_metadata("performative", FIPAPerformatives.INFORM)
                 msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(next_orden))
+                
+                msg.body = "START"
                 
                 await self.send(msg)
                 self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
@@ -852,7 +890,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
                 if supervisor_agents:
                     supervisor = supervisor_agents[0]
                     shutdown_msg = Message(to=str(supervisor.jid))
-                    shutdown_msg.set_metadata("performative", "inform")
+                    shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
                     shutdown_msg.set_metadata("ontology", "system-control")
                     shutdown_msg.set_metadata("content", "SHUTDOWN")
                     
