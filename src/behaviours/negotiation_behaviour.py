@@ -17,6 +17,7 @@ from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
 from objects.knowledge_base import AgentKnowledgeBase
 from objects.helper.quick_rejector import RoomQuickRejectFilter
+from objects.asignation_data import Actividad
 # from agents.profesor_redux import AgenteProfesor
 # import dataclass
 from dataclasses import dataclass
@@ -493,7 +494,8 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
             proposed_blocks = [block.get_block() for block in blocks]
 
-            if asignatura.get_actividad() not in ['LABORATORIO', 'TALLER']:
+            act  = asignatura.get_actividad()
+            if act != Actividad.TALLER and act != Actividad.LABORATORIO:
                 sorted_blocks = sorted(proposed_blocks + (existing_blocks or []))
                 continuous_count = 1
                 for i in range(1, len(sorted_blocks)):
