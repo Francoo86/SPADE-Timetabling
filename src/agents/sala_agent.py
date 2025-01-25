@@ -10,13 +10,17 @@ from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from datetime import datetime
 
 from objects.asignation_data import AsignacionSala
-from objects.helper.batch_proposals import BatchProposal
+from objects.helper.batch_proposals import BatchProposal, ClassroomAvailability
+from objects.helper.batch_requests import BatchAssignmentRequest, AssignmentRequest
 from objects.helper.confirmed_assignments import BatchAssignmentConfirmation, ConfirmedAssignment
+
 from objects.static.agent_enums import Day
 
 from .agent_logger import AgentLogger
 from fipa.common_templates import CommonTemplates
 from fipa.acl_message import FIPAPerformatives
+import jsonpickle
+
 
 import logging
 
@@ -169,6 +173,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         """Process incoming room requests"""
         try:
             # Parse request data
+            # In the JADE version, it was a string, but now it's a dictionary
             request_data = json.loads(msg.body)
             subject_name = self.agent.sanitize_subject_name(request_data["nombre"])
             vacancies = request_data["vacantes"]
@@ -178,18 +183,18 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             
             if available_blocks:
                 # Create availability response
-                availability = {
-                    "codigo": self.agent.codigo,
-                    "campus": self.agent.campus,
-                    "capacidad": self.agent.capacidad,
-                    "available_blocks": available_blocks
-                }
+                availability = ClassroomAvailability(
+                    codigo=self.agent.codigo,
+                    campus=self.agent.campus,
+                    capacidad=self.agent.capacidad,
+                    available_blocks=available_blocks
+                )
                 
                 # Send proposal
                 reply = msg.make_reply()
                 reply.set_metadata("performative", FIPAPerformatives.PROPOSE)
                 reply.set_metadata("ontology", "classroom-availability")
-                reply.body = json.dumps(availability)
+                reply.body = jsonpickle.encode(availability)
                 await self.send(reply)
             else:
                 # Send refuse if no blocks available
@@ -218,14 +223,14 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         """Handle assignment confirmation"""
         try:
             # Parse batch assignment request
-            request_data = json.loads(msg.body)
+            request_data : BatchAssignmentRequest = jsonpickle.decode(msg.body)
             assignments = []
             
-            for assignment in request_data["assignments"]:
-                day = Day[assignment["day"]]
-                block = assignment["block"] - 1
-                subject_name = assignment["subject_name"]
-                satisfaction = assignment["satisfaction"]
+            for assignment in request_data.get_assignments():
+                day = assignment.day
+                block = assignment.block - 1
+                subject_name = assignment.subject_name
+                satisfaction = assignment.satisfaction
                 
                 # Verify block is available
                 if (self.agent.horario_ocupado[day][block] is None):
@@ -233,7 +238,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     new_assignment = AsignacionSala(
                         subject_name,
                         satisfaction,
-                        float(assignment["vacancy"]) / self.agent.capacidad
+                        float(assignment.vacancy) / self.agent.capacidad
                     )
                     
                     # Update schedule
@@ -255,7 +260,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 reply.set_metadata("ontology", "room-assignment")
                 reply.set_metadata("protocol", "contract-net")
                 reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
-                reply.body = json.dumps(confirmation.to_dict())
+                reply.body = jsonpickle.encode(confirmation)
                 await self.send(reply)
                 
                 # Update JSON record

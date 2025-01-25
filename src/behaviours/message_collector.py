@@ -10,6 +10,7 @@ from objects.helper.batch_proposals import BatchProposal
 from objects.helper.classroom_availability import ClassroomAvailability
 from .negotiation_behaviour import NegotiationStateBehaviour
 from fipa.acl_message import FIPAPerformatives
+import jsonpickle
 
 class MessageCollectorBehaviour(CyclicBehaviour):
     def __init__(self, professor_agent, batch_proposals: asyncio.Queue, state_behaviour : NegotiationStateBehaviour):
@@ -53,15 +54,7 @@ class MessageCollectorBehaviour(CyclicBehaviour):
         """
         try:
             # Parse the content (assumed to be JSON)
-            content = json.loads(msg.body)
-            
-            # Create ClassroomAvailability object
-            availability = ClassroomAvailability(
-                codigo=content['codigo'],
-                campus=content['campus'],
-                capacidad=content['capacidad'],
-                available_blocks=content['available_blocks']
-            )
+            availability = jsonpickle.decode(msg.body)
 
             if availability:
                 # Create batch proposal

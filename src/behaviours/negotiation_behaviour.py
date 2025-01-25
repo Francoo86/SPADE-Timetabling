@@ -18,6 +18,7 @@ from objects.knowledge_base import AgentKnowledgeBase
 from objects.helper.quick_rejector import RoomQuickRejectFilter
 from objects.asignation_data import Actividad
 # from agents.profesor_redux import AgenteProfesor
+import jsonpickle
 # import dataclass
 from dataclasses import dataclass
 from fipa.acl_message import FIPAPerformatives
@@ -712,7 +713,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             msg.set_metadata("conversation-id", conv_id)
             msg.set_metadata("protocol", "contract-net")
             
-            msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
+            msg.body = jsonpickle.encode(BatchAssignmentRequest(requests))
 
             # Send message and wait for confirmation
             await self.send(msg)
@@ -724,11 +725,10 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             while datetime.now() - start_time < timeout:
                 confirmation_msg = await self.receive(timeout=0.1)
                 if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
-                    confirmation_data = json.loads(confirmation_msg.body)
-                    confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
+                    confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
 
                     # Process confirmed assignments
-                    for assignment in confirmation.get_confirmed_assignments():
+                    for assignment in confirmation_data.get_confirmed_assignments():
                         await self.profesor.update_schedule_info(
                             dia=assignment.get_day(),
                             sala=assignment.get_classroom_code(),
