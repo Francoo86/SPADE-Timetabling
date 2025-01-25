@@ -1,143 +1,200 @@
 [
-    {
-      "RUT": "10087939-5",
-      "Nombre": "ROJAS RODRIGUEZ RO",
-      "Turno": 1,
-      "Asignaturas": [
-        {
-          "CodigoAsignatura": "(PRI82-A)",
-          "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-          "Nivel": 8,
-          "Paralelo": "A",
-          "Horas": 12,
-          "Vacantes": 40,
-          "Campus": "Playa Brava",
-          "Actividad": "Teo"
-        }
-      ]
-    },
-    {
-      "RUT": "10090332-6",
-      "Nombre": "PADILLA GUZMAN SIL",
-      "Turno": 2,
-      "Asignaturas": [
-        {
-          "CodigoAsignatura": "(IC801-A)",
-          "Nombre": "DIRECCION DE PROYECTOS",
-          "Nivel": 8,
-          "Paralelo": "A",
-          "Horas": 2,
-          "Vacantes": 45,
-          "Campus": "Playa Brava",
-          "Actividad": "Lab"
-        },
-        {
-          "CodigoAsignatura": "(INT75-I)",
-          "Nombre": "GESTION DE EMPRESAS",
-          "Nivel": 7,
-          "Paralelo": "A",
-          "Horas": 12,
-          "Vacantes": 30,
-          "Campus": "Playa Brava",
-          "Actividad": "Teo"
-        },
-        {
-          "CodigoAsignatura": "(INT91-I)",
-          "Nombre": "TALLER DE TITULO",
-          "Nivel": 9,
-          "Paralelo": "A",
-          "Horas": 12,
-          "Vacantes": 30,
-          "Campus": "Playa Brava",
-          "Actividad": "Lab"
-        }
-      ]
-    },
-    {
-      "RUT": "10254482-K",
-      "Nombre": "OBILINOVIC GONZÁLE",
-      "Turno": 3,
-      "Asignaturas": [
-        {
-          "CodigoAsignatura": "(ARQ23-A)",
-          "Nombre": "HISTORIA Y TEORIA I",
-          "Nivel": 2,
-          "Paralelo": "A",
-          "Horas": 1,
-          "Vacantes": 60,
-          "Campus": "Playa Brava",
-          "Actividad": "Pra"
-        },
-        {
-          "CodigoAsignatura": "(ARQ23-A)",
-          "Nombre": "HISTORIA Y TEORIA I",
-          "Nivel": 2,
-          "Paralelo": "A",
-          "Horas": 2,
-          "Vacantes": 60,
-          "Campus": "Playa Brava",
-          "Actividad": "Teo"
-        },
-        {
-          "CodigoAsignatura": "(ARQ31-B)",
-          "Nombre": "TALLER 3",
-          "Nivel": 3,
-          "Paralelo": "A",
-          "Horas": 3,
-          "Vacantes": 30,
-          "Campus": "Playa Brava",
-          "Actividad": "Tal"
-        },
-        {
-          "CodigoAsignatura": "(ARQ31-B)",
-          "Nombre": "TALLER 3",
-          "Nivel": 3,
-          "Paralelo": "A",
-          "Horas": 1,
-          "Vacantes": 30,
-          "Campus": "Playa Brava",
-          "Actividad": "Teo"
-        },
-        {
-          "CodigoAsignatura": "(ARQ41-B)",
-          "Nombre": "TALLER 4",
-          "Nivel": 4,
-          "Paralelo": "A",
-          "Horas": 3,
-          "Vacantes": 30,
-          "Campus": "Playa Brava",
-          "Actividad": "Tal"
-        },
-        {
-          "CodigoAsignatura": "(ARQ41-B)",
-          "Nombre": "TALLER 4",
-          "Nivel": 4,
-          "Paralelo": "A",
-          "Horas": 1,
-          "Vacantes": 30,
-          "Campus": "Playa Brava",
-          "Actividad": "Teo"
-        },
-        {
-          "CodigoAsignatura": "(ARQ83-A)",
-          "Nombre": "TERRITORIO 4",
-          "Nivel": 8,
-          "Paralelo": "A",
-          "Horas": 1,
-          "Vacantes": 40,
-          "Campus": "Playa Brava",
-          "Actividad": "Pra"
-        },
-        {
-          "CodigoAsignatura": "(ARQ83-A)",
-          "Nombre": "TERRITORIO 4",
-          "Nivel": 8,
-          "Paralelo": "A",
-          "Horas": 2,
-          "Vacantes": 40,
-          "Campus": "Playa Brava",
-          "Actividad": "Teo"
-        }
-      ]
-    }
+  {
+    "RUT": "10087939-5",
+    "Nombre": "ROJAS RODRIGUEZ RO",
+    "Turno": 1,
+    "Asignaturas": [
+      {
+        "CodigoAsignatura": "(PRI82-A)",
+        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nivel": 8,
+        "Paralelo": "A",
+        "Horas": 12,
+        "Vacantes": 40,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      }
+    ]
+  },
+  {
+    "RUT": "10601312-8",
+    "Nombre": "MEZA CÁRDENAS ERIK",
+    "Turno": 11,
+    "Asignaturas": [
+      {
+        "CodigoAsignatura": "(FIA41-B)",
+        "Nombre": "TERMODINÁMICA",
+        "Nivel": 10,
+        "Paralelo": "A",
+        "Horas": 3,
+        "Vacantes": 50,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(IME61-A)",
+        "Nombre": "BALANCE DE MATERIA Y ENER",
+        "Nivel": 6,
+        "Paralelo": "A",
+        "Horas": 3,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(IME83-A)",
+        "Nombre": "PURIFICACION Y SEPARACION",
+        "Nivel": 8,
+        "Paralelo": "A",
+        "Horas": 3,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Lab"
+      },
+      {
+        "CodigoAsignatura": "(IME83-A)",
+        "Nombre": "PURIFICACION Y SEPARACION",
+        "Nivel": 8,
+        "Paralelo": "A",
+        "Horas": 4,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(INT52-I)",
+        "Nombre": "TERMODINAMICA",
+        "Nivel": 5,
+        "Paralelo": "A",
+        "Horas": 12,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      }
+    ]
+  },
+  {
+    "RUT": "10090332-6",
+    "Nombre": "PADILLA GUZMAN SIL",
+    "Turno": 2,
+    "Asignaturas": [
+      {
+        "CodigoAsignatura": "(IC801-A)",
+        "Nombre": "DIRECCION DE PROYECTOS",
+        "Nivel": 8,
+        "Paralelo": "A",
+        "Horas": 2,
+        "Vacantes": 45,
+        "Campus": "Playa Brava",
+        "Actividad": "Lab"
+      },
+      {
+        "CodigoAsignatura": "(INT75-I)",
+        "Nombre": "GESTION DE EMPRESAS",
+        "Nivel": 7,
+        "Paralelo": "A",
+        "Horas": 12,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(INT91-I)",
+        "Nombre": "TALLER DE TITULO",
+        "Nivel": 9,
+        "Paralelo": "A",
+        "Horas": 12,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Lab"
+      }
+    ]
+  },
+  {
+    "RUT": "10254482-K",
+    "Nombre": "OBILINOVIC GONZÁLE",
+    "Turno": 3,
+    "Asignaturas": [
+      {
+        "CodigoAsignatura": "(ARQ23-A)",
+        "Nombre": "HISTORIA Y TEORIA I",
+        "Nivel": 2,
+        "Paralelo": "A",
+        "Horas": 1,
+        "Vacantes": 60,
+        "Campus": "Playa Brava",
+        "Actividad": "Pra"
+      },
+      {
+        "CodigoAsignatura": "(ARQ23-A)",
+        "Nombre": "HISTORIA Y TEORIA I",
+        "Nivel": 2,
+        "Paralelo": "A",
+        "Horas": 2,
+        "Vacantes": 60,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(ARQ31-B)",
+        "Nombre": "TALLER 3",
+        "Nivel": 3,
+        "Paralelo": "A",
+        "Horas": 3,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Tal"
+      },
+      {
+        "CodigoAsignatura": "(ARQ31-B)",
+        "Nombre": "TALLER 3",
+        "Nivel": 3,
+        "Paralelo": "A",
+        "Horas": 1,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(ARQ41-B)",
+        "Nombre": "TALLER 4",
+        "Nivel": 4,
+        "Paralelo": "A",
+        "Horas": 3,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Tal"
+      },
+      {
+        "CodigoAsignatura": "(ARQ41-B)",
+        "Nombre": "TALLER 4",
+        "Nivel": 4,
+        "Paralelo": "A",
+        "Horas": 1,
+        "Vacantes": 30,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      },
+      {
+        "CodigoAsignatura": "(ARQ83-A)",
+        "Nombre": "TERRITORIO 4",
+        "Nivel": 8,
+        "Paralelo": "A",
+        "Horas": 1,
+        "Vacantes": 40,
+        "Campus": "Playa Brava",
+        "Actividad": "Pra"
+      },
+      {
+        "CodigoAsignatura": "(ARQ83-A)",
+        "Nombre": "TERRITORIO 4",
+        "Nivel": 8,
+        "Paralelo": "A",
+        "Horas": 2,
+        "Vacantes": 40,
+        "Campus": "Playa Brava",
+        "Actividad": "Teo"
+      }
+    ]
+  }
 ]

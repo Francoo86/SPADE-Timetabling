@@ -199,12 +199,12 @@ class AgenteProfesor(Agent):
                 
             current = self.asignaturas[self.asignatura_actual]
             if current is None:
-                logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
+                self.log.warning(f"Null subject at index {self.asignatura_actual}")
                 return False
                 
             return True
         except IndexError:
-            logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
+            self.log.error(f"Index out of bounds checking for more subjects: "
                         f"{self.asignatura_actual}/{len(self.asignaturas)}")
             return False
 
@@ -218,11 +218,11 @@ class AgenteProfesor(Agent):
     async def move_to_next_subject(self):
         """Move to the next subject in the list."""
         async with self.prof_lock:
-            logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving from subject index {self.asignatura_actual} "
+            self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
                         f"(total: {len(self.asignaturas)})")
             
             if self.asignatura_actual >= len(self.asignaturas):
-                logging.info(f"Agente Profesor{self.orden}: [MOVE] Already at last subject")
+                self.log.info(f" [MOVE] Already at last subject")
                 return
                 
             current = self.get_current_subject()
@@ -235,13 +235,13 @@ class AgenteProfesor(Agent):
                 if (next_subject.get_nombre() == current_name and 
                     next_subject.get_codigo_asignatura() == current_code):
                     self.current_instance_index += 1
-                    logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to next instance ({self.current_instance_index}) "
+                    self.log.info(f" [MOVE] Moving to next instance ({self.current_instance_index}) "
                                 f"of {current_name}")
                 else:
                     self.current_instance_index = 0
-                    logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to new subject {next_subject.get_nombre()}")
+                    self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
             else:
-                logging.info(f"Agente Profesor{self.orden}: [MOVE] Reached end of subjects")
+                self.log.info(f" [MOVE] Reached end of subjects")
 
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
@@ -287,26 +287,51 @@ class AgenteProfesor(Agent):
     async def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, satisfaccion: int):
         """Update the schedule information with a new assignment."""
         try:
+            if not hasattr(self, 'storage') or not self.storage:
+                self.log.error("Storage not properly initialized")
+                return
+                
             current_instance_key = self.get_current_instance_key()
             
             # Update local structures first
             self.horario_ocupado.setdefault(dia, set()).add(bloque)
-            self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(current_instance_key, []).append(bloque)
+            self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(
+                current_instance_key, []).append(bloque)
             
-            # Update JSON before storage
+            # Update JSON structure
             await self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
             
-            # Use asyncio.shield to prevent cancellation during storage update
-            await asyncio.shield(
-                self.storage.update_schedule(
-                    self.nombre,
-                    self.horario_json,
-                    self.asignaturas
-                )
-            )
+            # Create a deep copy of data for storage
+            schedule_data = {
+                "Asignaturas": self.horario_json["Asignaturas"].copy(),
+                "Nombre": self.nombre,
+                "TotalAsignaturas": len(self.asignaturas),
+                "AsignaturasCompletadas": self.asignatura_actual
+            }
             
+            # Update storage with retries
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await asyncio.shield(
+                        self.storage.update_schedule(
+                            self.nombre,
+                            schedule_data,
+                            self.asignaturas
+                        )
+                    )
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        self.log.error(f"Failed to update storage after {max_retries} attempts: {str(e)}")
+                    else:
+                        await asyncio.sleep(0.1 * (attempt + 1))
+                        
         except Exception as e:
             self.log.error(f"Error updating schedule: {str(e)}")
+            # Log the current state for debugging
+            self.log.error(f"Current state - Blocks: {len(self.horario_json['Asignaturas'])}, "
+                        f"Subject: {self.asignatura_actual}/{len(self.asignaturas)}")
 
     def get_tipo_contrato(self) -> TipoContrato:
         """Get the contract type based on total teaching hours."""

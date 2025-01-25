@@ -6,7 +6,6 @@ import asyncio
 from typing import Dict, List, Optional
 from collections import defaultdict
 import json
-from queue import Queue
 from aioxmpp import JID
 
 from objects.static.agent_enums import NegotiationState, Day, TipoContrato

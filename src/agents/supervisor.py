@@ -81,38 +81,75 @@ class AgenteSupervisor(Agent):
     async def finish_system(self):
         """Clean up and shut down the system"""
         try:
-            self.agent.set("system_active", False)
-            print("[Supervisor] Generating final JSON files...")
+            self.set("system_active", False)
+            self.log.info("[Supervisor] Starting system shutdown...")
             
-            # Generate final files using both storage systems
-            
-            await self.agent.room_storage.generate_json_file()
-            await self.agent.prof_storage.generate_json_file()
-            
+            # Ensure storage instances exist
+            if not self.room_storage or not self.prof_storage:
+                self.log.error("Storage instances not properly initialized")
+                return
+                
+            # Generate final files with proper error handling
+            try:
+                self.log.info("Generating room schedules JSON...")
+                await self.room_storage.generate_json_file()
+                
+                self.log.info("Generating professor schedules JSON...")
+                await self.prof_storage.generate_json_file()
+                
+                # Force flush any pending updates
+                await self.room_storage.force_flush()
+                await self.prof_storage.force_flush()
+                
+            except Exception as e:
+                self.log.error(f"Error generating JSON files: {str(e)}")
+                
             # Verify files were generated
             output_path = Path(os.getcwd()) / "agent_output"
             sala_file = output_path / "Horarios_salas.json"
             prof_file = output_path / "Horarios_asignados.json"
             
-            if sala_file.exists() and sala_file.stat().st_size > 0:
-                print("[Supervisor] Horarios_salas.json generated correctly")
+            # Add detailed logging for verification
+            if sala_file.exists():
+                size = sala_file.stat().st_size
+                self.log.info(f"Horarios_salas.json generated: {size} bytes")
+                if size == 0:
+                    self.log.error("Horarios_salas.json is empty")
             else:
-                print("[Supervisor] ERROR: Horarios_salas.json is empty or does not exist")
+                self.log.error("Horarios_salas.json was not generated")
                 
-            if prof_file.exists() and prof_file.stat().st_size > 0:
-                print("[Supervisor] Horarios_asignados.json generated correctly")
+            if prof_file.exists():
+                size = prof_file.stat().st_size
+                self.log.info(f"Horarios_asignados.json generated: {size} bytes")
+                if size == 0:
+                    self.log.error("Horarios_asignados.json is empty")
             else:
-                print("[Supervisor] ERROR: Horarios_asignados.json is empty or does not exist")
-            
-            print("[Supervisor] System finalized.")
-            
-            await self.agent._kb.deregister_agent(self.agent.jid)
-            await self.agent.stop()
-            
-            await self.finalizer.set()
-            
+                self.log.error("Horarios_asignados.json was not generated")
+
+            # Ensure proper cleanup
+            try:
+                await self._kb.deregister_agent(self.jid)
+                self.log.info("Deregistered from knowledge base")
+            except Exception as e:
+                self.log.error(f"Error deregistering from KB: {str(e)}")
+                
+            # Stop the agent
+            try:
+                await self.stop()
+                self.log.info("Agent stopped successfully")
+            except Exception as e:
+                self.log.error(f"Error stopping agent: {str(e)}")
+                
+            # Set completion event
+            if self.finalizer:
+                await self.finalizer.set()
+                self.log.info("Finalizer event set")
+                
         except Exception as e:
-            print(f"[Supervisor] Error finishing system: {str(e)}")
+            self.log.error(f"Critical error in finish_system: {str(e)}")
+            # Ensure finalizer is set even on error
+            if self.finalizer:
+                await self.finalizer.set()
 
     class ShutdownBehaviour(CyclicBehaviour):
         """Handles system shutdown signals from professors"""
