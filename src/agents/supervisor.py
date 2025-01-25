@@ -11,7 +11,7 @@ from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from .agent_logger import AgentLogger
 from pathlib import Path
 import os
-
+from fipa.acl_message import FIPAPerformatives
 
 class SupervisorState:
     def __init__(self, professor_jids: List[str]):
@@ -72,7 +72,7 @@ class AgenteSupervisor(Agent):
         
         # Add shutdown behavior
         shutdown_template = Template()
-        shutdown_template.set_metadata("performative", "inform")
+        shutdown_template.set_metadata("performative", FIPAPerformatives.INFORM)
         shutdown_template.set_metadata("ontology", "system-control")
         shutdown_template.set_metadata("content", "SHUTDOWN")
         
@@ -128,9 +128,5 @@ class AgenteSupervisor(Agent):
                     
                     # Generate final JSON files
                     await self.agent.finish_system()
-                    
-                    # Clean up and stop all agents
-                    # await self.agent.stop()
-                    
                 except Exception as e:
                     self.agent.log.error(f"Error during shutdown: {str(e)}")

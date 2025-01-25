@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from collections import defaultdict
 import json
 from queue import Queue
+from aioxmpp import JID
 
 from objects.static.agent_enums import NegotiationState, Day, TipoContrato
 from objects.helper.batch_proposals import BatchProposal, BlockProposal
@@ -727,7 +728,7 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
 
             while datetime.now() - start_time < timeout:
                 confirmation_msg = await self.receive(timeout=0.1)
-                if confirmation_msg and confirmation_msg.get_metadata("performative") == "inform" and confirmation_msg.get_metadata("conversation-id") == conv_id:
+                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
                     confirmation_data = json.loads(confirmation_msg.body)
                     confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
 
@@ -756,6 +757,10 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
             
         return False
+    
+    def is_valid_confirm(self, confirm : Message, og_sender : JID, conv_id : str) -> bool:
+        return confirm.get_metadata("performative") == FIPAPerformatives.INFORM and\
+        confirm.sender == og_sender and confirm.get_metadata("conversation-id") == conv_id
 
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
