@@ -32,14 +32,14 @@ class MessageCollectorBehaviour(CyclicBehaviour):
             # Wait for a message
             msg = await self.receive(timeout=0.05)
             
-            if msg and msg.get_metadata("ontology") == "classroom-availability":
+            if msg:
                 if msg.get_metadata("performative") == FIPAPerformatives.PROPOSE:
                     await self.handle_proposal(msg)
                 # We can ignore REFUSE messages as they don't require processing
                 
-            # else:
+            else:
                 # No message received, wait a bit before next check
-                # await asyncio.sleep(0.05)
+                await asyncio.sleep(0.1)
 
         except Exception as e:
             self.professor.log.error(f"Error in MessageCollector: {str(e)}")

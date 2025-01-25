@@ -153,7 +153,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
     
     async def run(self):
         # Wait for incoming messages
-        msg = await self.receive(timeout=10)
+        msg = await self.receive(timeout=0.1)
         if not msg:
             await asyncio.sleep(0.1)
             return

@@ -80,12 +80,6 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
         """Handle the SETUP state"""
         if not self.profesor.can_use_more_subjects():
             self.current_state = NegotiationState.FINISHED
-            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
-            self.profesor.log.info(f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms")
-            
-            for subject, time in self.subject_negotiation_times.items():
-                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
-            
             await self.finish_negotiations()
             return
 
