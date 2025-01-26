@@ -44,7 +44,7 @@ class NegotiationFSM(FSMBehaviour):
         self.negotiation_start_time = None
     
         # Add states
-        self.add_state(NegotiationStates.SETUP, SetupState(parent=self))
+        self.add_state(NegotiationStates.SETUP, SetupState(parent=self), initial=True)
         self.add_state(NegotiationStates.COLLECTING, CollectingState(parent=self))
         self.add_state(NegotiationStates.EVALUATING, EvaluatingState(evaluator=self.evaluator, parent=self))
         self.add_state(NegotiationStates.FINISHED, FinishedState(parent=self))
@@ -63,6 +63,7 @@ class SetupState(State):
         super().__init__()
 
     async def run(self):
+        self.agent.log.info(f"Starting negotiation setup for professor {self.agent.nombre}")
         if not self.agent.can_use_more_subjects():
             self.set_next_state(NegotiationStates.FINISHED)
             return
@@ -113,7 +114,7 @@ class SetupState(State):
                 "campus": current_subject.get_campus(),
                 "bloques_pendientes": self.parent.bloques_pendientes,
                 "sala_asignada": self.parent.assignation_data.get_sala_asignada(),
-                "ultimo_dia": self.parent.assignation_data.get_ultimo_dia_asignado().name if self.assignation_data.get_ultimo_dia_asignado() else "",
+                "ultimo_dia": self.parent.assignation_data.get_ultimo_dia_asignado().name if self.parent.assignation_data.get_ultimo_dia_asignado() else "",
                 "ultimo_bloque": self.parent.assignation_data.get_ultimo_bloque_asignado()
             }
 

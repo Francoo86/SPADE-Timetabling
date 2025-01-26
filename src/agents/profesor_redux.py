@@ -19,6 +19,7 @@ from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from behaviours.monitoring import InitialWaitBehaviour
 from fipa.common_templates import CommonTemplates
 from json_stuff.json_profesores import ProfesorScheduleStorage
+from behaviours.fsm_negotiation_states import NegotiationFSM
 
 from datetime import datetime
 
@@ -49,7 +50,7 @@ class AgenteProfesor(Agent):
         self.log =  AgentLogger(f"Profesor{self.orden}")
         self._initialize_data_structures()
         self._kb = None
-        self.batch_proposals = asyncio.Queue()
+        # self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
         
         # Lock para replicar el synchronized de Java
@@ -58,8 +59,9 @@ class AgenteProfesor(Agent):
         self.cleanup_state = CleanupState()
         
         # inicializar una fuente de verdad de los behaviors
-        self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
-        self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
+        self.negotiation_state_behaviour = NegotiationFSM(profesor_agent=self)
+        # self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
+        # self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -103,8 +105,8 @@ class AgenteProfesor(Agent):
     def prepare_behaviours(self):
         self.add_behaviour(self.negotiation_state_behaviour)
         
-        classroom_template = CommonTemplates.get_classroom_availability_template()
-        self.add_behaviour(self.message_collector_behaviour, classroom_template)
+        # classroom_template = CommonTemplates.get_classroom_availability_template()
+        # self.add_behaviour(self.message_collector_behaviour, classroom_template)
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
@@ -140,10 +142,7 @@ class AgenteProfesor(Agent):
             if self.orden == 0:
                 self.log.info("Starting as first professor")
                 template = CommonTemplates.get_notify_next_professor_template(is_base=True)
-                self.add_behaviour(InitialWaitBehaviour(
-                    self.negotiation_state_behaviour,
-                    self.message_collector_behaviour
-                ), template)
+                self.add_behaviour(InitialWaitBehaviour(), template)
             else:
                 self.log.info(f"Waiting for turn (order: {self.orden})")
                 wait_behaviour = EsperarTurnoBehaviour(
