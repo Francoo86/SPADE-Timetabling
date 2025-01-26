@@ -24,7 +24,6 @@ class ProfesorScheduleStorage:
         self._all_professor_names = set()
         self._update_count = 0
         self._write_lock = asyncio.Lock()
-        self._update_lock = asyncio.Lock()
         self._output_path = Path(os.getcwd()) / "agent_output"
         self._output_path.mkdir(exist_ok=True)
 
@@ -45,85 +44,96 @@ class ProfesorScheduleStorage:
 
             update = ProfessorScheduleUpdate(nombre, schedule_data, asignaturas)
             
-            # Use update lock instead of write lock for updates
-            async with self._update_lock:
+            async with self._write_lock:
                 self._pending_updates[nombre] = update
                 self._all_professor_names.add(nombre)
                 self._update_count += 1
 
-            # Move flush check outside of lock
-            if self._update_count >= self.WRITE_THRESHOLD:
-                await self._try_flush_updates()
+                if self._update_count >= self.WRITE_THRESHOLD:
+                    await self._write_updates_to_file()
 
         except Exception as e:
             print(f"[ERROR] Error adding professor schedule for {nombre}: {str(e)}")
             raise
 
-    async def _try_flush_updates(self) -> None:
-        """Try to flush updates without blocking if lock is taken"""
-        if await self._write_lock.acquire():
-            try:
-                await self._flush_updates()
-            finally:
-                self._write_lock.release()
-
-    async def _flush_updates(self) -> None:
-        """Write pending updates to file with timeout"""
+    async def _write_updates_to_file(self) -> None:
+        """Write updates to file - assumes lock is already held"""
         try:
             if not self._pending_updates:
                 return
 
-            async with asyncio.timeout(5):  # 5 second timeout
-                json_array = []
-                for update in self._pending_updates.values():
-                    profesor_json = {
-                        "Nombre": update.nombre,
-                        "Asignaturas": update.schedule_data.get("Asignaturas", []),
-                        "Solicitudes": len(update.asignaturas),
-                        "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
-                    }
-                    json_array.append(profesor_json)
-
-                if json_array:
-                    output_file = self._output_path / "Horarios_asignados.json"
-                    async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
-                        await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
-
-                self._pending_updates.clear()
-                self._update_count = 0
-
-        except asyncio.TimeoutError:
-            print(f"[WARNING] Flush operation timed out - will retry later")
-        except Exception as e:
-            print(f"Error writing professor schedules to file: {str(e)}")
-
-    async def generate_json_file(self) -> None:
-        """Generate final JSON file with all professor schedules"""
-        async with self._write_lock:
-            await self._flush_updates()
-
             json_array = []
-            for nombre in self._all_professor_names:
-                update = self._pending_updates.get(nombre)
-                if update:
-                    profesor_json = {
-                        "Nombre": update.nombre,
-                        "Asignaturas": update.schedule_data.get("Asignaturas", []),
-                        "Solicitudes": len(update.asignaturas),
-                        "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
-                    }
-                    json_array.append(profesor_json)
+            for update in self._pending_updates.values():
+                profesor_json = {
+                    "Nombre": update.nombre,
+                    "Asignaturas": update.schedule_data.get("Asignaturas", []),
+                    "Solicitudes": len(update.asignaturas),
+                    "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
+                }
+                json_array.append(profesor_json)
 
             if json_array:
                 output_file = self._output_path / "Horarios_asignados.json"
                 async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
                     await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
-                print(f"Generated final Horarios_asignados.json with {len(json_array)} professors")
+                    await f.flush()
+                print(f"Successfully wrote {len(json_array)} professor schedules to file")
+
+            self._pending_updates.clear()
+            self._update_count = 0
+
+        except Exception as e:
+            print(f"[ERROR] Error writing professor schedules to file: {str(e)}")
+            raise
+
+    async def generate_json_file(self) -> None:
+        """Generate final JSON file with all professor schedules"""
+        try:
+            async with self._write_lock:
+                print(f"[DEBUG] Processing {len(self._all_professor_names)} professors")
+                
+                json_array = []
+                for nombre in self._all_professor_names:
+                    try:
+                        update = self._pending_updates.get(nombre)
+                        if update:
+                            profesor_json = {
+                                "Nombre": update.nombre,
+                                "Asignaturas": update.schedule_data.get("Asignaturas", []),
+                                "Solicitudes": len(update.asignaturas),
+                                "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
+                            }
+                            json_array.append(profesor_json)
+                            print(f"[DEBUG] Processed professor {nombre}: {len(profesor_json['Asignaturas'])} assignments")
+                        else:
+                            print(f"[WARN] No data found for professor {nombre}")
+                    except Exception as e:
+                        print(f"[ERROR] Error processing professor {nombre}: {str(e)}")
+                        continue
+
+                if json_array:
+                    try:
+                        output_file = self._output_path / "Horarios_asignados.json"
+                        async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
+                            await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
+                            await f.flush()
+                            
+                        print(f"[SUCCESS] Generated Horarios_asignados.json with {len(json_array)} professors")
+                        if output_file.exists():
+                            print(f"[DEBUG] File size: {output_file.stat().st_size} bytes")
+                    except Exception as e:
+                        print(f"[ERROR] Error writing output file: {str(e)}")
+                else:
+                    print("[WARN] No professor data to write")
+
+        except Exception as e:
+            print(f"[ERROR] Critical error in generate_json_file: {str(e)}")
+            raise
 
     async def force_flush(self) -> None:
         """Force write pending updates to file"""
         async with self._write_lock:
-            await self._flush_updates()
+            await self._write_updates_to_file()
 
     def get_pending_update_count(self) -> int:
         """Get number of pending updates"""
