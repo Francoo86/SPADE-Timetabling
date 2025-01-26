@@ -150,60 +150,74 @@ class AgenteSala(Agent):
             self.log.error(f"Agent Sala{self.agent.codigo}:Error during cleanup: {str(e)}")
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
-    """Main behavior for handling room allocation requests"""
+    """Enhanced room responder behaviour to work with FSM professors"""
     
     async def run(self):
-        # Wait for incoming messages
-        msg = await self.receive(timeout=0.1)
-        if not msg:
-            await asyncio.sleep(0.1)
-            return
-        
-        performative = msg.get_metadata("performative")
+        """Main behaviour loop with improved message handling"""
+        try:
+            # Wait for a message with short timeout for responsiveness
+            msg = await self.receive(timeout=0.1)
+            if not msg:
+                await asyncio.sleep(0.1)
+                return
 
-        if performative == FIPAPerformatives.CFP:
-            await self.process_request(msg)
-        elif performative == FIPAPerformatives.ACCEPT_PROPOSAL:
-            await self.confirm_assignment(msg)
+            performative = msg.get_metadata("performative")
+            conversation_id = msg.get_metadata("conversation-id")
+
+            if performative == FIPAPerformatives.CFP:
+                await self.process_request(msg)
+            elif performative == FIPAPerformatives.ACCEPT_PROPOSAL:
+                await self.confirm_assignment(msg)
+
+        except Exception as e:
+            self.agent.log.error(f"Error in room responder: {str(e)}")
 
     async def process_request(self, msg: Message):
-        """Process incoming room requests"""
+        """Process incoming room requests with improved error handling"""
         try:
             # Parse request data
-            # In the JADE version, it was a string, but now it's a dictionary
             request_data = json.loads(msg.body)
             subject_name = self.agent.sanitize_subject_name(request_data["nombre"])
             vacancies = request_data["vacantes"]
             
-            # Check availability and prepare response
-            available_blocks = self.get_available_blocks(vacancies)
-            
-            if available_blocks:
-                # Create availability response
-                availability = ClassroomAvailability(
-                    codigo=self.agent.codigo,
-                    campus=self.agent.campus,
-                    capacidad=self.agent.capacidad,
-                    available_blocks=available_blocks
-                )
+            # Check availability with timeout protection
+            async with asyncio.timeout(1.0):
+                available_blocks = self.get_available_blocks(vacancies)
                 
-                # Send proposal
-                reply = msg.make_reply()
-                reply.set_metadata("performative", FIPAPerformatives.PROPOSE)
-                reply.set_metadata("ontology", "classroom-availability")
-                reply.body = jsonpickle.encode(availability)
-                await self.send(reply)
-            else:
-                # Send refuse if no blocks available
-                reply = msg.make_reply()
-                reply.set_metadata("performative", FIPAPerformatives.REFUSE)
-                reply.set_metadata("ontology", "classroom-availability")
-                reply.body = "No blocks available"
-                await self.send(reply)
-                
+                if available_blocks:
+                    # Create availability response
+                    availability = ClassroomAvailability(
+                        codigo=self.agent.codigo,
+                        campus=self.agent.campus,
+                        capacidad=self.agent.capacidad,
+                        available_blocks=available_blocks
+                    )
+                    
+                    # Send proposal with response tracking
+                    reply = msg.make_reply()
+                    reply.set_metadata("performative", FIPAPerformatives.PROPOSE)
+                    reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
+                    reply.set_metadata("ontology", "classroom-availability")
+                    reply.body = jsonpickle.encode(availability)
+                    
+                    await self.send(reply)
+                    self.agent.log.debug(f"Sent proposal to {msg.sender} for {subject_name}")
+                else:
+                    # Send refuse with reason
+                    reply = msg.make_reply()
+                    reply.set_metadata("performative", FIPAPerformatives.REFUSE)
+                    reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
+                    reply.set_metadata("ontology", "classroom-availability")
+                    reply.body = "No blocks available"
+                    
+                    await self.send(reply)
+                    self.agent.log.debug(f"Sent refuse to {msg.sender} - no blocks available")
+                    
+        except asyncio.TimeoutError:
+            self.agent.log.error(f"Timeout processing request from {msg.sender}")
         except Exception as e:
-            self.log.error(f"Agent Sala{self.agent.codigo}: Error processing request: {str(e)}")
-
+            self.agent.log.error(f"Error processing request: {str(e)}")
+    
     def get_available_blocks(self, vacancies: int) -> Dict[str, List[int]]:
         """Get available blocks for each day"""
         available_blocks = {}
@@ -216,32 +230,44 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 available_blocks[day.name] = free_blocks
         return available_blocks
 
+
     async def confirm_assignment(self, msg: Message):
-        """Handle assignment confirmation"""
+        """Handle assignment confirmation with improved verification"""
         try:
             # Parse batch assignment request
             request_data : BatchAssignmentRequest = jsonpickle.decode(msg.body)
             assignments = []
             
-            for assignment in request_data.get_assignments():
-                day = assignment.day
-                block = assignment.block - 1
-                subject_name = assignment.subject_name
-                satisfaction = assignment.satisfaction
-                
-                # Verify block is available
-                if (self.agent.horario_ocupado[day][block] is None):
-                    # Create assignment
+            # Process assignments with validation
+            async with asyncio.timeout(1.0):
+                for assignment in request_data.get_assignments():
+                    if assignment.classroom_code != self.agent.codigo:
+                        self.agent.log.debug(f"Skipping request for different room: {assignment.classroom_code}")
+                        continue
+
+                    day = assignment.day
+                    block = assignment.block - 1
+                    subject_name = assignment.subject_name
+                    satisfaction = assignment.satisfaction
+
+                    # Verify block availability
+                    if block < 0 or block >= len(self.agent.horario_ocupado[day]):
+                        self.agent.log.warning(f"Invalid block requested: {block + 1}")
+                        continue
+
+                    if self.agent.horario_ocupado[day][block] is not None:
+                        self.agent.log.warning(f"Block {block + 1} already assigned")
+                        continue
+
+                    # Create and store assignment
                     new_assignment = AsignacionSala(
                         subject_name,
                         satisfaction,
                         float(assignment.vacancy) / self.agent.capacidad
                     )
                     
-                    # Update schedule
                     self.agent.horario_ocupado[day][block] = new_assignment
                     
-                    # Add to confirmed assignments
                     assignments.append(ConfirmedAssignment(
                         day,
                         block + 1,
@@ -249,40 +275,41 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                         satisfaction
                     ))
 
-            # Send confirmation if any assignments were made
-            if assignments:
-                confirmation = BatchAssignmentConfirmation(assignments)
-                reply = msg.make_reply()
-                reply.set_metadata("performative", FIPAPerformatives.INFORM)
-                reply.set_metadata("ontology", "room-assignment")
-                reply.set_metadata("protocol", "contract-net")
-                reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
-                reply.body = jsonpickle.encode(confirmation)
-                await self.send(reply)
-                
-                # Update JSON record
-                await self.update_schedule_json()
-                
+                # Send confirmation for successful assignments
+                if assignments:
+                    confirmation = BatchAssignmentConfirmation(assignments)
+                    reply = msg.make_reply()
+                    reply.set_metadata("performative", FIPAPerformatives.INFORM)
+                    reply.set_metadata("ontology", "room-assignment")
+                    reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
+                    reply.body = jsonpickle.encode(confirmation)
+                    
+                    await self.send(reply)
+                    
+                    # Update storage asynchronously
+                    asyncio.create_task(self.update_schedule_storage())
+                    
+        except asyncio.TimeoutError:
+            self.agent.log.error(f"Timeout confirming assignment from {msg.sender}")
         except Exception as e:
-            self.log.error(f"Agent Sala{self.agent.codigo}:Error confirming assignment: {str(e)}")
+            self.agent.log.error(f"Error confirming assignment: {str(e)}")
 
-    async def update_schedule_json(self):
-        """Update JSON schedule record"""
+    async def update_schedule_storage(self):
+        """Update storage with error handling"""
         try:
             schedule_data = {
                 "codigo": self.agent.codigo,
                 "campus": self.agent.campus,
                 "horario": {
                     day.name: [
-                        assignment.to_dict() if assignment else None 
+                        assignment.to_dict() if assignment else None
                         for assignment in assignments
                     ]
                     for day, assignments in self.agent.horario_ocupado.items()
                 }
             }
             
-            # Update persistent storage (implement based on your needs)
             await self.agent.update_schedule_storage(schedule_data)
             
         except Exception as e:
-            self.log.error(f"Agent Sala{self.agent.codigo}: Error updating schedule JSON: {str(e)}")
+            self.agent.log.error(f"Error updating schedule storage: {str(e)}")
