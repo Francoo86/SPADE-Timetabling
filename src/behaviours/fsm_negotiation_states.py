@@ -58,43 +58,18 @@ class NegotiationFSM(FSMBehaviour):
         self.add_transition(NegotiationStates.EVALUATING, NegotiationStates.FINISHED)
         self.add_transition(NegotiationStates.EVALUATING, NegotiationStates.COLLECTING)
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.FINISHED)
-
-class SetupState(State):
+        
+class CFPSenderState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
         self.room_filter = RoomQuickRejectFilter()
         super().__init__()
-
-    async def run(self):
-        self.agent.log.info(f"Starting negotiation setup for professor {self.agent.nombre}")
-        if not self.agent.can_use_more_subjects():
-            self.set_next_state(NegotiationStates.FINISHED)
-            return
-
-        current_subject = self.agent.get_current_subject()
-        if current_subject:
-            self.parent.bloques_pendientes = current_subject.get_horas()
-            self.parent.negotiation_start_time = datetime.now()
-            
-            # Clear tracking sets for new round
-            self.parent.responding_rooms.clear()
-            self.parent.expected_rooms.clear()
-            self.parent.response_times.clear()
-            
-            # Send CFPs and track sent count
-            cfp_count = await self.send_cfp_messages()
-            self.parent.cfp_count = cfp_count
-            
-            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()}")
-            self.set_next_state(NegotiationStates.COLLECTING)
-        else:
-            self.set_next_state(NegotiationStates.FINISHED)
-            
+        
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
         """Sanitize subject name removing special characters"""
         return ''.join(c for c in name if c.isalnum())
-            
+        
     async def send_cfp_messages(self):
         """Send CFP messages to classroom agents"""
         try:
@@ -169,6 +144,35 @@ class SetupState(State):
             
         return 0
 
+class SetupState(CFPSenderState):
+    def __init__(self, parent: NegotiationFSM):
+        # self.parent = parent
+        super().__init__(parent=parent)
+
+    async def run(self):
+        self.agent.log.info(f"Starting negotiation setup for professor {self.agent.nombre}")
+        if not self.agent.can_use_more_subjects():
+            self.set_next_state(NegotiationStates.FINISHED)
+            return
+
+        current_subject = self.agent.get_current_subject()
+        if current_subject:
+            self.parent.bloques_pendientes = current_subject.get_horas()
+            self.parent.negotiation_start_time = datetime.now()
+            
+            # Clear tracking sets for new round
+            self.parent.responding_rooms.clear()
+            self.parent.expected_rooms.clear()
+            self.parent.response_times.clear()
+            
+            # Send CFPs and track sent count
+            cfp_count = await self.send_cfp_messages()
+            self.parent.cfp_count = cfp_count
+            
+            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()}")
+            self.set_next_state(NegotiationStates.COLLECTING)
+        else:
+            self.set_next_state(NegotiationStates.FINISHED)
 
 class CollectingState(State):
     def __init__(self, parent: NegotiationFSM):
@@ -249,48 +253,36 @@ class CollectingState(State):
         except Exception as e:
             self.agent.log.error(f"Error processing proposal: {str(e)}")
 
-class EvaluatingState(State):
+class EvaluatingState(CFPSenderState):
     TIMEOUT_PROPUESTA = 1000
     MAX_RETRIES = 3
     
     def __init__(self, evaluator: ConstraintEvaluator, parent: NegotiationFSM):
         self.evaluator = evaluator
-        self.parent = parent
-        super().__init__()
+        # self.parent = parent
+        super().__init__(parent=parent)
     
     async def run(self):
         try:
-            # Log response statistics before evaluation
-            total_rooms = len(self.parent.expected_rooms)
-            responded_rooms = len(self.parent.responding_rooms)
-            propose_count = self.parent.proposals.qsize()
-            refuse_count = responded_rooms - propose_count
-            
-            self.agent.log.info(
-                f"Evaluation starting with: "
-                f"{propose_count} proposals, {refuse_count} refusals, "
-                f"{total_rooms - responded_rooms} no responses"
-            )
-            
-            # Process proposals and continue with evaluation logic...
             proposals = []
             while not self.parent.proposals.empty():
                 proposals.append(await self.parent.proposals.get())
-                   
+
             valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
 
             if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
+                self.parent.retry_count = 0  # Reset retry count on success
                 if self.parent.bloques_pendientes == 0:
                     await self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
+                    await self.send_cfp_messages()
                     self.set_next_state(NegotiationStates.COLLECTING)
             else:
-                self.set_next_state(NegotiationStates.SETUP)
-                
+                await self.handle_proposal_failure()
         except Exception as e:
             self.agent.log.error(f"Error in evaluating state: {str(e)}")
-            self.set_next_state(NegotiationStates.SETUP)
+            await self.handle_proposal_failure()
             
     async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
         """Try to assign batch proposals to classrooms"""
@@ -435,7 +427,7 @@ class EvaluatingState(State):
     async def handle_proposal_failure(self):
         """Handle failure to assign proposals."""
         self.parent.retry_count += 1
-        if self.retry_count >= self.MAX_RETRIES:
+        if self.parent.retry_count >= self.MAX_RETRIES:
             if self.parent.assignation_data.has_sala_asignada():
                 # Try different room if current one isn't working
                 self.agent.log.critical("Max retries reached - clearing assigned room")
@@ -459,7 +451,7 @@ class EvaluatingState(State):
             await asyncio.sleep(backoff_time / 1000)  # Convert to seconds
             
             self.set_next_state(NegotiationStates.COLLECTING)
-            await self.send_proposal_requests()
+            await self.send_cfp_messages()
 
 class FinishedState(State):
     def __init__(self, parent: NegotiationFSM):
