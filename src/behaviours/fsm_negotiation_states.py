@@ -42,6 +42,7 @@ class NegotiationFSM(FSMBehaviour):
         
         self.cfp_count = 0  # Track number of CFPs sent
         self.negotiation_start_time = None
+        self.retry_count = 0
     
         # Add states
         self.add_state(NegotiationStates.SETUP, SetupState(parent=self), initial=True)
@@ -249,6 +250,9 @@ class CollectingState(State):
             self.agent.log.error(f"Error processing proposal: {str(e)}")
 
 class EvaluatingState(State):
+    TIMEOUT_PROPUESTA = 1000
+    MAX_RETRIES = 3
+    
     def __init__(self, evaluator: ConstraintEvaluator, parent: NegotiationFSM):
         self.evaluator = evaluator
         self.parent = parent
@@ -427,6 +431,35 @@ class EvaluatingState(State):
     def is_valid_confirm(self, confirm : Message, og_sender : JID, conv_id : str) -> bool:
         return confirm.get_metadata("performative") == FIPAPerformatives.INFORM and\
         confirm.sender == og_sender and confirm.get_metadata("conversation-id") == conv_id
+        
+    async def handle_proposal_failure(self):
+        """Handle failure to assign proposals."""
+        self.parent.retry_count += 1
+        if self.retry_count >= self.MAX_RETRIES:
+            if self.parent.assignation_data.has_sala_asignada():
+                # Try different room if current one isn't working
+                self.agent.log.critical("Max retries reached - clearing assigned room")
+                self.parent.assignation_data.set_sala_asignada(None)
+            else:
+                # If we've tried different rooms without success, move on
+                self.agent.log.critical("Max retries reached - moving to next subject")
+                await self.agent.move_to_next_subject()
+            
+            self.parent.retry_count = 0
+            self.set_next_state(NegotiationStates.SETUP)
+        else:
+            # Add exponential backoff
+            backoff_time = 2 ** self.parent.retry_count * 1000
+            self.agent.log.debug(
+                f"Retry {self.parent.retry_count}/{self.MAX_RETRIES} - "
+                f"backing off for {backoff_time}ms"
+            )
+            
+            # In SPADE we need to use asyncio.sleep for the backoff
+            await asyncio.sleep(backoff_time / 1000)  # Convert to seconds
+            
+            self.set_next_state(NegotiationStates.COLLECTING)
+            await self.send_proposal_requests()
 
 class FinishedState(State):
     def __init__(self, parent: NegotiationFSM):
