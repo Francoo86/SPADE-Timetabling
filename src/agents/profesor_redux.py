@@ -241,10 +241,10 @@ class AgenteProfesor(Agent):
                     self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
             else:
                 self.log.info(f" [MOVE] Reached end of subjects")
-
+        
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
-        return bloque not in self.horario_ocupado.get(dia, set())
+        return dia not in self.horario_ocupado or bloque not in self.horario_ocupado[dia]
 
     def get_blocks_by_day(self, dia: Day) -> Dict[str, List[int]]:
         """Get all blocks assigned for a specific day."""
