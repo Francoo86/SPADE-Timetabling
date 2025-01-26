@@ -13,9 +13,7 @@ from objects.helper.batch_proposals import BatchProposal, BlockProposal
 from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
 from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
 from objects.asignation_data import AssignationData, Asignatura
-from evaluators.timetabling_evaluator import TimetablingEvaluator
 from evaluators.constraint_evaluator import ConstraintEvaluator
-from objects.knowledge_base import AgentKnowledgeBase
 from objects.helper.quick_rejector import RoomQuickRejectFilter
 from objects.asignation_data import Actividad
 # from agents.profesor_redux import AgenteProfesor

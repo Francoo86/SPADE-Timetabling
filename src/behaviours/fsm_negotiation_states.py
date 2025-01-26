@@ -1,18 +1,20 @@
 from spade.behaviour import FSMBehaviour, State
-
-from spade.behaviour import FSMBehaviour, State
 from spade.message import Message
-from spade.template import Template
 import asyncio
 import jsonpickle
 import datetime
 from typing import List, Set, Dict
 from objects.helper.batch_proposals import BatchProposal
-from objects.helper.batch_requests import AssignmentRequest
+from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
+from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
+from objects.asignation_data import AssignationData
 from collections import defaultdict
 from evaluators.constraint_evaluator import ConstraintEvaluator
 from fipa.acl_message import FIPAPerformatives
 import json
+from datetime import datetime, timedelta
+from aioxmpp import JID
+from objects.helper.quick_rejector import RoomQuickRejectFilter
 
 # States for the FSM
 class NegotiationStates:
@@ -32,10 +34,13 @@ class NegotiationFSM(FSMBehaviour):
         self.timeout = 5  # seconds
         self.bloques_pendientes = 0
         self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent, fsm_behaviour=self)
+        self.assignation_data = AssignationData()
         
         self.responding_rooms: Set[str] = set()  # Track rooms that responded
         self.expected_rooms: Set[str] = set()    # Track rooms we sent CFPs to
         self.response_times: Dict[str, float] = {}  # Track response times per room
+        
+        self.cfp_count = 0  # Track number of CFPs sent
         
         # Add states
         self.add_state(NegotiationStates.SETUP, SetupState(parent=self))
@@ -53,6 +58,7 @@ class NegotiationFSM(FSMBehaviour):
 class SetupState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
+        self.room_filter = RoomQuickRejectFilter()
         super().__init__()
 
     async def run(self):
@@ -62,7 +68,7 @@ class SetupState(State):
 
         current_subject = self.agent.get_current_subject()
         if current_subject:
-            self.parent.pending_blocks = current_subject.get_horas()
+            self.parent.bloques_pendientes = current_subject.get_horas()
             
             # Clear tracking sets for new round
             self.parent.responding_rooms.clear()
@@ -78,19 +84,24 @@ class SetupState(State):
         else:
             self.set_next_state(NegotiationStates.FINISHED)
             
+    @staticmethod
+    def sanitize_subject_name(name: str) -> str:
+        """Sanitize subject name removing special characters"""
+        return ''.join(c for c in name if c.isalnum())
+            
     async def send_cfp_messages(self):
         """Send CFP messages to classroom agents"""
         try:
             current_subject = self.profesor.get_current_subject()
             if not current_subject:
-                self.profesor.log.error(f"No current subject available for professor {self.profesor.nombre}")
-                return
+                self.profesor.log.error(f"No current subject available for professor {self.agent.nombre}")
+                return 0
 
             rooms = await self.profesor._kb.search(service_type="sala")
             
             if not rooms:
                 self.profesor.log.error("No rooms found in knowledge base")
-                return
+                return 0
 
             # Build request info
             solicitud_info = {
@@ -98,10 +109,10 @@ class SetupState(State):
                 "vacantes": current_subject.get_vacantes(),
                 "nivel": current_subject.get_nivel(),
                 "campus": current_subject.get_campus(),
-                "bloques_pendientes": self.bloques_pendientes,
-                "sala_asignada": self.assignation_data.get_sala_asignada(),
-                "ultimo_dia": self.assignation_data.get_ultimo_dia_asignado().name if self.assignation_data.get_ultimo_dia_asignado() else "",
-                "ultimo_bloque": self.assignation_data.get_ultimo_bloque_asignado()
+                "bloques_pendientes": self.parent.bloques_pendientes,
+                "sala_asignada": self.parent.assignation_data.get_sala_asignada(),
+                "ultimo_dia": self.parent.assignation_data.get_ultimo_dia_asignado().name if self.assignation_data.get_ultimo_dia_asignado() else "",
+                "ultimo_bloque": self.parent.assignation_data.get_ultimo_bloque_asignado()
             }
 
             cfp_count = 0
@@ -130,7 +141,7 @@ class SetupState(State):
 
             if not filtered_rooms:
                 self.profesor.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
-                return
+                return 0
 
             # Send CFP only to filtered rooms
             for room in filtered_rooms:
@@ -139,7 +150,7 @@ class SetupState(State):
                 )
                 msg.set_metadata("protocol", "contract-net")
                 msg.set_metadata("performative", FIPAPerformatives.CFP)
-                msg.set_metadata("conversation-id", f"neg-{self.profesor.nombre}-{self.bloques_pendientes}")
+                msg.set_metadata("conversation-id", f"neg-{self.agent.nombre}-{self.parent.bloques_pendientes}")
                 msg.body = json.dumps(solicitud_info)
                 
                 await self.send(msg)
@@ -207,6 +218,29 @@ class CollectingState(State):
         except Exception as e:
             self.agent.log.error(f"Error in collecting state: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
+            
+    async def handle_proposal(self, msg: Message):
+        """
+        Handle received proposal messages.
+        
+        Args:
+            msg: The received SPADE message
+        """
+        try:
+            # Parse the content (assumed to be JSON)
+            availability = jsonpickle.decode(msg.body)
+
+            if availability:
+                # Create batch proposal
+                batch_proposal = BatchProposal.from_availability(availability, msg)
+                
+                # Add to queue
+                await self.parent.proposals.put(batch_proposal)                
+            else:
+                self.agent.log.warning("Received null classroom availability")
+
+        except Exception as e:
+            self.agent.log.error(f"Error processing proposal: {str(e)}")
 
 class EvaluatingState(State):
     def __init__(self, evaluator: ConstraintEvaluator, parent: NegotiationFSM):
@@ -235,8 +269,8 @@ class EvaluatingState(State):
                 
             valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
             
-            if valid_proposals and await self.try_assign_proposals(valid_proposals):
-                if self.parent.pending_blocks == 0:
+            if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
+                if self.parent.bloques_pendientes == 0:
                     await self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
@@ -247,8 +281,221 @@ class EvaluatingState(State):
         except Exception as e:
             self.agent.log.error(f"Error in evaluating state: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
+            
+    async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
+        """Try to assign batch proposals to classrooms"""
+        current_subject = self.profesor.get_current_subject()
+        required_hours = current_subject.get_horas()
+        batch_start_time = datetime.now()
+
+        if self.parent.bloques_pendientes <= 0 or self.parent.bloques_pendientes > required_hours:
+            self.profesor.log.error(
+                f"Invalid pending hours state: {self.parent.bloques_pendientes}/{required_hours} "
+                f"for {current_subject.get_nombre()}"
+            )
+            return False
+
+        daily_assignments = defaultdict(int)
+        total_assigned = 0
+
+        for batch_proposal in batch_proposals:
+            proposal_start_time = datetime.now()
+            requests = []
+
+            # Process each day's blocks in this room
+            for day, block_proposals in batch_proposal.get_day_proposals().items():
+                # Skip if day already has 2 blocks
+                if daily_assignments[day] >= 2:
+                    continue
+
+                # Process blocks for this day
+                for block in block_proposals:
+                    # Stop if we've assigned all needed blocks
+                    if total_assigned >= self.parent.bloques_pendientes:
+                        break
+
+                    # Skip if block not available
+                    if not self.agent.is_block_available(day, block.get_block()):
+                        continue
+
+                    requests.append(AssignmentRequest(
+                        day=day,
+                        block=block.get_block(),
+                        subject_name=current_subject.get_nombre(),
+                        satisfaction=batch_proposal.get_satisfaction_score(),
+                        classroom_code=batch_proposal.get_room_code(),
+                        vacancy=current_subject.get_vacantes()
+                    ))
+
+                    total_assigned += 1
+                    daily_assignments[day] += 1
+
+            # Send batch assignment if we have requests
+            if len(requests) > 0:
+                try:
+                    if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
+                        self.profesor.log.info(
+                            f"Successfully assigned {len(requests)} blocks in room "
+                            f"{batch_proposal.get_room_code()} for {current_subject.get_nombre()}"
+                        )
+
+                        proposal_time = (datetime.now() - proposal_start_time).total_seconds() * 1000
+                        self.profesor.log.info(
+                            f"[TIMING] Room {batch_proposal.get_room_code()} assignment took "
+                            f"{proposal_time} ms - Assigned {len(requests)} blocks for "
+                            f"{current_subject.get_nombre()}"
+                        )
+                except Exception as e:
+                    self.profesor.log.error(f"Error in batch assignment: {str(e)}")
+                    return False
+
+        total_batch_time = (datetime.now() - batch_start_time).total_seconds() * 1000
+        self.profesor.log.info(
+            f"[TIMING] Total batch assignment time for {current_subject.get_nombre()}: "
+            f"{total_batch_time} ms - Total blocks assigned: {total_assigned}"
+        )
+
+        return total_assigned > 0
+    
+    async def send_batch_assignment(
+        self,
+        requests: List[AssignmentRequest],
+        original_msg: Message
+    ) -> bool:
+        """Send batch assignment request and wait for confirmation"""
+        if self.parent.bloques_pendientes - len(requests) < 0:
+            self.profesor.log.warning("Assignment would exceed required hours")
+            return False
+        
+        try:
+            conv_id = original_msg.get_metadata("conversation-id")
+            # Create batch request message
+            msg = Message()
+            msg.to = str(original_msg.sender)
+            msg.set_metadata("performative", FIPAPerformatives.ACCEPT_PROPOSAL)
+            msg.set_metadata("ontology", "room-assignment")
+            msg.set_metadata("conversation-id", conv_id)
+            msg.set_metadata("protocol", "contract-net")
+            
+            msg.body = jsonpickle.encode(BatchAssignmentRequest(requests))
+
+            # Send message and wait for confirmation
+            await self.send(msg)
+            
+            # Wait for confirmation with timeout
+            start_time = datetime.now()
+            timeout = timedelta(seconds=1)
+
+            while datetime.now() - start_time < timeout:
+                confirmation_msg = await self.receive(timeout=0.1)
+                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
+                    confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
+
+                    # Process confirmed assignments
+                    for assignment in confirmation_data.get_confirmed_assignments():
+                        await self.profesor.update_schedule_info(
+                            dia=assignment.get_day(),
+                            sala=assignment.get_classroom_code(),
+                            bloque=assignment.get_block(),
+                            nombre_asignatura=self.profesor.get_current_subject().get_nombre(),
+                            satisfaccion=assignment.get_satisfaction()
+                        )
+
+                        self.parent.bloques_pendientes -= 1
+                        self.parent.assignation_data.assign(
+                            assignment.get_day(),
+                            assignment.get_classroom_code(),
+                            assignment.get_block()
+                        )
+
+                    return True
+
+                await asyncio.sleep(0.05)
+
+        except Exception as e:
+            self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
+            
+        return False
+    
+    def is_valid_confirm(self, confirm : Message, og_sender : JID, conv_id : str) -> bool:
+        return confirm.get_metadata("performative") == FIPAPerformatives.INFORM and\
+        confirm.sender == og_sender and confirm.get_metadata("conversation-id") == conv_id
 
 class FinishedState(State):
     async def run(self):
-        await self.agent.finish_negotiations()
+        await self.finish_negotiations()
         self.kill()
+        
+    async def finish_negotiations(self):
+        """Handle finished state and cleanup"""
+        try:
+            # Record completion time
+            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
+            self.profesor.log.info(
+                f"Professor {self.agent.nombre} completed all negotiations in {total_time} ms"
+            )
+            
+            # Log individual subject times 
+            for subject, time in self.subject_negotiation_times.items():
+                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
+
+            # Notify next professor first
+            await self.notify_next_professor()
+            
+            # Kill this behavior
+            self.kill()
+                
+            # Start cleanup with small delay to allow next prof to start
+            await asyncio.sleep(0.5)
+            await self.profesor.cleanup()
+            
+        except Exception as e:
+            self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
+            
+    async def notify_next_professor(self):
+        try:
+            next_orden = self.agent.orden + 1
+            
+            # Search for next professor
+            professors = await self.agent._kb.search(
+                service_type="profesor",
+                properties={"orden": next_orden}
+            )
+            
+            if professors:
+                next_professor = professors[0]
+                
+                # Create START message
+                msg = Message(to=str(next_professor.jid))
+                msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                msg.set_metadata("conversation-id", "negotiation-start")
+                msg.set_metadata("nextOrden", str(next_orden))
+                
+                msg.body = "START"
+                
+                await self.send(msg)
+                self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
+            else:
+                # No next professor means we're done - trigger system shutdown
+                self.agent.log.info("No next professor found - all professors completed")
+                
+                # Notify supervisor to begin shutdown
+                supervisor_agents = await self.agent._kb.search(service_type="supervisor")
+                if supervisor_agents:
+                    supervisor = supervisor_agents[0]
+                    shutdown_msg = Message(to=str(supervisor.jid))
+                    shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                    shutdown_msg.set_metadata("ontology", "system-control")
+                    shutdown_msg.set_metadata("content", "SHUTDOWN")
+                    
+                    await self.send(shutdown_msg)
+                    self.agent.log.info("Sent shutdown signal to supervisor")
+                else:
+                    self.agent.log.error("Could not find supervisor agent for shutdown")
+                    # Even without supervisor, proceed with cleanup
+                    await self.agent.cleanup()
+                
+        except Exception as e:
+            self.agent.log.error(f"Error in notify_next_professor: {str(e)}")
+            # On error, attempt cleanup to avoid stuck state
+            await self.agent.cleanup()
