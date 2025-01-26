@@ -1,7 +1,5 @@
 from spade.agent import Agent
 from typing import Dict, List, Optional
-from queue import Queue
-from spade.template import Template
 import asyncio
 
 import sys
@@ -9,9 +7,7 @@ sys.path.append('src/')
 
 from objects.asignation_data import Asignatura
 from objects.static.agent_enums import TipoContrato, Day
-from behaviours.negotiation_behaviour import NegotiationStateBehaviour
-from behaviours.message_collector import MessageCollectorBehaviour
-from behaviours.requests_behaviour import EsperarTurnoBehaviour, NotifyNextProfessorBehaviour
+from behaviours.requests_behaviour import EsperarTurnoBehaviour
 from objects.asignation_data import BloqueInfo
 from spade.message import Message
 from .agent_logger import AgentLogger
@@ -22,8 +18,6 @@ from json_stuff.json_profesores import ProfesorScheduleStorage
 from behaviours.fsm_negotiation_states import NegotiationFSM
 
 from datetime import datetime
-
-import logging
 
 class CleanupState:
     """Track cleanup state to avoid deadlocks"""

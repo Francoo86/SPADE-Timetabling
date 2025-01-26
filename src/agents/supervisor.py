@@ -145,6 +145,8 @@ class AgenteSupervisor(Agent):
                 await self.finalizer.set()
                 self.log.info("Finalizer event set")
                 
+            self.set("system_active", False)
+                
         except Exception as e:
             self.log.error(f"Critical error in finish_system: {str(e)}")
             # Ensure finalizer is set even on error
@@ -159,10 +161,6 @@ class AgenteSupervisor(Agent):
             if msg:
                 try:
                     self.agent.log.info("Received shutdown signal - initiating system shutdown")
-                    
-                    # Set system inactive to stop monitoring
-                    self.agent.set("system_active", False)
-                    
                     # Generate final JSON files
                     await self.agent.finish_system()
                 except Exception as e:
