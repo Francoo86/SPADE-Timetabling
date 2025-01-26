@@ -21,9 +21,6 @@ from fipa.common_templates import CommonTemplates
 from fipa.acl_message import FIPAPerformatives
 import jsonpickle
 
-
-import logging
-
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
 
@@ -62,9 +59,9 @@ class AgenteSala(Agent):
         try:
             await self.register_service()
             self.is_registered = True
-            logging.info(f"Room {self.codigo} registered successfully")
+            self.log.info(f"Room {self.codigo} registered successfully")
         except Exception as e:
-            logging.error(f"Error registering room {self.codigo}: {str(e)}")
+            self.log.error(f"Error registering room {self.codigo}: {str(e)}")
 
     def is_meeting_room(self) -> bool:
         """Check if room is a meeting room based on capacity"""
@@ -148,9 +145,9 @@ class AgenteSala(Agent):
             if self.is_registered:
                 await self.agent._kb.deregister_agent(self.jid)
                 self.is_registered = False
-                logging.info(f"Room {self.agent.codigo} deregistered from directory")
+                self.log.info(f"Room {self.agent.codigo} deregistered from directory")
         except Exception as e:
-            logging.error(f"Agent Sala{self.agent.codigo}:Error during cleanup: {str(e)}")
+            self.log.error(f"Agent Sala{self.agent.codigo}:Error during cleanup: {str(e)}")
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
     """Main behavior for handling room allocation requests"""
@@ -205,7 +202,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 await self.send(reply)
                 
         except Exception as e:
-            logging.error(f"Agent Sala{self.agent.codigo}: Error processing request: {str(e)}")
+            self.log.error(f"Agent Sala{self.agent.codigo}: Error processing request: {str(e)}")
 
     def get_available_blocks(self, vacancies: int) -> Dict[str, List[int]]:
         """Get available blocks for each day"""
@@ -267,7 +264,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 await self.update_schedule_json()
                 
         except Exception as e:
-            logging.error(f"Agent Sala{self.agent.codigo}:Error confirming assignment: {str(e)}")
+            self.log.error(f"Agent Sala{self.agent.codigo}:Error confirming assignment: {str(e)}")
 
     async def update_schedule_json(self):
         """Update JSON schedule record"""
@@ -288,4 +285,4 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             await self.agent.update_schedule_storage(schedule_data)
             
         except Exception as e:
-            logging.error(f"Agent Sala{self.agent.codigo}: Error updating schedule JSON: {str(e)}")
+            self.log.error(f"Agent Sala{self.agent.codigo}: Error updating schedule JSON: {str(e)}")
