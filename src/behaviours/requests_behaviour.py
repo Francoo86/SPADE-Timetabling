@@ -7,17 +7,14 @@ import asyncio
 # from agents.profesor_redux import AgenteProfesor
 from spade.agent import Agent
 from objects.knowledge_base import AgentKnowledgeBase
+from fipa.acl_message import FIPAPerformatives
 
 class EsperarTurnoBehaviour(CyclicBehaviour):
     """Behaviour that waits for the agent's turn before starting negotiations."""
     
-    def __init__(self, profesor_agent,
-                 state_behaviour,
-                 message_collector):
+    def __init__(self, profesor_agent):
         super().__init__()
         self.profesor = profesor_agent
-        self.state_behaviour = state_behaviour
-        self.message_collector = message_collector
 
     async def run(self):
         """Main behaviour loop - checks for START messages."""
@@ -25,8 +22,9 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
         
         if msg:
             try:
+                content = msg.body
                 # Check if this is a START message
-                if msg.body == "START":
+                if content == "START":
                     # Get the next order from metadata
                     next_orden_str = msg.get_metadata("nextOrden")
                     if next_orden_str is None:
@@ -43,11 +41,12 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
                         )
                         
                         # Add negotiation behaviors when it's our turn
-                        self.agent.add_behaviour(self.state_behaviour)
-                        self.agent.add_behaviour(self.message_collector)
+                        self.agent.prepare_behaviours()
                         
                         # Remove this waiting behavior
-                        await self.agent.remove_behaviour(self)
+                        # WORKAROUND: For some reason remove_behaviour doesn't work
+                        # kill it anyways because we don't need it anymore
+                        self.kill()
                         
             except (KeyError, ValueError) as e:
                 self.profesor.log.error(f"Error processing START message: {str(e)}")
@@ -72,10 +71,9 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
         """Execute the notification"""
         try:
             # Get the knowledge base
-            kb = await AgentKnowledgeBase.get_instance()
             
             # Search for professor with next order
-            professors = await kb.search(
+            professors = await self.agent._kb.search(
                 service_type="profesor",
                 properties={"orden": self.next_orden}
             )
@@ -86,8 +84,10 @@ class NotifyNextProfessorBehaviour(OneShotBehaviour):
                 msg = Message(
                     to=str(next_professor.jid)
                 )
-                msg.set_metadata("performative", "inform")
+                msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(self.next_orden))
+
                 msg.body = "START"
                 
                 await self.send(msg)

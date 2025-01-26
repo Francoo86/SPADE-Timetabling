@@ -68,6 +68,13 @@ class AsignacionSala:
 
     def get_capacidad(self) -> float:
         return self.capacidad
+    
+    def to_dict(self) -> dict:
+        return {
+            "nombre_asignatura": self.nombre_asignatura,
+            "satisfaccion": self.satisfaccion,
+            "capacidad": self.capacidad
+        }
 
 @dataclass
 class AssignationData:

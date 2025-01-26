@@ -1,4 +1,4 @@
-from spade.behaviour import CyclicBehaviour
+from spade.behaviour import PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
 from datetime import datetime, timedelta
@@ -6,7 +6,7 @@ import asyncio
 from typing import Dict, List, Optional
 from collections import defaultdict
 import json
-from queue import Queue
+from aioxmpp import JID
 
 from objects.static.agent_enums import NegotiationState, Day, TipoContrato
 from objects.helper.batch_proposals import BatchProposal, BlockProposal
@@ -15,9 +15,13 @@ from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequ
 from objects.asignation_data import AssignationData, Asignatura
 from evaluators.timetabling_evaluator import TimetablingEvaluator
 from objects.knowledge_base import AgentKnowledgeBase
+from objects.helper.quick_rejector import RoomQuickRejectFilter
+from objects.asignation_data import Actividad
 # from agents.profesor_redux import AgenteProfesor
+import jsonpickle
 # import dataclass
 from dataclasses import dataclass
+from fipa.acl_message import FIPAPerformatives
 
 @dataclass
 class BatchProposalScore:
@@ -25,14 +29,16 @@ class BatchProposalScore:
     proposal: BatchProposal
     score: int
 
-class NegotiationStateBehaviour(CyclicBehaviour):
+class NegotiationStateBehaviour(PeriodicBehaviour):
     MEETING_ROOM_THRESHOLD = 10
     TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
+    # En JADE teniamos 500 ms
+    JADE_BASE_PERIOD = 0.5
 
-    def __init__(self, profesor, batch_proposals : Queue):
+    def __init__(self, profesor, batch_proposals : asyncio.Queue):
         """Initialize the negotiation state behaviour."""
-        super().__init__()
+        super().__init__(period=self.JADE_BASE_PERIOD)
         self.profesor = profesor
         self.propuestas = batch_proposals
         self.current_state = NegotiationState.SETUP
@@ -43,6 +49,9 @@ class NegotiationStateBehaviour(CyclicBehaviour):
         self.proposal_received = False
         self.bloques_pendientes = 0
         self.subject_negotiation_times = {}
+        
+        self.cleanup_lock = asyncio.Lock()
+        self.room_filter = RoomQuickRejectFilter()
 
     async def run(self):
         """Main behaviour loop"""
@@ -60,18 +69,19 @@ class NegotiationStateBehaviour(CyclicBehaviour):
 
         except Exception as e:
             self.profesor.log.error(f"Error in NegotiationState: {str(e)}")
-
+    
+    async def on_end(self):
+        """Safe behavior cleanup"""
+        try:
+            self.profesor.mark_negotiation_done()
+        except Exception as e:
+            self.profesor.log.error(f"Error in negotiation cleanup: {str(e)}")
+    
     async def handle_setup_state(self):
         """Handle the SETUP state"""
         if not self.profesor.can_use_more_subjects():
             self.current_state = NegotiationState.FINISHED
-            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
-            self.profesor.log.info(f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms")
-            
-            for subject, time in self.subject_negotiation_times.items():
-                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
-            
-            await self.profesor.finalizar_negociaciones()
+            await self.finish_negotiations()
             return
 
         current_subject = self.profesor.get_current_subject()
@@ -111,7 +121,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
         if self.retry_count >= self.MAX_RETRIES:
             if self.bloques_pendientes == self.profesor.get_current_subject().get_horas():
                 # If no blocks assigned yet for this subject, move to next subject
-                self.profesor.move_to_next_subject()
+                await self.profesor.move_to_next_subject()
             else:
                 # If some blocks assigned, try different room
                 self.assignation_data.set_sala_asignada(None)
@@ -132,7 +142,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 self.assignation_data.set_sala_asignada(None)
             else:
                 # If we've tried different rooms without success, move on
-                self.profesor.move_to_next_subject()
+                await self.profesor.move_to_next_subject()
             self.retry_count = 0
             self.current_state = NegotiationState.SETUP
         else:
@@ -154,7 +164,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
         if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
             self.retry_count = 0
             if self.bloques_pendientes == 0:
-                self.profesor.move_to_next_subject()
+                await self.profesor.move_to_next_subject()
                 self.current_state = NegotiationState.SETUP
             else:
                 await self.send_proposal_requests()
@@ -484,7 +494,8 @@ class NegotiationStateBehaviour(CyclicBehaviour):
 
             proposed_blocks = [block.get_block() for block in blocks]
 
-            if asignatura.get_actividad() not in ['LABORATORIO', 'TALLER']:
+            act  = asignatura.get_actividad()
+            if act != Actividad.TALLER and act != Actividad.LABORATORIO:
                 sorted_blocks = sorted(proposed_blocks + (existing_blocks or []))
                 continuous_count = 1
                 for i in range(1, len(sorted_blocks)):
@@ -544,9 +555,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 self.profesor.log.error(f"No current subject available for professor {self.profesor.nombre}")
                 return
 
-            # Get room information from knowledge base
-            kb = await AgentKnowledgeBase.get_instance()
-            rooms = await kb.search(service_type="sala")
+            rooms = await self.profesor._kb.search(service_type="sala")
             
             if not rooms:
                 self.profesor.log.error("No rooms found in knowledge base")
@@ -564,18 +573,47 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                 "ultimo_bloque": self.assignation_data.get_ultimo_bloque_asignado()
             }
 
-            # Send CFP to each room
+            # Filter rooms before sending CFPs
+            filtered_rooms = []
             for room in rooms:
-                msg = Message(
-                    to=str(room.jid)  # Set the recipient JID
+                # Extract room properties from capabilities
+                room_caps = next((cap for cap in room.capabilities if cap.service_type == "sala"), None)
+                if not room_caps:
+                    continue
+                
+                room_props = room_caps.properties
+                
+                should_reject = await self.room_filter.can_quick_reject(
+                    subject_name=current_subject.get_nombre(),
+                    subject_code=current_subject.get_codigo_asignatura(),
+                    subject_campus=current_subject.get_campus(),
+                    subject_vacancies=current_subject.get_vacantes(),
+                    room_code=room_props["codigo"],
+                    room_campus=room_props["campus"],
+                    room_capacity=room_props["capacidad"]
                 )
-                msg.set_metadata("protocol", "fipa-contract-net")
-                msg.set_metadata("performative", "cfp")
+                
+                if not should_reject:
+                    filtered_rooms.append(room)
+
+            if not filtered_rooms:
+                self.profesor.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
+                return
+
+            # Send CFP only to filtered rooms
+            for room in filtered_rooms:
+                msg = Message(
+                    to=str(room.jid)
+                )
+                msg.set_metadata("protocol", "contract-net")
+                msg.set_metadata("performative", FIPAPerformatives.CFP)
                 msg.set_metadata("conversation-id", f"neg-{self.profesor.nombre}-{self.bloques_pendientes}")
                 msg.body = json.dumps(solicitud_info)
                 
                 await self.send(msg)  # Using behaviour's send method
-                self.profesor.log.debug(f"Sent CFP to room {room.jid}")
+                self.profesor.log.debug(f"Sent CFP to filtered room {room.jid}")
+
+            self.profesor.log.info(f"Sent CFPs to {len(filtered_rooms)} rooms out of {len(rooms)} total rooms")
 
         except Exception as e:
             self.profesor.log.error(f"Error sending proposal requests: {str(e)}")
@@ -629,7 +667,7 @@ class NegotiationStateBehaviour(CyclicBehaviour):
                     daily_assignments[day] += 1
 
             # Send batch assignment if we have requests
-            if requests:
+            if len(requests) > 0:
                 try:
                     if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
                         self.profesor.log.info(
@@ -664,13 +702,18 @@ class NegotiationStateBehaviour(CyclicBehaviour):
         if self.bloques_pendientes - len(requests) < 0:
             self.profesor.log.warning("Assignment would exceed required hours")
             return False
-
+        
         try:
+            conv_id = original_msg.get_metadata("conversation-id")
             # Create batch request message
             msg = Message()
             msg.to = str(original_msg.sender)
-            msg.set_metadata("performative", "accept-proposal")
-            msg.body = json.dumps(BatchAssignmentRequest(requests).to_dict())
+            msg.set_metadata("performative", FIPAPerformatives.ACCEPT_PROPOSAL)
+            msg.set_metadata("ontology", "room-assignment")
+            msg.set_metadata("conversation-id", conv_id)
+            msg.set_metadata("protocol", "contract-net")
+            
+            msg.body = jsonpickle.encode(BatchAssignmentRequest(requests))
 
             # Send message and wait for confirmation
             await self.send(msg)
@@ -680,19 +723,18 @@ class NegotiationStateBehaviour(CyclicBehaviour):
             timeout = timedelta(seconds=1)
 
             while datetime.now() - start_time < timeout:
-                confirmation_msg = await self.profesor.receive(timeout=0.1)
-                if confirmation_msg and confirmation_msg.get_metadata("performative") == "inform":
-                    confirmation_data = json.loads(confirmation_msg.body)
-                    confirmation = BatchAssignmentConfirmation.from_dict(confirmation_data)
+                confirmation_msg = await self.receive(timeout=0.1)
+                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
+                    confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
 
                     # Process confirmed assignments
-                    for assignment in confirmation.get_confirmed_assignments():
+                    for assignment in confirmation_data.get_confirmed_assignments():
                         await self.profesor.update_schedule_info(
-                            day=assignment.get_day(),
-                            classroom_code=assignment.get_classroom_code(),
-                            block=assignment.get_block(),
-                            subject_name=self.profesor.get_current_subject().get_nombre(),
-                            satisfaction=assignment.get_satisfaction()
+                            dia=assignment.get_day(),
+                            sala=assignment.get_classroom_code(),
+                            bloque=assignment.get_block(),
+                            nombre_asignatura=self.profesor.get_current_subject().get_nombre(),
+                            satisfaccion=assignment.get_satisfaction()
                         )
 
                         self.bloques_pendientes -= 1
@@ -706,11 +748,14 @@ class NegotiationStateBehaviour(CyclicBehaviour):
 
                 await asyncio.sleep(0.05)
 
-            return False
-
         except Exception as e:
             self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
-            return False
+            
+        return False
+    
+    def is_valid_confirm(self, confirm : Message, og_sender : JID, conv_id : str) -> bool:
+        return confirm.get_metadata("performative") == FIPAPerformatives.INFORM and\
+        confirm.sender == og_sender and confirm.get_metadata("conversation-id") == conv_id
 
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
@@ -781,3 +826,78 @@ class NegotiationStateBehaviour(CyclicBehaviour):
     def get_campus_sala(codigo_sala: str) -> str:
         """Get campus name from classroom code"""
         return "Kaufmann" if codigo_sala.startswith("KAU") else "Playa Brava"
+
+    async def finish_negotiations(self):
+        """Handle finished state and cleanup"""
+        try:
+            # Record completion time
+            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
+            self.profesor.log.info(
+                f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
+            )
+            
+            # Log individual subject times 
+            for subject, time in self.subject_negotiation_times.items():
+                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
+
+            # Notify next professor first
+            await self.notify_next_professor()
+            
+            # Kill this behavior
+            self.kill()
+                
+            # Start cleanup with small delay to allow next prof to start
+            await asyncio.sleep(0.5)
+            await self.profesor.cleanup()
+            
+        except Exception as e:
+            self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
+            
+    async def notify_next_professor(self):
+        try:
+            next_orden = self.profesor.orden + 1
+            
+            # Search for next professor
+            professors = await self.agent._kb.search(
+                service_type="profesor",
+                properties={"orden": next_orden}
+            )
+            
+            if professors:
+                next_professor = professors[0]
+                
+                # Create START message
+                msg = Message(to=str(next_professor.jid))
+                msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                msg.set_metadata("conversation-id", "negotiation-start")
+                msg.set_metadata("nextOrden", str(next_orden))
+                
+                msg.body = "START"
+                
+                await self.send(msg)
+                self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
+                
+            else:
+                # No next professor means we're done - trigger system shutdown
+                self.agent.log.info("No next professor found - all professors completed")
+                
+                # Notify supervisor to begin shutdown
+                supervisor_agents = await self.agent._kb.search(service_type="supervisor")
+                if supervisor_agents:
+                    supervisor = supervisor_agents[0]
+                    shutdown_msg = Message(to=str(supervisor.jid))
+                    shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                    shutdown_msg.set_metadata("ontology", "system-control")
+                    shutdown_msg.set_metadata("content", "SHUTDOWN")
+                    
+                    await self.send(shutdown_msg)
+                    self.agent.log.info("Sent shutdown signal to supervisor")
+                else:
+                    self.agent.log.error("Could not find supervisor agent for shutdown")
+                    # Even without supervisor, proceed with cleanup
+                    await self.agent.cleanup()
+                
+        except Exception as e:
+            self.agent.log.error(f"Error in notify_next_professor: {str(e)}")
+            # On error, attempt cleanup to avoid stuck state
+            await self.agent.cleanup()

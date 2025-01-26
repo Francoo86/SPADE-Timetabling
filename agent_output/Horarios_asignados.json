@@ -1,0 +1,129 @@
+[
+  {
+    "Nombre": "VILCA ASTORGA BELF",
+    "Asignaturas": [
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 1,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 2,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 3,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 4,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 5,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 6,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 7,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 8,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 9,
+        "Dia": "Lunes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 1,
+        "Dia": "Martes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 2,
+        "Dia": "Martes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "SALUD OCUPACIONAL II",
+        "Sala": "LFLO",
+        "Bloque": 3,
+        "Dia": "Martes",
+        "Satisfaccion": 5,
+        "CodigoAsignatura": "(IEP3C-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      }
+    ],
+    "Solicitudes": 3,
+    "AsignaturasCompletadas": 12
+  }
+]

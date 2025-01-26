@@ -108,10 +108,4 @@ class BatchProposal:
     
     @classmethod
     def from_availability(cls, availability: ClassroomAvailability, message: Message):
-        return cls(
-            room_code=availability.codigo,
-            campus=availability.campus,
-            capacity=availability.capacidad,
-            day_proposals=availability.available_blocks,
-            original_message=message
-        )
+        return cls(availability, message)

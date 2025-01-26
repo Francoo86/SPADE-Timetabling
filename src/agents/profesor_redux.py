@@ -16,12 +16,21 @@ from objects.asignation_data import BloqueInfo
 from spade.message import Message
 from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
-from behaviours.monitoring import StatusResponseBehaviour
+from behaviours.monitoring import InitialWaitBehaviour
+from fipa.common_templates import CommonTemplates
+from json_stuff.json_profesores import ProfesorScheduleStorage
 
 from datetime import datetime
 
 import logging
 
+class CleanupState:
+    """Track cleanup state to avoid deadlocks"""
+    is_cleaning: bool = False
+    negotiation_done: bool = False
+    message_collector_done: bool = False
+
+# TODO: Usar la clase TimetableAgent en lugar de Agent
 class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
     SERVICE_NAME = AGENT_NAME.lower()
@@ -37,8 +46,32 @@ class AgenteProfesor(Agent):
         self.bloques_asignados_por_dia = {}  # dia -> {asignatura -> List[bloques]}
         self.instance_counter = 0
         self.current_instance_index = 0
-        self.log =  AgentLogger(f"Professor_{self.nombre}")
+        self.log =  AgentLogger(f"Profesor{self.orden}")
         self._initialize_data_structures()
+        self._kb = None
+        self.batch_proposals = asyncio.Queue()
+        self.is_cleaning_up = False
+        
+        # Lock para replicar el synchronized de Java
+        self.prof_lock = asyncio.Lock()
+        self.cleanup_lock = asyncio.Lock()
+        self.cleanup_state = CleanupState()
+        
+        # inicializar una fuente de verdad de los behaviors
+        self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
+        self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
+        
+    def set_knowledge_base(self, kb: AgentKnowledgeBase):
+        self._kb = kb
+        
+    def mark_collector_done(self):
+        self.cleanup_state.message_collector_done = True
+        
+    def mark_negotiation_done(self):
+        self.cleanup_state.negotiation_done = True
+        
+    def mark_as_done(self):
+        self.cleanup_state.is_cleaning = True
 
     def _initialize_data_structures(self):
         """Initialize all data structures needed for the agent."""
@@ -53,10 +86,31 @@ class AgenteProfesor(Agent):
         
         # Initialize daily block assignments
         self.bloques_asignados_por_dia = {day: {} for day in Day}
+    
+    async def get_professor_status(self, request):
+        current = self.get_current_subject()
+        return {
+            "name": self.nombre,
+            "order": self.orden,
+            "current_subject": current.get_nombre() if current else None,
+            "total_subjects": len(self.asignaturas),
+            "completed_subjects": self.asignatura_actual,
+            "negotiation_state": self.current_state.name if hasattr(self, "current_state") else None,
+            "pending_blocks": self.bloques_pendientes if hasattr(self, "bloques_pendientes") else 0,
+            "schedule": self.horario_json
+        }
+        
+    def prepare_behaviours(self):
+        self.add_behaviour(self.negotiation_state_behaviour)
+        
+        classroom_template = CommonTemplates.get_classroom_availability_template()
+        self.add_behaviour(self.message_collector_behaviour, classroom_template)
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
         try:
+            # self.web.start(hostname="127.0.0.1", port=10000 + self.orden)
+            # self.web.add_get("/status", self.get_professor_status, template=None)
             # Initialize agent capabilities
             professor_capability = AgentCapability(
                 service_type="profesor",
@@ -68,8 +122,7 @@ class AgenteProfesor(Agent):
             )
             
             # Register with knowledge base
-            kb = await AgentKnowledgeBase.get_instance()
-            success = await kb.register_agent(
+            success = await self._kb.register_agent(
                 self.jid,
                 [professor_capability]
             )
@@ -80,38 +133,24 @@ class AgenteProfesor(Agent):
                 
             self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
             
-            # Create behaviours
-            batch_proposals = Queue()
-            state_behaviour = NegotiationStateBehaviour(self, batch_proposals)
-            message_collector = MessageCollectorBehaviour(self, batch_proposals, state_behaviour)
-            
-            # Add status response behavior
-            template = Template()
-            template.set_metadata("performative", "query-ref")
-            template.set_metadata("ontology", "agent-status")
-            self.add_behaviour(StatusResponseBehaviour(), template)
-            
             # Discover rooms
             await self.discover_rooms()
-            
-            message_template = Template()
-            message_template.set_metadata("performative", "propose")
-            message_template.set_metadata("ontology", "classroom-availability")
             
             # Add appropriate behaviour based on order
             if self.orden == 0:
                 self.log.info("Starting as first professor")
-                self.add_behaviour(state_behaviour)
-                self.add_behaviour(message_collector, message_template)
+                template = CommonTemplates.get_notify_next_professor_template(is_base=True)
+                self.add_behaviour(InitialWaitBehaviour(
+                    self.negotiation_state_behaviour,
+                    self.message_collector_behaviour
+                ), template)
             else:
                 self.log.info(f"Waiting for turn (order: {self.orden})")
                 wait_behaviour = EsperarTurnoBehaviour(
-                    self, 
-                    state_behaviour,
-                    message_collector
+                    self,
                 )
-                template = Template()
-                template.set_metadata("performative", "inform")
+                
+                template = CommonTemplates.get_notify_next_professor_template()
                 self.add_behaviour(wait_behaviour, template)
                 
         except Exception as e:
@@ -120,15 +159,14 @@ class AgenteProfesor(Agent):
     async def discover_rooms(self):
         """Discover available rooms through knowledge base"""
         try:
-            kb = await AgentKnowledgeBase.get_instance()
             
             # First ensure the knowledge base is properly initialized
-            if not kb._capabilities:
+            if not self._kb._capabilities:
                 self.log.warning("Knowledge base has no capabilities registered")
                 return
                 
             # Search for room agents
-            rooms = await kb.search(service_type="sala")
+            rooms = await self._kb.search(service_type="sala")
             
             if not rooms:
                 self.log.warning("No rooms found in knowledge base")
@@ -150,57 +188,60 @@ class AgenteProfesor(Agent):
             
         except Exception as e:
             self.log.error(f"Error discovering rooms: {str(e)}")
-            self.log.error(f"Knowledge base state: {kb._capabilities}")  # Debug log
+            self.log.error(f"Knowledge base state: {self._kb._capabilities}")  # Debug log
 
     def can_use_more_subjects(self) -> bool:
         """Check if there are more subjects to process."""
+        # async with self.prof_lock:
         try:
             if self.asignatura_actual >= len(self.asignaturas):
                 return False
                 
             current = self.asignaturas[self.asignatura_actual]
             if current is None:
-                logging.warning(f"Agente Profesor{self.orden}: Warning: Null subject at index {self.asignatura_actual}")
+                self.log.warning(f"Null subject at index {self.asignatura_actual}")
                 return False
                 
             return True
         except IndexError:
-            logging.error(f"Agente Profesor{self.orden}: Index out of bounds checking for more subjects: "
-                          f"{self.asignatura_actual}/{len(self.asignaturas)}")
+            self.log.error(f"Index out of bounds checking for more subjects: "
+                        f"{self.asignatura_actual}/{len(self.asignaturas)}")
             return False
 
     def get_current_subject(self) -> Optional[Asignatura]:
         """Get the current subject being processed."""
+        # async with self.prof_lock:
         if not self.can_use_more_subjects():
             return None
         return self.asignaturas[self.asignatura_actual]
 
-    def move_to_next_subject(self):
+    async def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving from subject index {self.asignatura_actual} "
-                     f"(total: {len(self.asignaturas)})")
-        
-        if self.asignatura_actual >= len(self.asignaturas):
-            logging.info(f"Agente Profesor{self.orden}: [MOVE] Already at last subject")
-            return
+        async with self.prof_lock:
+            self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
+                        f"(total: {len(self.asignaturas)})")
             
-        current = self.get_current_subject()
-        current_name = current.get_nombre()
-        current_code = current.get_codigo_asignatura()
-        self.asignatura_actual += 1
-        
-        if self.asignatura_actual < len(self.asignaturas):
-            next_subject = self.asignaturas[self.asignatura_actual]
-            if (next_subject.get_nombre() == current_name and 
-                next_subject.get_codigo_asignatura() == current_code):
-                self.current_instance_index += 1
-                logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to next instance ({self.current_instance_index}) "
-                            f"of {current_name}")
+            if self.asignatura_actual >= len(self.asignaturas):
+                self.log.info(f" [MOVE] Already at last subject")
+                return
+                
+            current = self.get_current_subject()
+            current_name = current.get_nombre()
+            current_code = current.get_codigo_asignatura()
+            self.asignatura_actual += 1
+            
+            if self.asignatura_actual < len(self.asignaturas):
+                next_subject = self.asignaturas[self.asignatura_actual]
+                if (next_subject.get_nombre() == current_name and 
+                    next_subject.get_codigo_asignatura() == current_code):
+                    self.current_instance_index += 1
+                    self.log.info(f" [MOVE] Moving to next instance ({self.current_instance_index}) "
+                                f"of {current_name}")
+                else:
+                    self.current_instance_index = 0
+                    self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
             else:
-                self.current_instance_index = 0
-                logging.info(f"Agente Profesor{self.orden}: [MOVE] Moving to new subject {next_subject.get_nombre()}")
-        else:
-            logging.info(f"Agente Profesor{self.orden}: [MOVE] Reached end of subjects")
+                self.log.info(f" [MOVE] Reached end of subjects")
 
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
@@ -243,25 +284,63 @@ class AgenteProfesor(Agent):
         current = self.get_current_subject()
         return f"{current.get_nombre()}-{current.get_codigo_asignatura()}-{self.current_instance_index}"
 
-    def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, 
-                           satisfaccion: int):
+    async def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, satisfaccion: int):
         """Update the schedule information with a new assignment."""
-        current_instance_key = self.get_current_instance_key()
-        
-        # Update occupied schedule
-        self.horario_ocupado.setdefault(dia, set()).add(bloque)
-        
-        # Update blocks by day with instance information
-        self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(current_instance_key, []).append(bloque)
-        
-        # Update JSON schedule
-        self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
+        try:
+            if not hasattr(self, 'storage') or not self.storage:
+                self.log.error("Storage not properly initialized")
+                return
+                
+            current_instance_key = self.get_current_instance_key()
+            
+            # Update local structures first
+            self.horario_ocupado.setdefault(dia, set()).add(bloque)
+            self.bloques_asignados_por_dia.setdefault(dia, {}).setdefault(
+                current_instance_key, []).append(bloque)
+            
+            # Update JSON structure
+            await self._actualizar_horario_json(dia, sala, bloque, satisfaccion)
+            
+            # Create a deep copy of data for storage
+            schedule_data = {
+                "Asignaturas": self.horario_json["Asignaturas"].copy(),
+                "Nombre": self.nombre,
+                "TotalAsignaturas": len(self.asignaturas),
+                "AsignaturasCompletadas": self.asignatura_actual
+            }
+            
+            # Update storage with retries
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await asyncio.shield(
+                        self.storage.update_schedule(
+                            self.nombre,
+                            schedule_data,
+                            self.asignaturas
+                        )
+                    )
+                    break
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        self.log.error(f"Failed to update storage after {max_retries} attempts: {str(e)}")
+                    else:
+                        await asyncio.sleep(0.1 * (attempt + 1))
+                        
+        except Exception as e:
+            self.log.error(f"Error updating schedule: {str(e)}")
+            # Log the current state for debugging
+            self.log.error(f"Current state - Blocks: {len(self.horario_json['Asignaturas'])}, "
+                        f"Subject: {self.asignatura_actual}/{len(self.asignaturas)}")
 
     def get_tipo_contrato(self) -> TipoContrato:
         """Get the contract type based on total teaching hours."""
         return self.inferir_tipo_contrato(self.asignaturas)
+    
+    def set_storage(self, storage : ProfesorScheduleStorage):
+        self.storage = storage
 
-    def _actualizar_horario_json(self, dia: Day, sala: str, bloque: int, satisfaccion: int):
+    async def _actualizar_horario_json(self, dia: Day, sala: str, bloque: int, satisfaccion: int):
         """Update the JSON schedule with new assignment."""
         current_subject = self.get_current_subject()
         
@@ -287,33 +366,49 @@ class AgenteProfesor(Agent):
             return TipoContrato.MEDIA_JORNADA
         return TipoContrato.JORNADA_PARCIAL
 
-    async def finalizar_negociaciones(self):
-        try:
-            if hasattr(self, '_cleaning_up') and self._cleaning_up:
-                return
-            self._cleaning_up = True
-            
-            # Save final schedule
-            await self.export_schedule_json()
-            
-            # Notify next professor
-            await self.notify_next_professor()
-            
-            # Cleanup
-            await self.cleanup()
-        except Exception as e:
-            logging.error(f"Agente Profesor{self.orden}: Error finalizing negotiations: {str(e)}")
-
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
         return ''.join(c for c in name if c.isalnum())
 
     async def cleanup(self):
+        """Coordinated cleanup with timeout protection"""
         try:
-            # Cleanup resources and deregister
-            await self.stop()
+            async with self.cleanup_lock:
+                if self.cleanup_state.is_cleaning:
+                    return
+                    
+                self.cleanup_state.is_cleaning = True
+                
+                # Kill behaviors immediately rather than waiting
+                behaviours = list(self.behaviours)
+                for behaviour in behaviours:
+                    try:
+                        if behaviour:
+                            behaviour.kill()
+                    except Exception as e:
+                        self.log.error(f"Error killing behavior: {str(e)}")
+                    
+                try:
+                    if self._kb:
+                        await self._kb.deregister_agent(self.jid)
+                        
+                    # Force final storage update
+                    if hasattr(self, 'storage') and self.storage:
+                        await self.storage.force_flush()
+                        
+                    await asyncio.sleep(0.5)  # Brief delay before stop
+                    await self.stop()
+                    
+                except Exception as e:
+                    self.log.error(f"Error during agent stop: {str(e)}")
+                    # Force stop on error
+                    await self.stop()
+                    
+        except Exception as e:
+            self.log.error(f"Error in cleanup: {str(e)}")
         finally:
-            self._cleaning_up = False
+            async with self.cleanup_lock:
+                self.cleanup_state.is_cleaning = False
 
     async def export_schedule_json(self) -> Dict:
         return {
@@ -322,18 +417,3 @@ class AgenteProfesor(Agent):
             "completadas": len(self.horario_json["Asignaturas"]),
             "total": len(self.asignaturas)
         }
-        
-    async def notify_next_professor(self):
-        """Notify the next professor to start their negotiations"""
-        try:
-            next_orden = self.orden + 1
-            
-            # Create and start the notification behaviour
-            notify_behaviour = NotifyNextProfessorBehaviour(self, next_orden)
-            self.add_behaviour(notify_behaviour)
-            
-            # Wait for the behaviour to complete
-            await notify_behaviour.join()
-            
-        except Exception as e:
-            self.log.error(f"Error setting up notification behaviour: {str(e)}")

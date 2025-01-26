@@ -7,6 +7,11 @@ import json
 from datetime import datetime, timedelta
 import asyncio
 import aioxmpp
+from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from .agent_logger import AgentLogger
+from pathlib import Path
+import os
+from fipa.acl_message import FIPAPerformatives
 
 class SupervisorState:
     def __init__(self, professor_jids: List[str]):
@@ -32,258 +37,133 @@ class AgenteSupervisor(Agent):
         super().__init__(jid, password)
         self.professor_jids = professor_jids
         self.state = None
+        self._kb : AgentKnowledgeBase = None
+        self.log = AgentLogger("Supervisor")
+        self.monitor = None
+        self.room_storage = None
+        self.prof_storage = None
+        
+        self.finalizer : asyncio.Event = None
+        
+    def add_finalizer_event(self, finalizer : asyncio.Event):
+        self.finalizer = finalizer
+        
+    def set_knowledge_base(self, kb : AgentKnowledgeBase):
+        self._kb = kb
+        
+    def set_storages(self, room_storage, professor_storage):
+        self.room_storage = room_storage
+        self.prof_storage = professor_storage
 
     async def setup(self):
         """Initialize the supervisor agent"""
         self.state = SupervisorState(self.professor_jids)
-        print(f"[Supervisor] Monitoring {len(self.professor_jids)} professors")
         
         # Store initial state in knowledge base
         self.set("system_active", True)
         
-        # Add monitoring behavior
-        self.add_behaviour(self.MonitorBehaviour(period=self.CHECK_INTERVAL))
+        capability = AgentCapability(
+            service_type="supervisor",
+            properties={"professor_jids": self.professor_jids},
+            last_updated=datetime.now()
+        )
         
-        # Add message handling behavior
-        template = Template()
-        template.set_metadata("performative", "inform")
-        self.add_behaviour(self.MessageHandlerBehaviour(), template)
-
-        print("[Supervisor] Monitoring behavior started")
+        await self._kb.register_agent(self.jid, [capability])
         
-        # Add message handling behavior for room schedules
-        room_template = Template()
-        room_template.set_metadata("performative", "query-ref")
-        room_template.set_metadata("ontology", "room-schedule")
-        self.add_behaviour(self.RoomScheduleCollectorBehaviour(), room_template)
-
-    class RoomScheduleCollectorBehaviour(CyclicBehaviour):
-        async def run(self):
-            msg = await self.receive(timeout=0.5)
-            if not msg:
-                return
-
-            try:
-                if msg.get_metadata("ontology") == "room-schedule-data":
-                    room_code = msg.get_metadata("room-code")
-                    schedule_data = json.loads(msg.body)
-                    self.agent.set(f"room_schedule_{room_code}", schedule_data)
-            except Exception as e:
-                print(f"[Supervisor] Error handling room schedule: {str(e)}")
-
-    class MonitorBehaviour(PeriodicBehaviour):
-        def __init__(self, period: float, start_at: datetime | None = None):
-            super().__init__(period, start_at)
-            self.current_iteration = 0
+        # Add shutdown behavior
+        shutdown_template = Template()
+        shutdown_template.set_metadata("performative", FIPAPerformatives.INFORM)
+        shutdown_template.set_metadata("ontology", "system-control")
+        shutdown_template.set_metadata("content", "SHUTDOWN")
         
-        async def on_start(self):
-            """Initialize the behaviour"""
-            print("[Supervisor] Starting monitoring cycle")
-            self.agent.state.state_count = {state: 0 for state in self.agent.state.state_count}
-        
-        async def run(self):
-            self.current_iteration += 1
-            system_active = self.agent.get("system_active")
-            if not system_active:
-                self.kill()
-                return
+        self.add_behaviour(self.ShutdownBehaviour(), shutdown_template)
 
-            try:
-                all_terminated = True
-                self.agent.state.state_count = {state: 0 for state in self.agent.state.state_count}
-
-                # Query all professors in parallel
-                responses = await self.query_all_professors()
-
-                # Process responses
-                for jid, response in responses.items():
-                    current_state = "UNKNOWN"
-                    if response and response.body:
-                        current_state = response.body
-
-                    self.agent.state.state_count[current_state] += 1
-                    previous_state = self.agent.state.last_known_states.get(jid)
-
-                    if current_state == previous_state:
-                        self.agent.state.inactivity_counters[jid] = \
-                            self.agent.state.inactivity_counters.get(jid, 0) + 1
-                    else:
-                        self.agent.state.inactivity_counters[jid] = 0
-                        self.agent.state.last_known_states[jid] = current_state
-
-                    if current_state != "TERMINATED":
-                        all_terminated = False
-                        inactivity = self.agent.state.inactivity_counters.get(jid, 0)
-                        if inactivity >= self.agent.state.MAX_INACTIVITY:
-                            print(f"[WARNING] Professor {jid} appears stuck in {current_state} state. "
-                                f"Inactivity count: {inactivity}")
-
-                if self.current_iteration % 4 == 0:
-                    await self.print_status_report()
-
-                if all_terminated or self.agent.state.state_count["TERMINATED"] == len(self.agent.state.professor_jids):
-                    print("[Supervisor] All professors have completed their work.")
-                    await self.finish_system()
-
-            except Exception as e:
-                print(f"[Supervisor] Error in monitoring: {str(e)}")
-
-        async def finish_system(self):
-            """Clean up and shut down the system"""
-            try:
-                self.agent.set("system_active", False)
-                print("[Supervisor] Generating final JSON files...")
-                
-                # Collect professor schedules
-                professor_schedules = await self.collect_all_schedules()
-                with open("professor_schedules.json", "w", encoding="utf-8") as f:
-                    json.dump(professor_schedules, f, indent=2, ensure_ascii=False)
-
-                # Collect and save room schedules
-                room_schedules = await self.collect_room_schedules()
-                print("[Supervisor] Room schedules collected:", room_schedules)
-                with open("rooms_output.json", "w", encoding="utf-8") as f:
-                    json.dump(room_schedules, f, indent=2, ensure_ascii=False)
-                
-                print("[Supervisor] System shutdown complete.")
-                await self.agent.stop()
-                
-            except Exception as e:
-                print(f"[Supervisor] Error finishing system: {str(e)}")
-
-        async def query_all_professors(self) -> Dict[str, Message]:
-            """Query all professors in parallel and return their responses"""
-            async def query_professor(jid: aioxmpp.JID) -> tuple[str, Message]:
-                try:
-                    receptor = f"{jid.localpart}@{jid.domain}"
-                    msg = Message(to=receptor)
-                    msg.set_metadata("performative", "query-ref")
-                    msg.set_metadata("ontology", "agent-status")
-                    msg.body = "status_query"
-                    
-                    await self.send(msg)
-                    response = await self.receive(timeout=2)
-                    return jid, response
-                except Exception as e:
-                    print(f"[Supervisor] Error querying agent {jid}: {str(e)}")
-                    return jid, None
-
-            tasks = [query_professor(jid) for jid in self.agent.state.professor_jids]
-            responses = await asyncio.gather(*tasks)
-            return dict(responses)
-
-        async def print_status_report(self):
-            """Print current status report"""
-            print("\n[Supervisor] Status Report:")
-            for state, count in self.agent.state.state_count.items():
-                print(f"- {state}: {count}")
-            print(f"Total Agents: {len(self.agent.state.professor_jids)}\n")
-
-        async def collect_all_schedules(self) -> List[dict]:
-            """Collect and transform schedules from all professors"""
-            async def get_professor_schedule(jid: aioxmpp.JID) -> tuple[str, dict]:
-                jid_str = str(jid)
-                try:
-                    msg = Message(to=str(jid))
-                    msg.set_metadata("performative", "query-ref")
-                    msg.set_metadata("ontology", "schedule-data")
-                    msg.body = "schedule_query"
-                    
-                    await self.send(msg)
-                    response = await self.receive(timeout=2)
-                    
-                    if response and response.body:
-                        return jid_str, json.loads(response.body)
-                    return jid_str, None
-                except Exception as e:
-                    print(f"[Supervisor] Error collecting schedule from {jid}: {str(e)}")
-                    return jid_str, None
-
-            tasks = [get_professor_schedule(jid) for jid in self.agent.state.professor_jids]
-            raw_schedules = await asyncio.gather(*tasks)
+    async def finish_system(self):
+        """Clean up and shut down the system"""
+        try:
+            self.set("system_active", False)
+            self.log.info("[Supervisor] Starting system shutdown...")
             
-            transformed_schedules = []
-            for jid, schedule in raw_schedules:
-                if schedule is not None:
-                    prof_data = self.agent.get(f"professor_data_{jid}")
-                    if prof_data:
-                        transformed_schedule = {
-                            "Nombre": prof_data["name"],
-                            "AsignaturasCompletadas": len(schedule["Asignaturas"]),
-                            "Solicitudes": len(prof_data["subjects"]),
-                            "Asignaturas": schedule["Asignaturas"]
-                        }
-                        transformed_schedules.append(transformed_schedule)
-
-            transformed_schedules.sort(key=lambda x: x["Nombre"])
-            return transformed_schedules
-
-        async def collect_room_schedules(self) -> List[dict]:
-            """Collect all room schedules and format them"""
-            room_schedules = []
-            room_jids = self.agent.get("room_jids") or []
-            print(f"[Supervisor] Collecting schedules from {len(room_jids)} rooms")
-            
-            for room_jid in room_jids:
-                try:
-                    print(f"[Supervisor] Requesting schedule from room: {room_jid}")
-                    msg = Message(
-                        to=str(room_jid),
-                        metadata={
-                            "performative": "query-ref",
-                            "ontology": "room-schedule"
-                        }
-                    )
-                    await self.send(msg)
-                    response = await self.receive(timeout=2)
-                    
-                    if response and response.body:
-                        schedule_data = json.loads(response.body)
-                        room_schedule = {
-                            "Codigo": schedule_data["code"],
-                            "Asignaturas": []
-                        }
-                        
-                        for day, assignments in schedule_data["schedule"].items():
-                            for block_idx, assignment in enumerate(assignments, 1):
-                                if assignment:
-                                    room_schedule["Asignaturas"].append({
-                                        "Nombre": assignment["subject_name"],
-                                        "Valoracion": assignment["satisfaction"],
-                                        "Bloque": block_idx,
-                                        "Dia": day
-                                    })
-                        
-                        room_schedules.append(room_schedule)
-                        print(f"[Supervisor] Successfully collected schedule from room: {schedule_data['code']}")
-                    else:
-                        print(f"[Supervisor] No response received from room: {room_jid}")
-                
-                except Exception as e:
-                    print(f"[Supervisor] Error collecting room schedule from {room_jid}: {str(e)}")
-            
-            return room_schedules
-
-    class MessageHandlerBehaviour(CyclicBehaviour):
-        async def run(self):
-            msg = await self.receive(timeout=0.5)
-            if not msg:
+            # Ensure storage instances exist
+            if not self.room_storage or not self.prof_storage:
+                self.log.error("Storage instances not properly initialized")
                 return
-
+                
+            # Generate final files with proper error handling
             try:
-                if msg.get_metadata("ontology") == "schedule-update":
-                    await self.handle_schedule_update(msg)
-                elif msg.get_metadata("ontology") == "status-update":
-                    await self.handle_status_update(msg)
+                self.log.info("Generating room schedules JSON...")
+                await self.room_storage.generate_json_file()
+                
+                self.log.info("Generating professor schedules JSON...")
+                await self.prof_storage.generate_json_file()
+                
+                # Force flush any pending updates
+                await self.room_storage.force_flush()
+                await self.prof_storage.force_flush()
+                
             except Exception as e:
-                print(f"[Supervisor] Error handling message: {str(e)}")
+                self.log.error(f"Error generating JSON files: {str(e)}")
+                
+            # Verify files were generated
+            output_path = Path(os.getcwd()) / "agent_output"
+            sala_file = output_path / "Horarios_salas.json"
+            prof_file = output_path / "Horarios_asignados.json"
+            
+            # Add detailed logging for verification
+            if sala_file.exists():
+                size = sala_file.stat().st_size
+                self.log.info(f"Horarios_salas.json generated: {size} bytes")
+                if size == 0:
+                    self.log.error("Horarios_salas.json is empty")
+            else:
+                self.log.error("Horarios_salas.json was not generated")
+                
+            if prof_file.exists():
+                size = prof_file.stat().st_size
+                self.log.info(f"Horarios_asignados.json generated: {size} bytes")
+                if size == 0:
+                    self.log.error("Horarios_asignados.json is empty")
+            else:
+                self.log.error("Horarios_asignados.json was not generated")
 
-        async def handle_schedule_update(self, msg: Message):
-            """Handle schedule update messages"""
-            # Implement if needed
-            pass
+            # Ensure proper cleanup
+            try:
+                await self._kb.deregister_agent(self.jid)
+                self.log.info("Deregistered from knowledge base")
+            except Exception as e:
+                self.log.error(f"Error deregistering from KB: {str(e)}")
+                
+            # Stop the agent
+            try:
+                await self.stop()
+                self.log.info("Agent stopped successfully")
+            except Exception as e:
+                self.log.error(f"Error stopping agent: {str(e)}")
+                
+            # Set completion event
+            if self.finalizer:
+                await self.finalizer.set()
+                self.log.info("Finalizer event set")
+                
+        except Exception as e:
+            self.log.error(f"Critical error in finish_system: {str(e)}")
+            # Ensure finalizer is set even on error
+            if self.finalizer:
+                await self.finalizer.set()
 
-        async def handle_status_update(self, msg: Message):
-            """Handle status update messages"""
-            # Implement if needed
-            pass
+    class ShutdownBehaviour(CyclicBehaviour):
+        """Handles system shutdown signals from professors"""
+        
+        async def run(self):            
+            msg = await self.receive(timeout=0.1)
+            if msg:
+                try:
+                    self.agent.log.info("Received shutdown signal - initiating system shutdown")
+                    
+                    # Set system inactive to stop monitoring
+                    self.agent.set("system_active", False)
+                    
+                    # Generate final JSON files
+                    await self.agent.finish_system()
+                except Exception as e:
+                    self.agent.log.error(f"Error during shutdown: {str(e)}")

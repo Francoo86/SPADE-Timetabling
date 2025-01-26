@@ -4,6 +4,7 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
+from spade.container import Container
 import json
 import logging
 
@@ -15,9 +16,17 @@ from src.agents.sala_agent import AgenteSala
 from src.agents.supervisor import AgenteSupervisor
 from src.objects.knowledge_base import AgentKnowledgeBase
 
+from json_stuff.json_salas import SalaScheduleStorage
+from json_stuff.json_profesores import ProfesorScheduleStorage
+from src.fipa.acl_message import FIPAPerformatives
+
 # Configure logging
-logging.basicConfig(level=logging.INFO,
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='agent_logs.log',  # Specify the file to write logs
+    filemode='w'  # Optional: Use 'w' to overwrite the file each time, or 'a' to append
+)
 logger = logging.getLogger(__name__)
 
 class ApplicationAgent(Agent):
@@ -26,7 +35,7 @@ class ApplicationAgent(Agent):
     """
     def __init__(self, jid: str, password: str, room_data: List[dict], 
                  professor_data: List[dict]):
-        super().__init__(jid, password)
+        super().__init__(jid, password, verify_security=False)
         self.room_data = room_data
         self.professor_data = professor_data
         self.room_agents: Dict[str, Agent] = {}
@@ -35,10 +44,66 @@ class ApplicationAgent(Agent):
         self.is_running = True
         self._kb = None
         
+        self._rooms_ready = False
+        self._professors_ready = False
+        self._supervisor_ready = False
+        
+        self.prof_storage = None
+        self.room_storage = None
+        
+        # ULTIMATUM
+        self.end_event = asyncio.Event()
+    
+    async def get_system_status(self, request):
+        """Web endpoint to get overall system status"""
+        return {
+            "rooms_ready": self._rooms_ready,
+            "professors_ready": self._professors_ready,
+            "supervisor_ready": self._supervisor_ready,
+            "active_professors": len([p for p in self.professor_agents if p.is_alive()]),
+            "active_rooms": len([r for r in self.room_agents.values() if r.is_alive()])
+        }
+
+    async def get_agent_status(self, request):
+        """Web endpoint to get detailed agent status"""
+        status = {
+            "professors": {},
+            "rooms": {}
+        }
+        
+        # Collect professor status
+        for prof in self.professor_agents:
+            subject = prof.get_current_subject()
+            
+            status["professors"][str(prof.jid)] = {
+                "alive": prof.is_alive(),
+                "current_subject": subject.get_nombre() if subject else None,
+                "pending_blocks": getattr(prof, "bloques_pendientes", 0),
+                "order": prof.orden
+            }
+            
+        # Collect room status  
+        for code, room in self.room_agents.items():
+            status["rooms"][code] = {
+                "alive": room.is_alive(),
+                "assignments": len([a for day in room.horario_ocupado.values() 
+                                for a in day if a is not None])
+            }
+            
+        return status
+        
     async def setup(self):
+        self.web.start(hostname="127.0.0.1", port=20000)
+        self.web.add_get("/status", self.get_system_status, template=None)
+        self.web.add_get("/agents", self.get_agent_status, template=None)
+    
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
         self._kb = await AgentKnowledgeBase.get_instance()
+        
+        # Initialize storage instances
+        self.prof_storage = await ProfesorScheduleStorage.get_instance()
+        self.room_storage = await SalaScheduleStorage.get_instance()
         
         # Add startup coordinator behavior
         startup_template = Template()
@@ -64,17 +129,48 @@ class ApplicationAgent(Agent):
             ]
             
         async def run(self):
-            """Execute startup stages sequentially"""
-            if self.current_stage < len(self.stages):
-                try:
-                    await self.stages[self.current_stage]()
-                    self.current_stage += 1
-                except Exception as e:
-                    logger.error(f"Error in startup stage {self.current_stage}: {e}")
-                    await self.cleanup()
+            try:
+                # 1. Initialize rooms first
+                if not self.agent._rooms_ready:
+                    await self.initialize_rooms()
+                    self.agent._rooms_ready = True
+                    print("All room agents initialized")
+                    return
+
+                # 2. Initialize professors after rooms are ready
+                if not self.agent._professors_ready:
+                    await self.initialize_professors()
+                    self.agent._professors_ready = True 
+                    print("All professor agents initialized")
+                    return
+
+                # 3. Initialize supervisor after professors
+                if not self.agent._supervisor_ready:
+                    await self.initialize_supervisor()
+                    self.agent._supervisor_ready = True
+                    print("Supervisor agent initialized")
+                    return
+
+                # 4. Only start negotiations when everything is ready
+                if self.agent._rooms_ready and self.agent._professors_ready and self.agent._supervisor_ready:
+                    # Start first professor
+                    first_prof = self.agent.professor_agents[0]
+                    msg = Message(to=str(first_prof.jid))
+                    msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                    msg.set_metadata("conversation-id", "negotiation-start-base")
                     
-            await asyncio.sleep(0.1)
-            
+                    msg.body = "START"
+                    # msg.set_metadata("nextOrden", "0") No lo necesitamos
+                    
+                    await self.send(msg)
+                    
+                    print("[GOOD] System initialization complete - Starting negotiations")
+                    await asyncio.sleep(0.1)
+                    self.kill()
+                    
+            except Exception as e:
+               print(f"[FATAL] Error in startup sequence: {str(e)}")
+
         async def initialize_rooms(self):
             """Initialize and start room agents"""
             logger.info("Initializing room agents...")
@@ -90,6 +186,8 @@ class ApplicationAgent(Agent):
                         capacidad=room_data.get("Capacidad"),
                         turno=room_data.get("Turno")
                     )
+                    room.set_storage(self.agent.room_storage)
+                    room.set_knowledge_base(self.agent._kb)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
@@ -113,6 +211,8 @@ class ApplicationAgent(Agent):
                         asignaturas=prof_data.get("Asignaturas"),
                         orden=i
                     )
+                    professor.set_storage(self.agent.prof_storage)
+                    professor.set_knowledge_base(self.agent._kb)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
                     logger.info(f"Professor agent started: {prof_jid}")
@@ -133,6 +233,9 @@ class ApplicationAgent(Agent):
                     password=self.agent.password,
                     professor_jids=[agent.jid for agent in self.agent.professor_agents]  # Pass JIDs list
                 )
+                supervisor.add_finalizer_event(self.agent.end_event)
+                supervisor.set_storages(self.agent.room_storage, self.agent.prof_storage)
+                supervisor.set_knowledge_base(self.agent._kb)
                 await supervisor.start(auto_register=True)
                 logger.info(f"Supervisor agent started: {supervisor_jid}")
                 
@@ -149,9 +252,9 @@ class ApplicationAgent(Agent):
                 # Send start signal to first professor
                 if self.agent.professor_agents:
                     msg = Message(to=str(self.agent.professor_agents[0].jid))
-                    msg.set_metadata("performative", "inform")
+                    msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                    msg.set_metadata("conversation-id", "negotiation-start-base")
                     msg.body = "START"
-                    msg.set_metadata("conversation-id", "negotiation-start")
                     await self.send(msg)
                     logger.info("Sent START signal to first professor")
                     
@@ -210,6 +313,7 @@ class ApplicationRunner:
     def __init__(self, xmpp_server: str, password: str):
         self.xmpp_server = xmpp_server
         self.password = password
+        self.app_agent: Optional[ApplicationAgent] = None
         
     def load_json(self, filename: str) -> List[dict]:
         """Load JSON data from file"""
@@ -225,7 +329,7 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("inputOfProfesores.json")
+            professors_data = self.load_json("20profs.json")
             rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:
@@ -241,17 +345,17 @@ class ApplicationRunner:
                 professors_data
             )
             
+            self.app_agent = app_agent
+            
             await app_agent.start(auto_register=True)
             logger.info("Application agent started successfully")
             
-            # Wait for completion
-            while app_agent.is_running:
-                try:
-                    await asyncio.sleep(1)
-                except KeyboardInterrupt:
-                    logger.info("Received shutdown signal")
-                    break
-                    
+            # Wait for completion using the end_event
+            try:
+                await self.app_agent.end_event.wait()
+            except KeyboardInterrupt:
+                logger.info("Received shutdown signal")
+                
         except Exception as e:
             logger.error(f"Application error: {e}")
             
@@ -268,13 +372,13 @@ class ApplicationRunner:
         cleanup_tasks = []
         
         # Stop all agents in reverse order
-        if self.supervisor_agent:
-            cleanup_tasks.append(self.supervisor_agent.stop())
+        if self.app_agent.supervisor_agent:
+            cleanup_tasks.append(self.app_agent.supervisor_agent.stop())
             
-        for agent in reversed(self.professor_agents):
+        for agent in reversed(self.app_agent.professor_agents):
             cleanup_tasks.append(agent.stop())
             
-        for agent in reversed(list(self.room_agents.values())):
+        for agent in reversed(list(self.app_agent.room_agents.values())):
             cleanup_tasks.append(agent.stop())
 
         # Wait for all cleanup tasks to complete
