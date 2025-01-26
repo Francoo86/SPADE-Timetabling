@@ -399,10 +399,6 @@ class NegotiationStateBehaviour(PeriodicBehaviour):
             self.profesor.log.info(
                 f"Professor {self.profesor.nombre} completed all negotiations in {total_time} ms"
             )
-            
-            # Log individual subject times 
-            for subject, time in self.subject_negotiation_times.items():
-                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
 
             # Notify next professor first
             await self.notify_next_professor()

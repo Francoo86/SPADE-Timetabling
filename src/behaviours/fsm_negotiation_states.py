@@ -28,7 +28,7 @@ class NegotiationFSM(FSMBehaviour):
     
     def __init__(self, profesor_agent):
         super().__init__()
-        self.profesor = profesor_agent
+        self.agent = profesor_agent
         # Rather than saving it here we could save it in the agent
         self.proposals = asyncio.Queue()
         self.timeout = 5  # seconds
@@ -41,12 +41,13 @@ class NegotiationFSM(FSMBehaviour):
         self.response_times: Dict[str, float] = {}  # Track response times per room
         
         self.cfp_count = 0  # Track number of CFPs sent
-        
+        self.negotiation_start_time = None
+    
         # Add states
         self.add_state(NegotiationStates.SETUP, SetupState(parent=self))
         self.add_state(NegotiationStates.COLLECTING, CollectingState(parent=self))
         self.add_state(NegotiationStates.EVALUATING, EvaluatingState(evaluator=self.evaluator, parent=self))
-        self.add_state(NegotiationStates.FINISHED, FinishedState())
+        self.add_state(NegotiationStates.FINISHED, FinishedState(parent=self))
         
         # Define transitions
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.COLLECTING)
@@ -69,6 +70,7 @@ class SetupState(State):
         current_subject = self.agent.get_current_subject()
         if current_subject:
             self.parent.bloques_pendientes = current_subject.get_horas()
+            self.parent.negotiation_start_time = datetime.now()
             
             # Clear tracking sets for new round
             self.parent.responding_rooms.clear()
@@ -92,15 +94,15 @@ class SetupState(State):
     async def send_cfp_messages(self):
         """Send CFP messages to classroom agents"""
         try:
-            current_subject = self.profesor.get_current_subject()
+            current_subject = self.agent.get_current_subject()
             if not current_subject:
-                self.profesor.log.error(f"No current subject available for professor {self.agent.nombre}")
+                self.agent.log.error(f"No current subject available for professor {self.agent.nombre}")
                 return 0
 
-            rooms = await self.profesor._kb.search(service_type="sala")
+            rooms = await self.agent._kb.search(service_type="sala")
             
             if not rooms:
-                self.profesor.log.error("No rooms found in knowledge base")
+                self.agent.log.error("No rooms found in knowledge base")
                 return 0
 
             # Build request info
@@ -140,7 +142,7 @@ class SetupState(State):
                     filtered_rooms.append(room)
 
             if not filtered_rooms:
-                self.profesor.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
+                self.agent.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
                 return 0
 
             # Send CFP only to filtered rooms
@@ -155,10 +157,10 @@ class SetupState(State):
                 
                 await self.send(msg)
                 cfp_count += 1
-            self.profesor.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
+            self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
             return cfp_count
         except Exception as e:
-            self.profesor.log.error(f"Error sending proposal requests: {str(e)}")
+            self.agent.log.error(f"Error sending proposal requests: {str(e)}")
             
         return 0
 
@@ -284,12 +286,12 @@ class EvaluatingState(State):
             
     async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
         """Try to assign batch proposals to classrooms"""
-        current_subject = self.profesor.get_current_subject()
+        current_subject = self.agent.get_current_subject()
         required_hours = current_subject.get_horas()
         batch_start_time = datetime.now()
 
         if self.parent.bloques_pendientes <= 0 or self.parent.bloques_pendientes > required_hours:
-            self.profesor.log.error(
+            self.agent.log.error(
                 f"Invalid pending hours state: {self.parent.bloques_pendientes}/{required_hours} "
                 f"for {current_subject.get_nombre()}"
             )
@@ -334,23 +336,23 @@ class EvaluatingState(State):
             if len(requests) > 0:
                 try:
                     if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
-                        self.profesor.log.info(
+                        self.agent.log.info(
                             f"Successfully assigned {len(requests)} blocks in room "
                             f"{batch_proposal.get_room_code()} for {current_subject.get_nombre()}"
                         )
 
                         proposal_time = (datetime.now() - proposal_start_time).total_seconds() * 1000
-                        self.profesor.log.info(
+                        self.agent.log.info(
                             f"[TIMING] Room {batch_proposal.get_room_code()} assignment took "
                             f"{proposal_time} ms - Assigned {len(requests)} blocks for "
                             f"{current_subject.get_nombre()}"
                         )
                 except Exception as e:
-                    self.profesor.log.error(f"Error in batch assignment: {str(e)}")
+                    self.agent.log.error(f"Error in batch assignment: {str(e)}")
                     return False
 
         total_batch_time = (datetime.now() - batch_start_time).total_seconds() * 1000
-        self.profesor.log.info(
+        self.agent.log.info(
             f"[TIMING] Total batch assignment time for {current_subject.get_nombre()}: "
             f"{total_batch_time} ms - Total blocks assigned: {total_assigned}"
         )
@@ -364,7 +366,7 @@ class EvaluatingState(State):
     ) -> bool:
         """Send batch assignment request and wait for confirmation"""
         if self.parent.bloques_pendientes - len(requests) < 0:
-            self.profesor.log.warning("Assignment would exceed required hours")
+            self.agent.log.warning("Assignment would exceed required hours")
             return False
         
         try:
@@ -393,11 +395,11 @@ class EvaluatingState(State):
 
                     # Process confirmed assignments
                     for assignment in confirmation_data.get_confirmed_assignments():
-                        await self.profesor.update_schedule_info(
+                        await self.agent.update_schedule_info(
                             dia=assignment.get_day(),
                             sala=assignment.get_classroom_code(),
                             bloque=assignment.get_block(),
-                            nombre_asignatura=self.profesor.get_current_subject().get_nombre(),
+                            nombre_asignatura=self.agent.get_current_subject().get_nombre(),
                             satisfaccion=assignment.get_satisfaction()
                         )
 
@@ -413,7 +415,7 @@ class EvaluatingState(State):
                 await asyncio.sleep(0.05)
 
         except Exception as e:
-            self.profesor.log.error(f"Error in send_batch_assignment: {str(e)}")
+            self.agent.log.error(f"Error in send_batch_assignment: {str(e)}")
             
         return False
     
@@ -422,6 +424,10 @@ class EvaluatingState(State):
         confirm.sender == og_sender and confirm.get_metadata("conversation-id") == conv_id
 
 class FinishedState(State):
+    def __init__(self, parent: NegotiationFSM):
+        self.parent = parent
+        super().__init__()
+    
     async def run(self):
         await self.finish_negotiations()
         self.kill()
@@ -430,14 +436,10 @@ class FinishedState(State):
         """Handle finished state and cleanup"""
         try:
             # Record completion time
-            total_time = (datetime.now() - self.negotiation_start_time).total_seconds() * 1000
-            self.profesor.log.info(
+            total_time = (datetime.now() - self.parent.negotiation_start_time).total_seconds() * 1000
+            self.agent.log.info(
                 f"Professor {self.agent.nombre} completed all negotiations in {total_time} ms"
             )
-            
-            # Log individual subject times 
-            for subject, time in self.subject_negotiation_times.items():
-                self.profesor.log.info(f"Subject {subject} negotiation took {time} ms")
 
             # Notify next professor first
             await self.notify_next_professor()
@@ -447,10 +449,10 @@ class FinishedState(State):
                 
             # Start cleanup with small delay to allow next prof to start
             await asyncio.sleep(0.5)
-            await self.profesor.cleanup()
+            await self.agent.cleanup()
             
         except Exception as e:
-            self.profesor.log.error(f"Error in finish_negotiations: {str(e)}")
+            self.agent.log.error(f"Error in finish_negotiations: {str(e)}")
             
     async def notify_next_professor(self):
         try:
