@@ -2,3 +2,7 @@ venv/
 .env
 *.pyc
 .vscode
+deleteme/
+agent_logs/
+old_logs/
+*.log
