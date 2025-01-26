@@ -6,10 +6,13 @@ from spade.template import Template
 import asyncio
 import jsonpickle
 import datetime
-from typing import List
+from typing import List, Set, Dict
 from objects.helper.batch_proposals import BatchProposal
 from objects.helper.batch_requests import AssignmentRequest
 from collections import defaultdict
+from evaluators.constraint_evaluator import ConstraintEvaluator
+from fipa.acl_message import FIPAPerformatives
+import json
 
 # States for the FSM
 class NegotiationStates:
@@ -27,12 +30,17 @@ class NegotiationFSM(FSMBehaviour):
         # Rather than saving it here we could save it in the agent
         self.proposals = asyncio.Queue()
         self.timeout = 5  # seconds
-        self.pending_blocks = 0
+        self.bloques_pendientes = 0
+        self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent, fsm_behaviour=self)
+        
+        self.responding_rooms: Set[str] = set()  # Track rooms that responded
+        self.expected_rooms: Set[str] = set()    # Track rooms we sent CFPs to
+        self.response_times: Dict[str, float] = {}  # Track response times per room
         
         # Add states
-        self.add_state(NegotiationStates.SETUP, SetupState())
-        self.add_state(NegotiationStates.COLLECTING, CollectingState())
-        self.add_state(NegotiationStates.EVALUATING, EvaluatingState())
+        self.add_state(NegotiationStates.SETUP, SetupState(parent=self))
+        self.add_state(NegotiationStates.COLLECTING, CollectingState(parent=self))
+        self.add_state(NegotiationStates.EVALUATING, EvaluatingState(evaluator=self.evaluator, parent=self))
         self.add_state(NegotiationStates.FINISHED, FinishedState())
         
         # Define transitions
@@ -43,34 +51,126 @@ class NegotiationFSM(FSMBehaviour):
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.FINISHED)
 
 class SetupState(State):
+    def __init__(self, parent: NegotiationFSM):
+        self.parent = parent
+        super().__init__()
+
     async def run(self):
         if not self.agent.can_use_more_subjects():
             self.set_next_state(NegotiationStates.FINISHED)
             return
-            
+
         current_subject = self.agent.get_current_subject()
         if current_subject:
-            self.agent.pending_blocks = current_subject.get_horas()
-            await self.send_cfp_messages()
+            self.parent.pending_blocks = current_subject.get_horas()
+            
+            # Clear tracking sets for new round
+            self.parent.responding_rooms.clear()
+            self.parent.expected_rooms.clear()
+            self.parent.response_times.clear()
+            
+            # Send CFPs and track sent count
+            cfp_count = await self.send_cfp_messages()
+            self.parent.cfp_count = cfp_count
+            
+            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()}")
             self.set_next_state(NegotiationStates.COLLECTING)
         else:
             self.set_next_state(NegotiationStates.FINISHED)
+            
+    async def send_cfp_messages(self):
+        """Send CFP messages to classroom agents"""
+        try:
+            current_subject = self.profesor.get_current_subject()
+            if not current_subject:
+                self.profesor.log.error(f"No current subject available for professor {self.profesor.nombre}")
+                return
+
+            rooms = await self.profesor._kb.search(service_type="sala")
+            
+            if not rooms:
+                self.profesor.log.error("No rooms found in knowledge base")
+                return
+
+            # Build request info
+            solicitud_info = {
+                "nombre": self.sanitize_subject_name(current_subject.get_nombre()),
+                "vacantes": current_subject.get_vacantes(),
+                "nivel": current_subject.get_nivel(),
+                "campus": current_subject.get_campus(),
+                "bloques_pendientes": self.bloques_pendientes,
+                "sala_asignada": self.assignation_data.get_sala_asignada(),
+                "ultimo_dia": self.assignation_data.get_ultimo_dia_asignado().name if self.assignation_data.get_ultimo_dia_asignado() else "",
+                "ultimo_bloque": self.assignation_data.get_ultimo_bloque_asignado()
+            }
+
+            cfp_count = 0
+            # Filter rooms before sending CFPs
+            filtered_rooms = []
+            for room in rooms:
+                # Extract room properties from capabilities
+                room_caps = next((cap for cap in room.capabilities if cap.service_type == "sala"), None)
+                if not room_caps:
+                    continue
+                
+                room_props = room_caps.properties
+                
+                should_reject = await self.room_filter.can_quick_reject(
+                    subject_name=current_subject.get_nombre(),
+                    subject_code=current_subject.get_codigo_asignatura(),
+                    subject_campus=current_subject.get_campus(),
+                    subject_vacancies=current_subject.get_vacantes(),
+                    room_code=room_props["codigo"],
+                    room_campus=room_props["campus"],
+                    room_capacity=room_props["capacidad"]
+                )
+                
+                if not should_reject:
+                    filtered_rooms.append(room)
+
+            if not filtered_rooms:
+                self.profesor.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
+                return
+
+            # Send CFP only to filtered rooms
+            for room in filtered_rooms:
+                msg = Message(
+                    to=str(room.jid)
+                )
+                msg.set_metadata("protocol", "contract-net")
+                msg.set_metadata("performative", FIPAPerformatives.CFP)
+                msg.set_metadata("conversation-id", f"neg-{self.profesor.nombre}-{self.bloques_pendientes}")
+                msg.body = json.dumps(solicitud_info)
+                
+                await self.send(msg)
+                cfp_count += 1
+            self.profesor.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
+            return cfp_count
+        except Exception as e:
+            self.profesor.log.error(f"Error sending proposal requests: {str(e)}")
+            
+        return 0
+
 
 class CollectingState(State):
+    def __init__(self, parent: NegotiationFSM):
+        self.parent = parent
+        super().__init__()
+    
     async def run(self):
         try:
             start_time = asyncio.get_event_loop().time()
             
-            while asyncio.get_event_loop().time() - start_time < self.agent.timeout:
+            while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
                 msg = await self.receive(timeout=0.05)
                 
                 if msg:
                     sender = str(msg.sender)
-                    response_time = asyncio.get_event_loop().time() - self.agent.response_times.get(sender, start_time)
+                    response_time = asyncio.get_event_loop().time() - self.parent.response_times.get(sender, start_time)
                     
                     # Track response regardless of type
-                    if sender in self.agent.expected_rooms:
-                        self.agent.responding_rooms.add(sender)
+                    if sender in self.parent.expected_rooms:
+                        self.parent.responding_rooms.add(sender)
                     
                     if msg.get_metadata("performative") == "propose":
                         await self.handle_proposal(msg)
@@ -79,27 +179,27 @@ class CollectingState(State):
                         self.agent.log.debug(f"Refuse from {sender} received in {response_time:.3f}s")
                 
                 # Log progress
-                if len(self.agent.responding_rooms) == self.agent.cfp_count:
+                if len(self.parent.responding_rooms) == self.parent.cfp_count:
                     self.agent.log.info("Received all expected responses")
                     break
                     
                 await asyncio.sleep(0.05)
             
             # Report collection results
-            responses = len(self.agent.responding_rooms)
-            missing = self.agent.cfp_count - responses
+            responses = len(self.parent.responding_rooms)
+            missing = self.parent.cfp_count - responses
             self.agent.log.info(
-                f"Collection complete: {responses}/{self.agent.cfp_count} responses received. "
+                f"Collection complete: {responses}/{self.parent.cfp_count} responses received. "
                 f"Missing responses: {missing}"
             )
             
             # List non-responding rooms
             if missing > 0:
-                non_responding = self.agent.expected_rooms - self.agent.responding_rooms
+                non_responding = self.parent.expected_rooms - self.parent.responding_rooms
                 self.agent.log.warning(f"No response from rooms: {non_responding}")
             
             # Determine next state
-            if not self.agent.proposals.empty():
+            if not self.parent.proposals.empty():
                 self.set_next_state(NegotiationStates.EVALUATING)
             else:
                 self.set_next_state(NegotiationStates.SETUP)
@@ -109,12 +209,17 @@ class CollectingState(State):
             self.set_next_state(NegotiationStates.SETUP)
 
 class EvaluatingState(State):
+    def __init__(self, evaluator: ConstraintEvaluator, parent: NegotiationFSM):
+        self.evaluator = evaluator
+        self.parent = parent
+        super().__init__()
+    
     async def run(self):
         try:
             # Log response statistics before evaluation
-            total_rooms = len(self.agent.expected_rooms)
-            responded_rooms = len(self.agent.responding_rooms)
-            propose_count = self.agent.proposals.qsize()
+            total_rooms = len(self.parent.expected_rooms)
+            responded_rooms = len(self.parent.responding_rooms)
+            propose_count = self.parent.proposals.qsize()
             refuse_count = responded_rooms - propose_count
             
             self.agent.log.info(
@@ -125,13 +230,13 @@ class EvaluatingState(State):
             
             # Process proposals and continue with evaluation logic...
             proposals = []
-            while not self.agent.proposals.empty():
-                proposals.append(await self.agent.proposals.get())
+            while not self.parent.proposals.empty():
+                proposals.append(await self.parent.proposals.get())
                 
-            valid_proposals = await self.filter_and_sort_proposals(proposals)
+            valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
             
             if valid_proposals and await self.try_assign_proposals(valid_proposals):
-                if self.agent.pending_blocks == 0:
+                if self.parent.pending_blocks == 0:
                     await self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
@@ -142,81 +247,6 @@ class EvaluatingState(State):
         except Exception as e:
             self.agent.log.error(f"Error in evaluating state: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
-        
-    async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
-        """Try to assign batch proposals to classrooms"""
-        current_subject = self.profesor.get_current_subject()
-        required_hours = current_subject.get_horas()
-        batch_start_time = datetime.now()
-
-        if self.bloques_pendientes <= 0 or self.bloques_pendientes > required_hours:
-            self.profesor.log.error(
-                f"Invalid pending hours state: {self.bloques_pendientes}/{required_hours} "
-                f"for {current_subject.get_nombre()}"
-            )
-            return False
-
-        daily_assignments = defaultdict(int)
-        total_assigned = 0
-
-        for batch_proposal in batch_proposals:
-            proposal_start_time = datetime.now()
-            requests = []
-
-            # Process each day's blocks in this room
-            for day, block_proposals in batch_proposal.get_day_proposals().items():
-                # Skip if day already has 2 blocks
-                if daily_assignments[day] >= 2:
-                    continue
-
-                # Process blocks for this day
-                for block in block_proposals:
-                    # Stop if we've assigned all needed blocks
-                    if total_assigned >= self.bloques_pendientes:
-                        break
-
-                    # Skip if block not available
-                    if not self.profesor.is_block_available(day, block.get_block()):
-                        continue
-
-                    requests.append(AssignmentRequest(
-                        day=day,
-                        block=block.get_block(),
-                        subject_name=current_subject.get_nombre(),
-                        satisfaction=batch_proposal.get_satisfaction_score(),
-                        classroom_code=batch_proposal.get_room_code(),
-                        vacancy=current_subject.get_vacantes()
-                    ))
-
-                    total_assigned += 1
-                    daily_assignments[day] += 1
-
-            # Send batch assignment if we have requests
-            if len(requests) > 0:
-                try:
-                    if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
-                        self.profesor.log.info(
-                            f"Successfully assigned {len(requests)} blocks in room "
-                            f"{batch_proposal.get_room_code()} for {current_subject.get_nombre()}"
-                        )
-
-                        proposal_time = (datetime.now() - proposal_start_time).total_seconds() * 1000
-                        self.profesor.log.info(
-                            f"[TIMING] Room {batch_proposal.get_room_code()} assignment took "
-                            f"{proposal_time} ms - Assigned {len(requests)} blocks for "
-                            f"{current_subject.get_nombre()}"
-                        )
-                except Exception as e:
-                    self.profesor.log.error(f"Error in batch assignment: {str(e)}")
-                    return False
-
-        total_batch_time = (datetime.now() - batch_start_time).total_seconds() * 1000
-        self.profesor.log.info(
-            f"[TIMING] Total batch assignment time for {current_subject.get_nombre()}: "
-            f"{total_batch_time} ms - Total blocks assigned: {total_assigned}"
-        )
-
-        return total_assigned > 0
 
 class FinishedState(State):
     async def run(self):
