@@ -52,8 +52,10 @@ class NegotiationFSM(FSMBehaviour):
         # Define transitions
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.COLLECTING)
         self.add_transition(NegotiationStates.COLLECTING, NegotiationStates.EVALUATING)
+        self.add_transition(NegotiationStates.COLLECTING, NegotiationStates.SETUP)
         self.add_transition(NegotiationStates.EVALUATING, NegotiationStates.SETUP)
         self.add_transition(NegotiationStates.EVALUATING, NegotiationStates.FINISHED)
+        self.add_transition(NegotiationStates.EVALUATING, NegotiationStates.COLLECTING)
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.FINISHED)
 
 class SetupState(State):
@@ -159,6 +161,7 @@ class SetupState(State):
                 await self.send(msg)
                 cfp_count += 1
             self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
+            self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
             return cfp_count
         except Exception as e:
             self.agent.log.error(f"Error sending proposal requests: {str(e)}")
@@ -269,9 +272,9 @@ class EvaluatingState(State):
             proposals = []
             while not self.parent.proposals.empty():
                 proposals.append(await self.parent.proposals.get())
-                
+                   
             valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
-            
+
             if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
                 if self.parent.bloques_pendientes == 0:
                     await self.agent.move_to_next_subject()
@@ -307,8 +310,9 @@ class EvaluatingState(State):
 
             # Process each day's blocks in this room
             for day, block_proposals in batch_proposal.get_day_proposals().items():
+                daily_count = daily_assignments.get(day, 0)
                 # Skip if day already has 2 blocks
-                if daily_assignments[day] >= 2:
+                if daily_count >= 2:
                     continue
 
                 # Process blocks for this day
