@@ -237,6 +237,7 @@ class ApplicationAgent(Agent):
                 supervisor.set_storages(self.agent.room_storage, self.agent.prof_storage)
                 supervisor.set_knowledge_base(self.agent._kb)
                 await supervisor.start(auto_register=True)
+                self.agent.supervisor_agent = supervisor
                 logger.info(f"Supervisor agent started: {supervisor_jid}")
                 
             except Exception as e:
@@ -273,7 +274,7 @@ class ApplicationAgent(Agent):
             """Check system status and manage shutdown if needed"""
             try:
                 if self.agent.supervisor_agent:
-                    system_active = await self.agent.supervisor_agent.get_state("system_active")
+                    system_active = self.agent.supervisor_agent.get("system_active")
                     if not system_active:
                         logger.info("System completion detected, initiating shutdown...")
                         await self.initiate_shutdown()
@@ -304,6 +305,7 @@ class ApplicationAgent(Agent):
             # Stop the application agent
             self.agent.is_running = False
             await self.agent.stop()
+            self.agent.end_event.set()
             
             logger.info("System shutdown complete")
 
