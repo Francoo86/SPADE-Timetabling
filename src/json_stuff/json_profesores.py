@@ -21,6 +21,8 @@ class ProfesorScheduleStorage:
 
     def __init__(self):
         self._pending_updates: Dict[str, ProfessorScheduleUpdate] = {}
+        # FIXME: La implementacion no solía guardar todas las actualizaciones
+        self._all_updates: Dict[str, ProfessorScheduleUpdate] = {}
         self._all_professor_names = set()
         self._update_count = 0
         self._write_lock = asyncio.Lock()
@@ -46,6 +48,7 @@ class ProfesorScheduleStorage:
             
             async with self._write_lock:
                 self._pending_updates[nombre] = update
+                self._all_updates[nombre] = update
                 self._all_professor_names.add(nombre)
                 self._update_count += 1
 
@@ -59,11 +62,12 @@ class ProfesorScheduleStorage:
     async def _write_updates_to_file(self) -> None:
         """Write updates to file - assumes lock is already held"""
         try:
-            if not self._pending_updates:
+            if not self._all_updates:
                 return
 
             json_array = []
-            for update in self._pending_updates.values():
+
+            for update in self._all_updates.values():
                 profesor_json = {
                     "Nombre": update.nombre,
                     "Asignaturas": update.schedule_data.get("Asignaturas", []),
@@ -79,6 +83,7 @@ class ProfesorScheduleStorage:
                     await f.flush()
                 print(f"Successfully wrote {len(json_array)} professor schedules to file")
 
+            # Only clear pending updates, keep complete history
             self._pending_updates.clear()
             self._update_count = 0
 
@@ -93,22 +98,20 @@ class ProfesorScheduleStorage:
                 print(f"[DEBUG] Processing {len(self._all_professor_names)} professors")
                 
                 json_array = []
-                for nombre in self._all_professor_names:
+
+                for update in self._all_updates.values():
                     try:
-                        update = self._pending_updates.get(nombre)
-                        if update:
-                            profesor_json = {
-                                "Nombre": update.nombre,
-                                "Asignaturas": update.schedule_data.get("Asignaturas", []),
-                                "Solicitudes": len(update.asignaturas),
-                                "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
-                            }
-                            json_array.append(profesor_json)
-                            print(f"[DEBUG] Processed professor {nombre}: {len(profesor_json['Asignaturas'])} assignments")
-                        else:
-                            print(f"[WARN] No data found for professor {nombre}")
+                        profesor_json = {
+                            "Nombre": update.nombre,
+                            "Asignaturas": update.schedule_data.get("Asignaturas", []),
+                            "Solicitudes": len(update.asignaturas),
+                            "AsignaturasCompletadas": len(update.schedule_data.get("Asignaturas", [])),
+                        }
+                        json_array.append(profesor_json)
+                        print(f"[DEBUG] Processed professor {update.nombre}: "
+                              f"{len(profesor_json['Asignaturas'])} assignments")
                     except Exception as e:
-                        print(f"[ERROR] Error processing professor {nombre}: {str(e)}")
+                        print(f"[ERROR] Error processing professor {update.nombre}: {str(e)}")
                         continue
 
                 if json_array:
@@ -138,3 +141,7 @@ class ProfesorScheduleStorage:
     def get_pending_update_count(self) -> int:
         """Get number of pending updates"""
         return len(self._pending_updates)
+
+    def get_total_update_count(self) -> int:
+        """Get total number of professors with updates"""
+        return len(self._all_updates)
