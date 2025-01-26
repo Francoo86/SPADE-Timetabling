@@ -1,6 +1,4 @@
-from enum import Enum
-from typing import Dict, List, Optional
-from dataclasses import dataclass
+from typing import Dict, List
 from objects.static.agent_enums import Actividad, TipoContrato
 
 # Constants

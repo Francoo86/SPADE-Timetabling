@@ -1,7 +1,6 @@
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
-from spade.template import Template
 from typing import Dict, List, Optional, Any
 from json_stuff.json_salas import SalaScheduleStorage
 import json
@@ -10,8 +9,8 @@ from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from datetime import datetime
 
 from objects.asignation_data import AsignacionSala
-from objects.helper.batch_proposals import BatchProposal, ClassroomAvailability
-from objects.helper.batch_requests import BatchAssignmentRequest, AssignmentRequest
+from objects.helper.batch_proposals import ClassroomAvailability
+from objects.helper.batch_requests import BatchAssignmentRequest
 from objects.helper.confirmed_assignments import BatchAssignmentConfirmation, ConfirmedAssignment
 
 from objects.static.agent_enums import Day
@@ -113,10 +112,6 @@ class AgenteSala(Agent):
             schedule_data: Dictionary containing the schedule information
         """
         try:
-            # Get storage instance
-            # storage = await SalaScheduleStorage.get_instance()
-            
-            # Update schedule
             await self.storage.update_schedule(
                 codigo=self.codigo,
                 campus=self.campus,

@@ -1,6 +1,5 @@
 from objects.helper.batch_proposals import BatchProposal, BlockProposal
-from objects.helper.classroom_availability import ClassroomAvailability
-from objects.asignation_data import AssignationData, Asignatura
+from objects.asignation_data import Asignatura
 from typing import List, Dict, Optional
 from objects.static.agent_enums import Day, TipoContrato, Actividad
 from dataclasses import dataclass

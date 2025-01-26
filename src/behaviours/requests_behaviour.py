@@ -1,13 +1,5 @@
-from spade.behaviour import CyclicBehaviour, OneShotBehaviour
-from spade.template import Template
-from spade.message import Message
+from spade.behaviour import CyclicBehaviour
 import asyncio
-# from .negotiation_behaviour import NegotiationStateBehaviour
-# from .message_collector import MessageCollectorBehaviour
-# from agents.profesor_redux import AgenteProfesor
-from spade.agent import Agent
-from objects.knowledge_base import AgentKnowledgeBase
-from fipa.acl_message import FIPAPerformatives
 
 class EsperarTurnoBehaviour(CyclicBehaviour):
     """Behaviour that waits for the agent's turn before starting negotiations."""

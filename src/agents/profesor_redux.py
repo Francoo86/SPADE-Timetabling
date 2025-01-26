@@ -9,7 +9,6 @@ from objects.asignation_data import Asignatura
 from objects.static.agent_enums import TipoContrato, Day
 from behaviours.requests_behaviour import EsperarTurnoBehaviour
 from objects.asignation_data import BloqueInfo
-from spade.message import Message
 from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from behaviours.monitoring import InitialWaitBehaviour
