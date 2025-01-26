@@ -21,8 +21,12 @@ from json_stuff.json_profesores import ProfesorScheduleStorage
 from src.fipa.acl_message import FIPAPerformatives
 
 # Configure logging
-logging.basicConfig(level=logging.INFO,
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='agent_logs.log',  # Specify the file to write logs
+    filemode='w'  # Optional: Use 'w' to overwrite the file each time, or 'a' to append
+)
 logger = logging.getLogger(__name__)
 
 class ApplicationAgent(Agent):
@@ -325,7 +329,7 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("LastStraw.json")
+            professors_data = self.load_json("20profs.json")
             rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:
