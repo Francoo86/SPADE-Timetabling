@@ -30,7 +30,7 @@ class BatchProposalScore:
     score: int
 
 # CRITICAL: Replace with FSM behaviour and remove Message Collector
-class NegotiationStateBehaviour(FSMBehaviour):
+class NegotiationFSM(FSMBehaviour):
     MEETING_ROOM_THRESHOLD = 10
     TIMEOUT_PROPUESTA = 1
     MAX_RETRIES = 3
