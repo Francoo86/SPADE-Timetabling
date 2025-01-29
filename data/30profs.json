@@ -1,0 +1,1239 @@
+[
+    {
+        "RUT": "10087939-5",
+        "Nombre": "ROJAS RODRIGUEZ RO",
+        "Turno": 1,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(PRI82-A)",
+                "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10090332-6",
+        "Nombre": "PADILLA GUZMAN SIL",
+        "Turno": 2,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(IC801-A)",
+                "Nombre": "DIRECCION DE PROYECTOS",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 45,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(INT75-I)",
+                "Nombre": "GESTION DE EMPRESAS",
+                "Nivel": 7,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(INT91-I)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "10254482-K",
+        "Nombre": "OBILINOVIC GONZÁLE",
+        "Turno": 3,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ARQ23-A)",
+                "Nombre": "HISTORIA Y TEORIA I",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 60,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ23-A)",
+                "Nombre": "HISTORIA Y TEORIA I",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 60,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ31-B)",
+                "Nombre": "TALLER 3",
+                "Nivel": 3,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ31-B)",
+                "Nombre": "TALLER 3",
+                "Nivel": 3,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ41-B)",
+                "Nombre": "TALLER 4",
+                "Nivel": 4,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ41-B)",
+                "Nombre": "TALLER 4",
+                "Nivel": 4,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ83-A)",
+                "Nombre": "TERRITORIO 4",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ83-A)",
+                "Nombre": "TERRITORIO 4",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10279921-6",
+        "Nombre": "YÁÑEZ MUÑOZ RICARD",
+        "Turno": 4,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ARQ31-B)",
+                "Nombre": "TALLER 3",
+                "Nivel": 3,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ31-B)",
+                "Nombre": "TALLER 3",
+                "Nivel": 3,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ41-B)",
+                "Nombre": "TALLER 4",
+                "Nivel": 4,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ41-B)",
+                "Nombre": "TALLER 4",
+                "Nivel": 4,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ65-A)",
+                "Nombre": "CONSTRUCCION 3",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ65-A)",
+                "Nombre": "CONSTRUCCION 3",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ85-A)",
+                "Nombre": "INSTALACIONES",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ85-A)",
+                "Nombre": "INSTALACIONES",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10316944-5",
+        "Nombre": "AZÓCAR AZÓCAR PABL",
+        "Turno": 5,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ARQ21-A)",
+                "Nombre": "TALLER 2",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 7,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ21-A)",
+                "Nombre": "TALLER 2",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ22-A)",
+                "Nombre": "GEOMETRIA Y ARQUITECTURA",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 60,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ22-A)",
+                "Nombre": "GEOMETRIA Y ARQUITECTURA",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 60,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ56-A)",
+                "Nombre": "PRACTICA EN OFICINA",
+                "Nivel": 5,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ56-A)",
+                "Nombre": "PRACTICA EN OFICINA",
+                "Nivel": 5,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ96-A)",
+                "Nombre": "PRACTICA EN TERRENO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ96-A)",
+                "Nombre": "PRACTICA EN TERRENO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            }
+        ]
+    },
+    {
+        "RUT": "10322352-0",
+        "Nombre": "LUZA CONTRERAS JUA",
+        "Turno": 6,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT56-J)",
+                "Nombre": "INGENIERIA ECONOMICA",
+                "Nivel": 5,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(INT59-J)",
+                "Nombre": "PRODUCCION I",
+                "Nivel": 5,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(INT68-I)",
+                "Nombre": "PRODUCCION II",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(INT73-I)",
+                "Nombre": "PROCESOS INDUSTRIALES",
+                "Nivel": 7,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10412542-5",
+        "Nombre": "VILCA ASTORGA BELF",
+        "Turno": 7,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(IEP3C-A)",
+                "Nombre": "SALUD OCUPACIONAL II",
+                "Nivel": 3,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 5,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(PRI62-A)",
+                "Nombre": "LEGISLACIÓN DE SALUD Y SE",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 50,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(PRI85-A)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            }
+        ]
+    },
+    {
+        "RUT": "10466628-0",
+        "Nombre": "TAPIA QUEZADA JAIM",
+        "Turno": 8,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(IME64-A)",
+                "Nombre": "CINETICA QUIMICA",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(IMEA2-A)",
+                "Nombre": "CADENA DE VALOR HIDROMETA",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10480087-4",
+        "Nombre": "DIAZ MIRANDA MARCO",
+        "Turno": 9,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(PRI66-A)",
+                "Nombre": "TALLER DE INTEGRACIÓN PRO",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 6,
+                "Vacantes": 50,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            }
+        ]
+    },
+    {
+        "RUT": "10566934-8",
+        "Nombre": "CORTES CAMPOS EMEL",
+        "Turno": 10,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(FIA52-A)",
+                "Nombre": "ESTADÍSTICA APLICADA",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10601312-8",
+        "Nombre": "MEZA CÁRDENAS ERIK",
+        "Turno": 11,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(FIA41-B)",
+                "Nombre": "TERMODINÁMICA",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 50,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(IME61-A)",
+                "Nombre": "BALANCE DE MATERIA Y ENER",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(IME83-A)",
+                "Nombre": "PURIFICACION Y SEPARACION",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(IME83-A)",
+                "Nombre": "PURIFICACION Y SEPARACION",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 4,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(INT52-I)",
+                "Nombre": "TERMODINAMICA",
+                "Nivel": 5,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10674498-K",
+        "Nombre": "LAM MORAGA JAIME A",
+        "Turno": 12,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(IC804-A)",
+                "Nombre": "GESTIÓN DE PRODUCCIÓN",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 45,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(IC804-A)",
+                "Nombre": "GESTIÓN DE PRODUCCIÓN",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 45,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(IC904-A)",
+                "Nombre": "PRODUCCION",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 1,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ICA04-A)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ICIA3-A)",
+                "Nombre": "PREPARCIÓN PARA EL PROCES",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(INT91-J)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(INT91-I)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "10765311-2",
+        "Nombre": "WONG BARREDA EDUAR",
+        "Turno": 13,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(FIA24-C)",
+                "Nombre": "INTRODUCCIÓN A LA PROGRAM",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 33,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(FIA24-C)",
+                "Nombre": "INTRODUCCIÓN A LA PROGRAM",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 33,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(CCI83-A)",
+                "Nombre": "REDES DE COMPUTADORES",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(CCI83-A)",
+                "Nombre": "REDES DE COMPUTADORES",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(FIA24-A)",
+                "Nombre": "INTRODUCCIÓN A LA PROGRAM",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(FIA24-A)",
+                "Nombre": "INTRODUCCIÓN A LA PROGRAM",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(IC10F-A)",
+                "Nombre": "SEGURIDAD DE LA INFORMACI",
+                "Nivel": 1,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 25,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(IC10F-A)",
+                "Nombre": "SEGURIDAD DE LA INFORMACI",
+                "Nivel": 1,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 25,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10894115-4",
+        "Nombre": "ROJAS GONZALEZ MAR",
+        "Turno": 14,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(PRI64-A)",
+                "Nombre": "ERGONOMÍA",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 50,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "10991494-0",
+        "Nombre": "LÓPEZ SEGUEL JULIO",
+        "Turno": 15,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ICE64-A)",
+                "Nombre": "LABORATORIO DE ELECTRÓNIC",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICEA6-A)",
+                "Nombre": "TALLER DE TITULACIÓN",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 6,
+                "Vacantes": 15,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "11806634-0",
+        "Nombre": "URIBE PALACIOS MAR",
+        "Turno": 16,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT72-FA)",
+                "Nombre": "GESTION DE PERSONAS II",
+                "Nivel": 7,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 24,
+                "Campus": "Playa Brava",
+                "Actividad": "Ayu"
+            }
+        ]
+    },
+    {
+        "RUT": "11835889-9",
+        "Nombre": "SALAZAR PEREZ INGR",
+        "Turno": 17,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(PRI82-S)",
+                "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 25,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "11840767-9",
+        "Nombre": "MASANA SEPULVEDA P",
+        "Turno": 18,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT91-S)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 15,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "12232430-3",
+        "Nombre": "CARMONA MALBRAN RA",
+        "Turno": 19,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ARQA2-A)",
+                "Nombre": "INTRODUCCION AL PROYECTO",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQA2-A)",
+                "Nombre": "INTRODUCCION AL PROYECTO",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12245111-9",
+        "Nombre": "CHANDIA CONCHA HEC",
+        "Turno": 20,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT75-FA)",
+                "Nombre": "GESTION DE EMPRESAS",
+                "Nivel": 7,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 28,
+                "Campus": "Playa Brava",
+                "Actividad": "Ayu"
+            },
+            {
+                "CodigoAsignatura": "(INT24-FA)",
+                "Nombre": "COMPUTACION I",
+                "Nivel": 2,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12291340-6",
+        "Nombre": "CARREÑO PASTRIAN E",
+        "Turno": 21,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ICA44-A)",
+                "Nombre": "BIOQUIMICA Y MICROBIOLOGI",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICA44-A)",
+                "Nombre": "BIOQUIMICA Y MICROBIOLOGI",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 4,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ICA82-A)",
+                "Nombre": "TRATAMIENTO DE EMISIONES",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICA82-A)",
+                "Nombre": "TRATAMIENTO DE EMISIONES",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ICAA6-A)",
+                "Nombre": "CAMBIO CLIMÁTICO Y RESILE",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 12,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12350209-4",
+        "Nombre": "CONTRERAS AGUILAR",
+        "Turno": 22,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(CCI63-A)",
+                "Nombre": "FUNDAMENTOS DE LENGUAJE D",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(CCI63-A)",
+                "Nombre": "FUNDAMENTOS DE LENGUAJE D",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(CCI82-A)",
+                "Nombre": "COMPILADORES",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(CCI82-A)",
+                "Nombre": "COMPILADORES",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12388046-3",
+        "Nombre": "RAMÍREZ CASTILLO W",
+        "Turno": 23,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(PRI64-DV1)",
+                "Nombre": "ERGONOMÍA",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(PRI64-DV2)",
+                "Nombre": "ERGONOMÍA",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12438825-2",
+        "Nombre": "ARAYA TORRES CARLO",
+        "Turno": 24,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT51-I)",
+                "Nombre": "MICROECONOMIA",
+                "Nivel": 5,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12438878-3",
+        "Nombre": "RANGEL MORALES JUA",
+        "Turno": 25,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(IMEB9-A)",
+                "Nombre": "DERECHO MINERO Y AMBIENTA",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(IMIA3-A)",
+                "Nombre": "CIERRE Y ABANDONO DE FAEN",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12469691-7",
+        "Nombre": "SEGOVIA RIVERA JUA",
+        "Turno": 26,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ICA61-A)",
+                "Nombre": "MECANICA DE FLUIDOS",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Ayu"
+            },
+            {
+                "CodigoAsignatura": "(ICA61-A)",
+                "Nombre": "MECANICA DE FLUIDOS",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICA61-A)",
+                "Nombre": "MECANICA DE FLUIDOS",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ICA63-A)",
+                "Nombre": "FENOMENOS DE TRANSPORTE",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 10,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ICAA3-A)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "12611505-9",
+        "Nombre": "VALDIVIESO VEGA CA",
+        "Turno": 27,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ARQ63-A)",
+                "Nombre": "TERRITORIO 3",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Pra"
+            },
+            {
+                "CodigoAsignatura": "(ARQ63-A)",
+                "Nombre": "TERRITORIO 3",
+                "Nivel": 6,
+                "Paralelo": "A",
+                "Horas": 2,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ARQ91-A)",
+                "Nombre": "TALLER 9",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 7,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Tal"
+            },
+            {
+                "CodigoAsignatura": "(ARQ91-A)",
+                "Nombre": "TALLER 9",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12613186-0",
+        "Nombre": "CASTRO CASTRO RUBÉ",
+        "Turno": 28,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(ICE82-A)",
+                "Nombre": "LABORATORIO DE CONTROL AU",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 20,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICE83-A)",
+                "Nombre": "ROBÓTICA",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 1,
+                "Vacantes": 20,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICE83-A)",
+                "Nombre": "ROBÓTICA",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 20,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(ICEA3-A)",
+                "Nombre": "LABORATORIO DE CONTROL DI",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 15,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(ICEA4-A)",
+                "Nombre": "LABORATORIO DE ROBÓTICA",
+                "Nivel": 10,
+                "Paralelo": "A",
+                "Horas": 3,
+                "Vacantes": 15,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "12613447-9",
+        "Nombre": "AYALA ALCAZAR LUIS",
+        "Turno": 29,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT91-FA)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 28,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            },
+            {
+                "CodigoAsignatura": "(INT91-FB)",
+                "Nombre": "TALLER DE TITULO",
+                "Nivel": 9,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 28,
+                "Campus": "Playa Brava",
+                "Actividad": "Lab"
+            }
+        ]
+    },
+    {
+        "RUT": "12622845-7",
+        "Nombre": "VARELA VILLAGRAN J",
+        "Turno": 30,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(INT43-I)",
+                "Nombre": "TEORIA DE SISTEMAS",
+                "Nivel": 4,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 30,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            },
+            {
+                "CodigoAsignatura": "(PRI84-A)",
+                "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 40,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    },
+    {
+        "RUT": "12659928-5",
+        "Nombre": "ARAVENA APPELT HÉC",
+        "Turno": 31,
+        "Asignaturas": [
+            {
+                "CodigoAsignatura": "(PRI83-S)",
+                "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+                "Nivel": 8,
+                "Paralelo": "A",
+                "Horas": 12,
+                "Vacantes": 25,
+                "Campus": "Playa Brava",
+                "Actividad": "Teo"
+            }
+        ]
+    }
+]

@@ -17,7 +17,7 @@ class ScheduleUpdate:
 class SalaScheduleStorage:
     _instance = None
     _lock = asyncio.Lock()
-    WRITE_THRESHOLD = 20  # Same as JADE implementation
+    WRITE_THRESHOLD = 20
 
     def __init__(self):
         self._pending_updates: Dict[str, ScheduleUpdate] = {}
@@ -39,16 +39,12 @@ class SalaScheduleStorage:
         """Add or update a room's schedule"""
         try:
             print(f"[DEBUG] Adding/updating schedule for room {codigo}")
-
-            # Count assignments
             assignment_count = sum(
                 1 for day_assignments in schedule_data["horario"].values()
                 for assignment in day_assignments if assignment
             )
-
             print(f"[DEBUG] Room {codigo} has {assignment_count} total assignments")
 
-            # Store update in memory with timestamp
             update = ScheduleUpdate(codigo, campus, schedule_data)
             
             async with self._write_lock:
@@ -56,19 +52,15 @@ class SalaScheduleStorage:
                 self._all_room_codes.add(codigo)
                 self._update_count += 1
 
-                # Check if we should write to disk
                 if self._update_count >= self.WRITE_THRESHOLD:
-                    await self._flush_updates()
+                    await self._write_updates_to_file()
 
         except Exception as e:
             print(f"[ERROR] Error adding classroom schedule for {codigo}: {str(e)}")
             raise
 
-    async def _flush_updates(self) -> None:
-        """Write pending updates to file"""
-        if not await self._write_lock.acquire():
-            return
-
+    async def _write_updates_to_file(self) -> None:
+        """Write updates to file without acquiring additional locks"""
         try:
             if not self._pending_updates:
                 return
@@ -81,18 +73,18 @@ class SalaScheduleStorage:
                     "Asignaturas": []
                 }
 
-                # Transform schedule data into required format
-                for day, assignments in update.schedule_data["horario"].items():
-                    for block_idx, assignment in enumerate(assignments, 1):
-                        if assignment:
-                            asignatura = {
-                                "Nombre": assignment.get_nombre_asignatura(),
-                                "Capacidad": assignment.get_capacidad(),
-                                "Bloque": block_idx,
-                                "Dia": day,
-                                "Satisfaccion": assignment.get_satisfaccion()
-                            }
-                            sala_json["Asignaturas"].append(asignatura)
+                if "horario" in update.schedule_data:
+                    for day, assignments in update.schedule_data["horario"].items():
+                        for block_idx, assignment in enumerate(assignments, 1):
+                            if assignment:
+                                asignatura = {
+                                    "Nombre": assignment['nombre_asignatura'],
+                                    "Capacidad": assignment['capacidad'],
+                                    "Bloque": block_idx,
+                                    "Dia": day,
+                                    "Satisfaccion": assignment['satisfaccion']
+                                }
+                                sala_json["Asignaturas"].append(asignatura)
 
                 json_array.append(sala_json)
 
@@ -108,36 +100,70 @@ class SalaScheduleStorage:
         except Exception as e:
             print(f"Error writing classroom schedules to file: {str(e)}")
             raise
-        finally:
-            self._write_lock.release()
 
     async def generate_json_file(self) -> None:
         """Generate final JSON file with all room schedules"""
-        async with self._write_lock:
-            await self._flush_updates()
+        try:
+            async with self._write_lock:
+                print(f"[DEBUG] Processing {len(self._all_room_codes)} rooms")
+                json_array = []
+                
+                for room_code in self._all_room_codes:
+                    try:
+                        update = self._pending_updates.get(room_code)
+                        if update:
+                            sala_json = {
+                                "Codigo": update.codigo,
+                                "Campus": update.campus,
+                                "Asignaturas": []
+                            }
+                            
+                            if "horario" in update.schedule_data:
+                                for day, assignments in update.schedule_data["horario"].items():
+                                    for block_idx, assignment in enumerate(assignments, 1):
+                                        if assignment:
+                                            asignatura = {
+                                                "Nombre": assignment['nombre_asignatura'],
+                                                "Capacidad": assignment['capacidad'],
+                                                "Bloque": block_idx,
+                                                "Dia": day,
+                                                "Satisfaccion": assignment['satisfaccion']
+                                            }
+                                            sala_json["Asignaturas"].append(asignatura)
+                                            
+                            json_array.append(sala_json)
+                            print(f"[DEBUG] Processed room {room_code}: {len(sala_json['Asignaturas'])} assignments")
+                        else:
+                            print(f"[WARN] No data found for room {room_code}")
+                            
+                    except Exception as e:
+                        print(f"[ERROR] Error processing room {room_code}: {str(e)}")
+                        continue
 
-            json_array = []
-            for room_code in self._all_room_codes:
-                sala_json = self._pending_updates.get(room_code, ScheduleUpdate(
-                    room_code, "", {"horario": {}}
-                )).schedule_data
-                json_array.append(sala_json)
+                if json_array:
+                    try:
+                        output_file = self._output_path / "Horarios_salas.json"
+                        async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
+                            await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
+                            await f.flush()
+                            
+                        print(f"[SUCCESS] Generated Horarios_salas.json with {len(json_array)} rooms")
+                        if output_file.exists():
+                            print(f"[DEBUG] File size: {output_file.stat().st_size} bytes")
+                        
+                    except Exception as e:
+                        print(f"[ERROR] Error writing output file: {str(e)}")
+                else:
+                    print("[WARN] No room data to write")
 
-            if json_array:
-                output_file = self._output_path / "Horarios_salas.json"
-                async with aiofiles.open(output_file, 'w', encoding='utf-8') as f:
-                    await f.write(json.dumps(json_array, indent=2, ensure_ascii=False))
-                print(f"Generated final Horarios_salas.json with {len(json_array)} salas")
-
-                for sala in json_array:
-                    codigo = sala.get("Codigo", "Unknown")
-                    asignaturas = sala.get("Asignaturas", [])
-                    print(f"Room {codigo}: {len(asignaturas)} assignments")
+        except Exception as e:
+            print(f"[ERROR] Critical error in generate_json_file: {str(e)}")
+            raise
 
     async def force_flush(self) -> None:
         """Force write pending updates to file"""
         async with self._write_lock:
-            await self._flush_updates()
+            await self._write_updates_to_file()
 
     def get_pending_update_count(self) -> int:
         """Get number of pending updates"""

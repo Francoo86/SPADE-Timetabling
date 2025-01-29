@@ -1,13 +1,5 @@
-from spade.behaviour import CyclicBehaviour, OneShotBehaviour
-from spade.template import Template
-from spade.message import Message
+from spade.behaviour import CyclicBehaviour
 import asyncio
-# from .negotiation_behaviour import NegotiationStateBehaviour
-# from .message_collector import MessageCollectorBehaviour
-# from agents.profesor_redux import AgenteProfesor
-from spade.agent import Agent
-from objects.knowledge_base import AgentKnowledgeBase
-from fipa.acl_message import FIPAPerformatives
 
 class EsperarTurnoBehaviour(CyclicBehaviour):
     """Behaviour that waits for the agent's turn before starting negotiations."""
@@ -58,51 +50,3 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
     async def on_end(self):
         """Cleanup when behaviour ends."""
         self.profesor.log.info(f"Wait turn behaviour ended for professor {self.profesor.nombre}")
-
-class NotifyNextProfessorBehaviour(OneShotBehaviour):
-    """One-shot behaviour to notify the next professor to start negotiations"""
-    
-    def __init__(self, profesor, next_orden):
-        super().__init__()
-        self.profesor = profesor
-        self.next_orden = next_orden
-        
-    async def run(self):
-        """Execute the notification"""
-        try:
-            # Get the knowledge base
-            
-            # Search for professor with next order
-            professors = await self.agent._kb.search(
-                service_type="profesor",
-                properties={"orden": self.next_orden}
-            )
-            
-            if professors:
-                next_professor = professors[0]
-                # Create START message
-                msg = Message(
-                    to=str(next_professor.jid)
-                )
-                msg.set_metadata("performative", FIPAPerformatives.INFORM)
-                msg.set_metadata("conversation-id", "negotiation-start")
-                msg.set_metadata("nextOrden", str(self.next_orden))
-
-                msg.body = "START"
-                
-                await self.send(msg)
-                self.profesor.log.info(
-                    f"Successfully notified next professor {next_professor.jid} "
-                    f"with order: {self.next_orden}"
-                )
-            else:
-                self.profesor.log.warning(
-                    f"No professor found with order {self.next_orden}"
-                )
-                
-        except Exception as e:
-            self.profesor.log.error(f"Error notifying next professor: {str(e)}")
-            
-    async def on_end(self):
-        """Cleanup after notification is sent"""
-        await super().on_end()

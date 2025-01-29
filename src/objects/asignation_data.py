@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, List
+from typing import Optional
 from .static.agent_enums import Day, Actividad, translate_actividad
 
 @dataclass

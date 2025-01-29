@@ -81,7 +81,7 @@ class AgenteSupervisor(Agent):
     async def finish_system(self):
         """Clean up and shut down the system"""
         try:
-            self.set("system_active", False)
+            # self.set("system_active", False)
             self.log.info("[Supervisor] Starting system shutdown...")
             
             # Ensure storage instances exist
@@ -141,15 +141,17 @@ class AgenteSupervisor(Agent):
                 self.log.error(f"Error stopping agent: {str(e)}")
                 
             # Set completion event
-            if self.finalizer:
-                await self.finalizer.set()
-                self.log.info("Finalizer event set")
+            # if self.finalizer:
+                # self.finalizer.set()
+                # self.log.info("Finalizer event set")
                 
         except Exception as e:
             self.log.error(f"Critical error in finish_system: {str(e)}")
             # Ensure finalizer is set even on error
-            if self.finalizer:
-                await self.finalizer.set()
+            # if self.finalizer:
+                # self.finalizer.set()
+        
+        self.set("system_active", False)
 
     class ShutdownBehaviour(CyclicBehaviour):
         """Handles system shutdown signals from professors"""
@@ -159,10 +161,6 @@ class AgenteSupervisor(Agent):
             if msg:
                 try:
                     self.agent.log.info("Received shutdown signal - initiating system shutdown")
-                    
-                    # Set system inactive to stop monitoring
-                    self.agent.set("system_active", False)
-                    
                     # Generate final JSON files
                     await self.agent.finish_system()
                 except Exception as e:

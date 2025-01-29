@@ -1,7 +1,5 @@
 from spade.agent import Agent
 from typing import Dict, List, Optional
-from queue import Queue
-from spade.template import Template
 import asyncio
 
 import sys
@@ -9,20 +7,16 @@ sys.path.append('src/')
 
 from objects.asignation_data import Asignatura
 from objects.static.agent_enums import TipoContrato, Day
-from behaviours.negotiation_behaviour import NegotiationStateBehaviour
-from behaviours.message_collector import MessageCollectorBehaviour
-from behaviours.requests_behaviour import EsperarTurnoBehaviour, NotifyNextProfessorBehaviour
+from behaviours.requests_behaviour import EsperarTurnoBehaviour
 from objects.asignation_data import BloqueInfo
-from spade.message import Message
 from .agent_logger import AgentLogger
 from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from behaviours.monitoring import InitialWaitBehaviour
 from fipa.common_templates import CommonTemplates
 from json_stuff.json_profesores import ProfesorScheduleStorage
+from behaviours.fsm_negotiation_states import NegotiationFSM
 
 from datetime import datetime
-
-import logging
 
 class CleanupState:
     """Track cleanup state to avoid deadlocks"""
@@ -49,7 +43,7 @@ class AgenteProfesor(Agent):
         self.log =  AgentLogger(f"Profesor{self.orden}")
         self._initialize_data_structures()
         self._kb = None
-        self.batch_proposals = asyncio.Queue()
+        # self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
         
         # Lock para replicar el synchronized de Java
@@ -58,8 +52,9 @@ class AgenteProfesor(Agent):
         self.cleanup_state = CleanupState()
         
         # inicializar una fuente de verdad de los behaviors
-        self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
-        self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
+        self.negotiation_state_behaviour = NegotiationFSM(profesor_agent=self)
+        # self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
+        # self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -103,8 +98,8 @@ class AgenteProfesor(Agent):
     def prepare_behaviours(self):
         self.add_behaviour(self.negotiation_state_behaviour)
         
-        classroom_template = CommonTemplates.get_classroom_availability_template()
-        self.add_behaviour(self.message_collector_behaviour, classroom_template)
+        # classroom_template = CommonTemplates.get_classroom_availability_template()
+        # self.add_behaviour(self.message_collector_behaviour, classroom_template)
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
@@ -140,10 +135,7 @@ class AgenteProfesor(Agent):
             if self.orden == 0:
                 self.log.info("Starting as first professor")
                 template = CommonTemplates.get_notify_next_professor_template(is_base=True)
-                self.add_behaviour(InitialWaitBehaviour(
-                    self.negotiation_state_behaviour,
-                    self.message_collector_behaviour
-                ), template)
+                self.add_behaviour(InitialWaitBehaviour(), template)
             else:
                 self.log.info(f"Waiting for turn (order: {self.orden})")
                 wait_behaviour = EsperarTurnoBehaviour(
@@ -242,10 +234,10 @@ class AgenteProfesor(Agent):
                     self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
             else:
                 self.log.info(f" [MOVE] Reached end of subjects")
-
+        
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
-        return bloque not in self.horario_ocupado.get(dia, set())
+        return dia not in self.horario_ocupado or bloque not in self.horario_ocupado[dia]
 
     def get_blocks_by_day(self, dia: Day) -> Dict[str, List[int]]:
         """Get all blocks assigned for a specific day."""
