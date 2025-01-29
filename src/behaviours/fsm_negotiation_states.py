@@ -182,11 +182,17 @@ class CollectingState(State):
     async def run(self):
         try:
             start_time = asyncio.get_event_loop().time()
+            already_msgs_id = set()
             
             while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
                 msg = await self.receive(timeout=0.05)
                 
                 if msg:
+                    # Skip already processed messages
+                    if msg.id in already_msgs_id:
+                        self.agent.log.warning(f"Skipping already processed message: {msg.id}")
+                        continue
+                    
                     sender = str(msg.sender)
                     response_time = asyncio.get_event_loop().time() - self.parent.response_times.get(sender, start_time)
                     
@@ -199,6 +205,8 @@ class CollectingState(State):
                         self.agent.log.debug(f"Proposal from {sender} received in {response_time:.3f}s")
                     elif msg.get_metadata("performative") == "refuse":
                         self.agent.log.debug(f"Refuse from {sender} received in {response_time:.3f}s")
+                        
+                    already_msgs_id.add(msg.id)
                 
                 # Log progress
                 if len(self.parent.responding_rooms) == self.parent.cfp_count:
@@ -264,25 +272,41 @@ class EvaluatingState(CFPSenderState):
     
     async def run(self):
         try:
+            # Get all proposals atomically
             proposals = []
             while not self.parent.proposals.empty():
-                proposals.append(await self.parent.proposals.get())
+                try:
+                    proposals.append(await self.parent.proposals.get())
+                except Exception as e:
+                    self.agent.log.error(f"Error getting proposal: {str(e)}")
+                    break
 
+            self.agent.log.debug(f"Processing {len(proposals)} proposals")
+            
             valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
+            self.agent.log.debug(f"Found {len(valid_proposals)} valid proposals")
 
             if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
-                self.parent.retry_count = 0  # Reset retry count on success
+                self.parent.retry_count = 0
                 if self.parent.bloques_pendientes == 0:
                     await self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
-                    await self.send_cfp_messages()
-                    self.set_next_state(NegotiationStates.COLLECTING)
+                    # Add timeout for sending new CFPs
+                    try:
+                        async with asyncio.timeout(5):  # 5 second timeout
+                            await self.send_cfp_messages()
+                            self.set_next_state(NegotiationStates.COLLECTING)
+                    except asyncio.TimeoutError:
+                        self.agent.log.error("Timeout sending CFPs")
+                        self.set_next_state(NegotiationStates.SETUP)
             else:
                 await self.handle_proposal_failure()
+                
         except Exception as e:
             self.agent.log.error(f"Error in evaluating state: {str(e)}")
-            await self.handle_proposal_failure()
+            # Always ensure we transition to a valid state
+            self.set_next_state(NegotiationStates.SETUP)
             
     async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
         """Try to assign batch proposals to classrooms"""
@@ -425,33 +449,31 @@ class EvaluatingState(CFPSenderState):
         confirm.sender == og_sender and confirm.get_metadata("conversation-id") == conv_id
         
     async def handle_proposal_failure(self):
-        """Handle failure to assign proposals."""
-        self.parent.retry_count += 1
-        if self.parent.retry_count >= self.MAX_RETRIES:
-            if self.parent.assignation_data.has_sala_asignada():
-                # Try different room if current one isn't working
-                self.agent.log.critical("Max retries reached - clearing assigned room")
-                self.parent.assignation_data.set_sala_asignada(None)
+        """Handle proposal failure with proper error recovery"""
+        try:
+            self.parent.retry_count += 1
+            self.agent.log.info(f"Handling proposal failure (retry {self.parent.retry_count}/{self.MAX_RETRIES})")
+            
+            if self.parent.retry_count >= self.MAX_RETRIES:
+                if self.parent.assignation_data.has_sala_asignada():
+                    self.parent.assignation_data.set_sala_asignada(None)
+                else:
+                    await self.agent.move_to_next_subject()
+                self.parent.retry_count = 0
+                self.set_next_state(NegotiationStates.SETUP)
             else:
-                # If we've tried different rooms without success, move on
-                self.agent.log.critical("Max retries reached - moving to next subject")
-                await self.agent.move_to_next_subject()
-            
-            self.parent.retry_count = 0
+                # Add timeout for retry
+                try:
+                    async with asyncio.timeout(5):
+                        await self.send_cfp_messages()
+                        self.set_next_state(NegotiationStates.COLLECTING)
+                except asyncio.TimeoutError:
+                    self.agent.log.error("Timeout during retry")
+                    self.set_next_state(NegotiationStates.SETUP)
+                    
+        except Exception as e:
+            self.agent.log.error(f"Error in handle_proposal_failure: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
-        else:
-            # Add exponential backoff
-            backoff_time = 2 ** self.parent.retry_count * 1000
-            self.agent.log.debug(
-                f"Retry {self.parent.retry_count}/{self.MAX_RETRIES} - "
-                f"backing off for {backoff_time}ms"
-            )
-            
-            # In SPADE we need to use asyncio.sleep for the backoff
-            await asyncio.sleep(backoff_time / 1000)  # Convert to seconds
-            
-            self.set_next_state(NegotiationStates.COLLECTING)
-            await self.send_cfp_messages()
 
 class FinishedState(State):
     def __init__(self, parent: NegotiationFSM):
