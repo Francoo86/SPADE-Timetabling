@@ -412,7 +412,6 @@ class ApplicationAgent(Agent):
             # Stop the application agent
             self.agent.is_running = False
             await self.agent.stop()
-            await asyncio.sleep(5) # Add time to ensure proper shutdown
             self.agent.end_event.set()
             
             logger.info("System shutdown complete")
