@@ -6,3 +6,4 @@ deleteme/
 agent_logs/
 old_logs/
 *.log
+*.csv
