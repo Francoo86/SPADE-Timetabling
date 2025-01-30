@@ -44,6 +44,10 @@ class AgenteSupervisor(Agent):
         self.prof_storage = None
         
         self.finalizer : asyncio.Event = None
+        self.metrics_monitor = None
+        
+    def set_metrics_monitor(self, monitor):
+        self.metrics_monitor = monitor
         
     def add_finalizer_event(self, finalizer : asyncio.Event):
         self.finalizer = finalizer
@@ -200,3 +204,4 @@ class AgenteSupervisor(Agent):
                     # Ensure finalizer is set even on error
                     # if self.agent.finalizer:
                         # await self.agent.finalizer.set()
+                self.agent.set("system_active", False)

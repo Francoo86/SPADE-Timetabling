@@ -56,7 +56,7 @@ class RTTMeasurement:
 
 class RTTLogger:
     """Asynchronous RTT logging system with CSV output"""
-    _shared_csv_path = Path("agent_output/rtt_logs") / f"rtt_measurements_{datetime.now().strftime('%Y%m%d')}.csv"
+    _shared_csv_path = Path("agent_output/rtt_logs") / f"rtt_measurements_{datetime.now().strftime('%Y%m%d_%H-%M-%S')}.csv"
     _shared_lock = asyncio.Lock()  # Class-level lock for file access
     _is_initialized = False  # Class-level flag to track header writing
     

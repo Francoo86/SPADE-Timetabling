@@ -16,8 +16,9 @@ class AgentFactory:
     def __init__(self):
         # get todays date
         today = datetime.now()
-        mas_metrics_file = f"mas_metrics_{today.strftime('%Y-%m-%d')}.csv"
-        request_metrics_file = f"request_metrics_{today.strftime('%Y-%m-%d')}.csv"
+
+        mas_metrics_file = f"mas_metrics_{today.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+        request_metrics_file = f"request_metrics_{today.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         
         mas_metrics_file = os.path.join(OUTPUT_DIR, mas_metrics_file)
         request_metrics_file = os.path.join(OUTPUT_DIR, request_metrics_file)
@@ -152,7 +153,7 @@ class AgentFactory:
     async def create_supervisor(self, jid: str, password: str, professor_jids: list) -> AgenteSupervisor:
         """Create supervisor agent with non-blocking metrics monitoring"""
         agent = AgenteSupervisor(jid, password, professor_jids)
-        agent.metrics_monitor = self.metrics_monitor
+        agent.set_metrics_monitor(self.metrics_monitor)
         
         # Add CPU monitoring behavior
         class CPUMonitorBehaviour(PeriodicBehaviour):
