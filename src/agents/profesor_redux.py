@@ -363,44 +363,61 @@ class AgenteProfesor(Agent):
         return ''.join(c for c in name if c.isalnum())
 
     async def cleanup(self):
-        """Coordinated cleanup with timeout protection"""
+        """Coordinated cleanup with metrics handling and timeout protection"""
         try:
             async with self.cleanup_lock:
                 if self.cleanup_state.is_cleaning:
                     return
                     
                 self.cleanup_state.is_cleaning = True
+                self.log.info(f"Starting cleanup for professor {self.nombre}")
                 
-                # Kill behaviors immediately rather than waiting
-                behaviours = list(self.behaviours)
-                for behaviour in behaviours:
-                    try:
-                        if behaviour:
-                            behaviour.kill()
-                    except Exception as e:
-                        self.log.error(f"Error killing behavior: {str(e)}")
-                    
                 try:
-                    if self._kb:
-                        await self._kb.deregister_agent(self.jid)
+                    # First stop metrics related tasks
+                    if hasattr(self, 'metrics_monitor'):
+                        self.log.info("Stopping metrics collection...")
+                        # Don't await stop() here as it might be handled by supervisor
+                        asyncio.create_task(self.metrics_monitor._flush_all())
                         
-                    # Force final storage update
-                    if hasattr(self, 'storage') and self.storage:
-                        await self.storage.force_flush()
+                    # Kill behaviors immediately rather than waiting
+                    behaviours = list(self.behaviours)
+                    for behaviour in behaviours:
+                        try:
+                            if behaviour:
+                                behaviour.kill()
+                        except Exception as e:
+                            self.log.error(f"Error killing behavior: {str(e)}")
                         
-                    await asyncio.sleep(0.5)  # Brief delay before stop
-                    await self.stop()
-                    
+                    try:
+                        if self._kb:
+                            await self._kb.deregister_agent(self.jid)
+                            
+                        # Force final storage update with timeout
+                        if hasattr(self, 'storage') and self.storage:
+                            async with asyncio.timeout(5):  # 5 second timeout
+                                await self.storage.force_flush()
+                            
+                        await asyncio.sleep(0.5)  # Brief delay before stop
+                        await self.stop()
+                        
+                    except asyncio.TimeoutError:
+                        self.log.error("Timeout during storage flush")
+                        await self.stop()  # Stop anyway
+                    except Exception as e:
+                        self.log.error(f"Error during agent stop: {str(e)}")
+                        await self.stop()
+                        
                 except Exception as e:
-                    self.log.error(f"Error during agent stop: {str(e)}")
+                    self.log.error(f"Error during cleanup: {str(e)}")
                     # Force stop on error
                     await self.stop()
                     
         except Exception as e:
-            self.log.error(f"Error in cleanup: {str(e)}")
+            self.log.error(f"Critical error in cleanup: {str(e)}")
         finally:
             async with self.cleanup_lock:
                 self.cleanup_state.is_cleaning = False
+                self.log.info(f"Cleanup completed for professor {self.nombre}")
 
     async def export_schedule_json(self) -> Dict:
         return {

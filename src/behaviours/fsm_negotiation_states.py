@@ -15,6 +15,9 @@ import json
 from datetime import datetime, timedelta
 from aioxmpp import JID
 from objects.helper.quick_rejector import RoomQuickRejectFilter
+from performance.rtt_stats import RTTLogger
+from sys import getsizeof
+import uuid
 
 # States for the FSM
 class NegotiationStates:
@@ -63,12 +66,22 @@ class CFPSenderState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
         self.room_filter = RoomQuickRejectFilter()
+        self.rtt_logger = None
+        self.rtt_initialized = False
         super().__init__()
         
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
         """Sanitize subject name removing special characters"""
         return ''.join(c for c in name if c.isalnum())
+    
+    async def on_start(self):
+        if self.rtt_initialized:
+            return
+        
+        self.rtt_logger = RTTLogger(str(self.agent.jid))
+        self.rtt_initialized = True
+        await self.rtt_logger.start()
         
     async def send_cfp_messages(self):
         """Send CFP messages to classroom agents"""
@@ -129,12 +142,24 @@ class CFPSenderState(State):
                 msg = Message(
                     to=str(room.jid)
                 )
+                
                 msg.set_metadata("protocol", "contract-net")
                 msg.set_metadata("performative", FIPAPerformatives.CFP)
                 msg.set_metadata("conversation-id", f"neg-{self.agent.nombre}-{self.parent.bloques_pendientes}")
                 msg.body = json.dumps(solicitud_info)
                 
+                cfp_id = f"cfp-{str(uuid.uuid4())}"
+                msg.set_metadata("rtt-id", cfp_id)
+                
+                await self.rtt_logger.start_request(
+                    cfp_id,
+                    FIPAPerformatives.CFP,
+                    str(room.jid),
+                    ontology="classroom-availability"
+                )
+                
                 await self.send(msg)
+
                 cfp_count += 1
             self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
             self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
@@ -177,6 +202,7 @@ class SetupState(CFPSenderState):
 class CollectingState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
+        self.rtt_logger = RTTLogger(str(self.parent.agent.jid))
         super().__init__()
     
     async def run(self):
@@ -201,9 +227,23 @@ class CollectingState(State):
                         self.parent.responding_rooms.add(sender)
                     
                     if msg.get_metadata("performative") == "propose":
+                        await self.rtt_logger.end_request(
+                            msg.get_metadata("rtt-id"),  # Usar el nuevo ID
+                            response_performative="propose",  # Performative de respuesta
+                            message_size=getsizeof(msg.body),
+                            success=True,
+                            ontology="classroom-availability"
+                        )
                         await self.handle_proposal(msg)
                         self.agent.log.debug(f"Proposal from {sender} received in {response_time:.3f}s")
                     elif msg.get_metadata("performative") == "refuse":
+                        await self.rtt_logger.end_request(
+                            msg.get_metadata("rtt-id"),  # Usar el nuevo ID
+                            response_performative="refuse",  # Performative de respuesta
+                            message_size=getsizeof(msg.body),
+                            success=False,  # <--- Marcar como fallido
+                            ontology="classroom-availability"
+                        )
                         self.agent.log.debug(f"Refuse from {sender} received in {response_time:.3f}s")
                         
                     already_msgs_id.add(msg.id)
@@ -405,6 +445,16 @@ class EvaluatingState(CFPSenderState):
             msg.set_metadata("protocol", "contract-net")
             
             msg.body = jsonpickle.encode(BatchAssignmentRequest(requests))
+            
+            id_prop = f"assign-{str(uuid.uuid4())}"
+            msg.set_metadata("rtt-id", id_prop)
+            
+            await self.rtt_logger.start_request(
+                id_prop,
+                FIPAPerformatives.ACCEPT_PROPOSAL,
+                str(original_msg.sender),
+                ontology="room-assignment"
+            )
 
             # Send message and wait for confirmation
             await self.send(msg)
@@ -417,6 +467,14 @@ class EvaluatingState(CFPSenderState):
                 confirmation_msg = await self.receive(timeout=0.1)
                 if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
                     confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
+                    
+                    await self.rtt_logger.end_request(
+                        id_prop,  # Usar el nuevo ID
+                        response_performative=FIPAPerformatives.INFORM,  # Respuesta
+                        message_size=getsizeof(confirmation_msg.body),
+                        success=True,
+                        ontology="room-assignment"
+                    )
 
                     # Process confirmed assignments
                     for assignment in confirmation_data.get_confirmed_assignments():
@@ -438,10 +496,17 @@ class EvaluatingState(CFPSenderState):
                     return True
 
                 await asyncio.sleep(0.05)
-
         except Exception as e:
+            await self.rtt_logger.end_request(
+                conv_id,
+                "ERROR",
+                0,
+                success=False,
+                extra_info={"error": str(e)},
+                ontology="room-assignment"
+            )
             self.agent.log.error(f"Error in send_batch_assignment: {str(e)}")
-            
+    
         return False
     
     def is_valid_confirm(self, confirm : Message, og_sender : JID, conv_id : str) -> bool:
@@ -496,12 +561,14 @@ class FinishedState(State):
             # Notify next professor first
             await self.notify_next_professor()
             
-            # Kill this behavior
-            self.kill()
-                
-            # Start cleanup with small delay to allow next prof to start
+            # Brief delay to ensure notification is processed
             await asyncio.sleep(0.5)
-            await self.agent.cleanup()
+            
+            # Start cleanup with proper error handling
+            try:
+                await self.agent.cleanup()
+            except Exception as e:
+                self.agent.log.error(f"Error during cleanup: {str(e)}")
             
         except Exception as e:
             self.agent.log.error(f"Error in finish_negotiations: {str(e)}")
@@ -524,14 +591,20 @@ class FinishedState(State):
                 msg.set_metadata("performative", FIPAPerformatives.INFORM)
                 msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(next_orden))
-                
                 msg.body = "START"
                 
                 await self.send(msg)
                 self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
+                
+                # Wait briefly to ensure message is processed
+                await asyncio.sleep(0.2)
             else:
                 # No next professor means we're done - trigger system shutdown
                 self.agent.log.info("No next professor found - all professors completed")
+                
+                # Final metrics flush before shutdown
+                if hasattr(self.agent, 'metrics_monitor'):
+                    await self.agent.metrics_monitor._flush_all()
                 
                 # Notify supervisor to begin shutdown
                 supervisor_agents = await self.agent._kb.search(service_type="supervisor")
@@ -544,6 +617,9 @@ class FinishedState(State):
                     
                     await self.send(shutdown_msg)
                     self.agent.log.info("Sent shutdown signal to supervisor")
+                    
+                    # Wait to ensure supervisor receives shutdown signal
+                    await asyncio.sleep(0.5)
                 else:
                     self.agent.log.error("Could not find supervisor agent for shutdown")
                     # Even without supervisor, proceed with cleanup
