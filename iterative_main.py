@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 import os
 
 # Import the original code
-from main import ApplicationRunner
+from benchmarked_main import ApplicationRunner
 
 class IterationRunner:
     def __init__(self, num_iterations: int):
@@ -141,7 +141,9 @@ class IterationRunner:
 
     def save_results(self):
         """Save results to JSON file"""
-        output_file = f"iteration_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        path_json = Path('results_json_profiling')
+        path_json.mkdir(exist_ok=True)
+        output_file = path_json / f"iteration_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(output_file, 'w') as f:
             json.dump(self.results, f, indent=2)
 
