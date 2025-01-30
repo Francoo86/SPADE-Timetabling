@@ -6,6 +6,11 @@ from spade.behaviour import PeriodicBehaviour
 import time
 from datetime import datetime
 import asyncio
+import os
+
+FILE_PATH = os.path.dirname(os.path.abspath(__file__))
+# GO TWO DIRECTORIES UP
+OUTPUT_DIR = os.path.abspath(os.path.join(FILE_PATH, "..", "..", "metrics"))
 
 class AgentFactory:
     def __init__(self):
@@ -13,6 +18,12 @@ class AgentFactory:
         today = datetime.now()
         mas_metrics_file = f"mas_metrics_{today.strftime('%Y-%m-%d')}.csv"
         request_metrics_file = f"request_metrics_{today.strftime('%Y-%m-%d')}.csv"
+        
+        mas_metrics_file = os.path.join(OUTPUT_DIR, mas_metrics_file)
+        request_metrics_file = os.path.join(OUTPUT_DIR, request_metrics_file)
+        
+        if not os.path.exists(OUTPUT_DIR):
+            os.makedirs(OUTPUT_DIR)
         
         self.metrics_monitor = MetricsMonitor(
             output_file=mas_metrics_file,
