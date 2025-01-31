@@ -7,3 +7,6 @@ agent_logs/
 old_logs/
 *.log
 *.csv
+*.prof
+*.txt
+results_json_profiling/
