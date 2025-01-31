@@ -1,205 +1,1020 @@
 [
   {
-    "Codigo": "K3",
+    "Codigo": "CM6",
     "Campus": "Playa Brava",
     "Asignaturas": [
       {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Nombre": "MICROECONOMIA",
         "Capacidad": 1.0,
+        "Bloque": 1,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 6,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "TALLER 3",
+        "Capacidad": 1.0,
+        "Bloque": 7,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 8,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 9,
+        "Dia": "LUNES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 1,
+        "Dia": "MARTES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "PRACTICA EN OFICINA",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "MARTES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 8
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Capacidad": 1.0,
+        "Bloque": 5,
+        "Dia": "MARTES",
+        "Satisfaccion": 8
+      }
+    ]
+  },
+  {
+    "Codigo": "SRA01",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "DERECHO MINERO Y AMBIENTA",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 1,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
+        "Nombre": "DERECHO MINERO Y AMBIENTA",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 2,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
+        "Nombre": "DERECHO MINERO Y AMBIENTA",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 3,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "CIERRE Y ABANDONO DE FAEN",
-        "Capacidad": 0.75,
+        "Nombre": "MECANICA DE FLUIDOS",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 4,
         "Dia": "LUNES",
-        "Satisfaccion": 9
+        "Satisfaccion": 10
       },
       {
-        "Nombre": "CIERRE Y ABANDONO DE FAEN",
-        "Capacidad": 0.75,
+        "Nombre": "FENOMENOS DE TRANSPORTE",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 5,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
+        "Nombre": "FENOMENOS DE TRANSPORTE",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 6,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 2,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 3,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "INSTALACIONES",
-        "Capacidad": 0.75,
-        "Bloque": 4,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "INSTALACIONES",
-        "Capacidad": 0.75,
-        "Bloque": 5,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 2,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 3,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 4,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 5,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
-        "Bloque": 6,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 1.0,
+        "Nombre": "FENOMENOS DE TRANSPORTE",
+        "Capacidad": 0.6666666666666666,
         "Bloque": 7,
-        "Dia": "MIERCOLES",
+        "Dia": "LUNES",
         "Satisfaccion": 9
       }
     ]
   },
   {
-    "Codigo": "LAUT",
+    "Codigo": "V105",
     "Campus": "Playa Brava",
     "Asignaturas": [
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "CIERRE Y ABANDONO DE FAEN",
+        "Capacidad": 0.75,
+        "Bloque": 4,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "CIERRE Y ABANDONO DE FAEN",
+        "Capacidad": 0.75,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TERRITORIO 4",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TERRITORIO 4",
+        "Capacidad": 1.0,
+        "Bloque": 5,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      }
+    ]
+  },
+  {
+    "Codigo": "LPIR",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 1,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 4,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 5,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 6,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 7,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 8,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 9,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 1,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
         "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "COMUNICACIÓN Y LIDERAZGO",
+        "Nombre": "GESTION DE PERSONAS II",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "MECANICA DE FLUIDOS",
+        "Capacidad": 0.4166666666666667,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "MECANICA DE FLUIDOS",
+        "Capacidad": 0.4166666666666667,
+        "Bloque": 5,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "MECANICA DE FLUIDOS",
+        "Capacidad": 0.4166666666666667,
+        "Bloque": 6,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "MECANICA DE FLUIDOS",
+        "Capacidad": 0.4166666666666667,
+        "Bloque": 7,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      }
+    ]
+  },
+  {
+    "Codigo": "IC3",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.75,
+        "Bloque": 1,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "TERRITORIO 3",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "TERRITORIO 3",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TERRITORIO 3",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 6,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 7,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 8,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 9,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 1,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 2,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 3,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "INSTALACIONES",
+        "Capacidad": 0.75,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "INSTALACIONES",
+        "Capacidad": 0.75,
+        "Bloque": 5,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 6,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 7,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 8,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Capacidad": 0.75,
+        "Bloque": 9,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      }
+    ]
+  },
+  {
+    "Codigo": "V102",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 1,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 6,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 7,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 8,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 9,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 1,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 2,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 3,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      }
+    ]
+  },
+  {
+    "Codigo": "E6",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "COMPILADORES",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 1,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "GESTIÓN DE PRODUCCIÓN",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "GESTIÓN DE PRODUCCIÓN",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "GESTIÓN DE PRODUCCIÓN",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 6,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 7,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 8,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 9,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 1,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 2,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 3,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 5,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 6,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 7,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 8,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 9,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 1,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 2,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 3,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 4,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 5,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 6,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 7,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 8,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 9,
+        "Dia": "MIERCOLES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Capacidad": 0.8888888888888888,
+        "Bloque": 1,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER 9",
+        "Capacidad": 0.6666666666666666,
+        "Bloque": 2,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 3,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 4,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 5,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 6,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 7,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 8,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 9,
+        "Dia": "JUEVES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 1,
+        "Dia": "VIERNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 2,
+        "Dia": "VIERNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 3,
+        "Dia": "VIERNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 4,
+        "Dia": "VIERNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 0.6222222222222222,
+        "Bloque": 5,
+        "Dia": "VIERNES",
+        "Satisfaccion": 9
+      }
+    ]
+  },
+  {
+    "Codigo": "IM3",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "LABORATORIO DE CONTROL AU",
+        "Capacidad": 1.0,
+        "Bloque": 1,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "LABORATORIO DE CONTROL AU",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "LABORATORIO DE CONTROL AU",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      }
+    ]
+  },
+  {
+    "Codigo": "LRSM",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "ROBÓTICA",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      }
+    ]
+  },
+  {
+    "Codigo": "IM2",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "ROBÓTICA",
+        "Capacidad": 1.0,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ROBÓTICA",
+        "Capacidad": 1.0,
+        "Bloque": 6,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "ROBÓTICA",
+        "Capacidad": 1.0,
+        "Bloque": 7,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      }
+    ]
+  },
+  {
+    "Codigo": "A106",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "LABORATORIO DE CONTROL DI",
+        "Capacidad": 0.8333333333333334,
+        "Bloque": 8,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "LABORATORIO DE CONTROL DI",
+        "Capacidad": 0.8333333333333334,
+        "Bloque": 9,
+        "Dia": "LUNES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "LABORATORIO DE CONTROL DI",
+        "Capacidad": 0.8333333333333334,
+        "Bloque": 1,
+        "Dia": "MARTES",
+        "Satisfaccion": 10
+      }
+    ]
+  },
+  {
+    "Codigo": "LCSI",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "LABORATORIO DE ROBÓTICA",
+        "Capacidad": 0.8333333333333334,
+        "Bloque": 2,
+        "Dia": "MARTES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "LABORATORIO DE ROBÓTICA",
+        "Capacidad": 0.8333333333333334,
+        "Bloque": 3,
+        "Dia": "MARTES",
+        "Satisfaccion": 10
+      },
+      {
+        "Nombre": "LABORATORIO DE ROBÓTICA",
+        "Capacidad": 0.8333333333333334,
+        "Bloque": 4,
+        "Dia": "MARTES",
+        "Satisfaccion": 10
+      }
+    ]
+  },
+  {
+    "Codigo": "LMIN",
+    "Campus": "Playa Brava",
+    "Asignaturas": [
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 1,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 3,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 4,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 5,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 6,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 7,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 8,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 9,
+        "Dia": "LUNES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 1,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Capacidad": 1.0,
+        "Bloque": 2,
+        "Dia": "MARTES",
+        "Satisfaccion": 9
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
         "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "MARTES",
