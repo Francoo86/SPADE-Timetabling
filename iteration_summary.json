@@ -1,0 +1,11 @@
+{
+  "total_iterations": 1,
+  "successful_runs": 1,
+  "failed_runs": 0,
+  "average_duration": 210.7599527835846,
+  "min_duration": 210.7599527835846,
+  "max_duration": 210.7599527835846,
+  "std_dev_duration": 0,
+  "avg_professor_assignments": 0,
+  "avg_room_utilization": 0
+}

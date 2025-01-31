@@ -1,547 +1,206 @@
 [
   {
-    "Codigo": "LC-03",
+    "Codigo": "K3",
     "Campus": "Playa Brava",
     "Asignaturas": [
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
         "Capacidad": 1.0,
         "Bloque": 1,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
         "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
         "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Capacidad": 1.0,
+        "Nombre": "CIERRE Y ABANDONO DE FAEN",
+        "Capacidad": 0.75,
         "Bloque": 4,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Capacidad": 1.0,
+        "Nombre": "CIERRE Y ABANDONO DE FAEN",
+        "Capacidad": 0.75,
         "Bloque": 5,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
         "Capacidad": 1.0,
         "Bloque": 6,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Capacidad": 1.0,
-        "Bloque": 7,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Capacidad": 1.0,
-        "Bloque": 8,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Capacidad": 1.0,
-        "Bloque": 9,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Capacidad": 1.0,
-        "Bloque": 1,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
         "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "SISTEMAS DE GESTIÓN DE CA",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
         "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TALLER 2",
+        "Nombre": "INSTALACIONES",
         "Capacidad": 0.75,
         "Bloque": 4,
         "Dia": "MARTES",
-        "Satisfaccion": 8
+        "Satisfaccion": 9
       },
       {
-        "Nombre": "PURIFICACION Y SEPARACION",
+        "Nombre": "INSTALACIONES",
         "Capacidad": 0.75,
         "Bloque": 5,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "PURIFICACION Y SEPARACION",
-        "Capacidad": 0.75,
-        "Bloque": 6,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "PURIFICACION Y SEPARACION",
-        "Capacidad": 0.75,
-        "Bloque": 7,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "PURIFICACION Y SEPARACION",
-        "Capacidad": 0.75,
-        "Bloque": 8,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER 9",
-        "Capacidad": 0.75,
-        "Bloque": 9,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
-        "Bloque": 1,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "MIERCOLES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "MIERCOLES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Capacidad": 1.0,
         "Bloque": 4,
         "Dia": "MIERCOLES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Capacidad": 1.0,
         "Bloque": 5,
         "Dia": "MIERCOLES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Capacidad": 1.0,
         "Bloque": 6,
         "Dia": "MIERCOLES",
         "Satisfaccion": 9
       },
       {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Capacidad": 1.0,
         "Bloque": 7,
         "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
-        "Bloque": 8,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
-        "Bloque": 9,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
-        "Bloque": 1,
-        "Dia": "JUEVES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
-        "Bloque": 2,
-        "Dia": "JUEVES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.7,
-        "Bloque": 3,
-        "Dia": "JUEVES",
         "Satisfaccion": 9
       }
     ]
   },
   {
-    "Codigo": "CRP33",
-    "Campus": "Playa Brava",
-    "Asignaturas": [
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 1,
-        "Dia": "LUNES",
-        "Satisfaccion": 10
-      },
-      {
-        "Nombre": "TERRITORIO 3",
-        "Capacidad": 0.5633802816901409,
-        "Bloque": 2,
-        "Dia": "LUNES",
-        "Satisfaccion": 10
-      },
-      {
-        "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Capacidad": 0.4647887323943662,
-        "Bloque": 3,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Capacidad": 0.4647887323943662,
-        "Bloque": 4,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 5,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 6,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 7,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 8,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 9,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 1,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 2,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 3,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 4,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 5,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 6,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Capacidad": 0.4225352112676056,
-        "Bloque": 7,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      }
-    ]
-  },
-  {
-    "Codigo": "E6",
-    "Campus": "Playa Brava",
-    "Asignaturas": [
-      {
-        "Nombre": "DIRECCION DE PROYECTOS",
-        "Capacidad": 1.0,
-        "Bloque": 1,
-        "Dia": "LUNES",
-        "Satisfaccion": 10
-      },
-      {
-        "Nombre": "DIRECCION DE PROYECTOS",
-        "Capacidad": 1.0,
-        "Bloque": 2,
-        "Dia": "LUNES",
-        "Satisfaccion": 10
-      },
-      {
-        "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Capacidad": 1.0,
-        "Bloque": 3,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Capacidad": 1.0,
-        "Bloque": 4,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Capacidad": 1.0,
-        "Bloque": 5,
-        "Dia": "LUNES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 8,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 9,
-        "Dia": "MARTES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 1,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 2,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 3,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 4,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 5,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 6,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 7,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 8,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 9,
-        "Dia": "MIERCOLES",
-        "Satisfaccion": 9
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Capacidad": 0.8888888888888888,
-        "Bloque": 1,
-        "Dia": "JUEVES",
-        "Satisfaccion": 9
-      }
-    ]
-  },
-  {
-    "Codigo": "LPOT",
+    "Codigo": "LAUT",
     "Campus": "Playa Brava",
     "Asignaturas": [
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 1,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 4,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 5,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 6,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 7,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 8,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 9,
         "Dia": "LUNES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 1,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 2,
         "Dia": "MARTES",
         "Satisfaccion": 9
       },
       {
         "Nombre": "COMUNICACIÓN Y LIDERAZGO",
-        "Capacidad": 0.9259259259259259,
+        "Capacidad": 1.0,
         "Bloque": 3,
         "Dia": "MARTES",
         "Satisfaccion": 9
