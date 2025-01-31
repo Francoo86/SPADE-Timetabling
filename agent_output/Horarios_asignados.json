@@ -4,7 +4,7 @@
     "Asignaturas": [
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -14,7 +14,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -24,7 +24,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -34,7 +34,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -44,7 +44,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -54,7 +54,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -64,7 +64,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -74,7 +74,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -84,7 +84,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -94,7 +94,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -104,7 +104,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -114,7 +114,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "K3",
+        "Sala": "LAMB",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -131,7 +131,7 @@
     "Asignaturas": [
       {
         "Nombre": "DIRECCION DE PROYECTOS",
-        "Sala": "E1",
+        "Sala": "CM4",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -141,7 +141,7 @@
       },
       {
         "Nombre": "DIRECCION DE PROYECTOS",
-        "Sala": "E1",
+        "Sala": "CM4",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -151,7 +151,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -161,7 +161,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -171,7 +171,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -181,7 +181,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -191,7 +191,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -201,7 +201,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -211,7 +211,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -221,7 +221,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -231,7 +231,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -241,7 +241,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -251,7 +251,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -261,7 +261,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "K2",
+        "Sala": "CM6",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -428,7 +428,7 @@
       },
       {
         "Nombre": "TALLER 3",
-        "Sala": "LC-02",
+        "Sala": "K2",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -438,7 +438,7 @@
       },
       {
         "Nombre": "TALLER 3",
-        "Sala": "LC-02",
+        "Sala": "K2",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -448,7 +448,7 @@
       },
       {
         "Nombre": "TALLER 3",
-        "Sala": "LC-02",
+        "Sala": "K2",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -458,7 +458,7 @@
       },
       {
         "Nombre": "TALLER 3",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -508,7 +508,7 @@
       },
       {
         "Nombre": "TERRITORIO 4",
-        "Sala": "LAMB",
+        "Sala": "LC-03",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 10,
@@ -518,7 +518,7 @@
       },
       {
         "Nombre": "TERRITORIO 4",
-        "Sala": "V105",
+        "Sala": "LC6",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -528,7 +528,7 @@
       },
       {
         "Nombre": "TERRITORIO 4",
-        "Sala": "V105",
+        "Sala": "LC6",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -625,7 +625,7 @@
       },
       {
         "Nombre": "CONSTRUCCION 3",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -635,7 +635,7 @@
       },
       {
         "Nombre": "CONSTRUCCION 3",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -645,7 +645,7 @@
       },
       {
         "Nombre": "CONSTRUCCION 3",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -665,7 +665,7 @@
       },
       {
         "Nombre": "INSTALACIONES",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -675,7 +675,7 @@
       },
       {
         "Nombre": "INSTALACIONES",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -692,37 +692,7 @@
     "Asignaturas": [
       {
         "Nombre": "TALLER 2",
-        "Sala": "D105",
-        "Bloque": 1,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(ARQ21-A)",
-        "Instance": 0,
-        "Actividad": "TALLER"
-      },
-      {
-        "Nombre": "TALLER 2",
-        "Sala": "D105",
-        "Bloque": 2,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(ARQ21-A)",
-        "Instance": 0,
-        "Actividad": "TALLER"
-      },
-      {
-        "Nombre": "TALLER 2",
-        "Sala": "D105",
-        "Bloque": 3,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(ARQ21-A)",
-        "Instance": 0,
-        "Actividad": "TALLER"
-      },
-      {
-        "Nombre": "TALLER 2",
-        "Sala": "D105",
+        "Sala": "IC8",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -732,7 +702,7 @@
       },
       {
         "Nombre": "TALLER 2",
-        "Sala": "D105",
+        "Sala": "IC8",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -742,7 +712,7 @@
       },
       {
         "Nombre": "TALLER 2",
-        "Sala": "D105",
+        "Sala": "IC8",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -752,7 +722,7 @@
       },
       {
         "Nombre": "TALLER 2",
-        "Sala": "D105",
+        "Sala": "IC8",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -762,8 +732,38 @@
       },
       {
         "Nombre": "TALLER 2",
-        "Sala": "K3",
-        "Bloque": 4,
+        "Sala": "IC8",
+        "Bloque": 8,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(ARQ21-A)",
+        "Instance": 0,
+        "Actividad": "TALLER"
+      },
+      {
+        "Nombre": "TALLER 2",
+        "Sala": "IC8",
+        "Bloque": 9,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(ARQ21-A)",
+        "Instance": 0,
+        "Actividad": "TALLER"
+      },
+      {
+        "Nombre": "TALLER 2",
+        "Sala": "IC8",
+        "Bloque": 1,
+        "Dia": "Martes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(ARQ21-A)",
+        "Instance": 0,
+        "Actividad": "TALLER"
+      },
+      {
+        "Nombre": "TALLER 2",
+        "Sala": "IC8",
+        "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 8,
         "CodigoAsignatura": "(ARQ21-A)",
@@ -773,7 +773,7 @@
       {
         "Nombre": "GEOMETRIA Y ARQUITECTURA",
         "Sala": "V207",
-        "Bloque": 8,
+        "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(ARQ22-A)",
@@ -783,7 +783,7 @@
       {
         "Nombre": "GEOMETRIA Y ARQUITECTURA",
         "Sala": "V207",
-        "Bloque": 9,
+        "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(ARQ22-A)",
@@ -792,8 +792,8 @@
       },
       {
         "Nombre": "GEOMETRIA Y ARQUITECTURA",
-        "Sala": "V205",
-        "Bloque": 1,
+        "Sala": "V207",
+        "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 8,
         "CodigoAsignatura": "(ARQ22-A)",
@@ -802,9 +802,9 @@
       },
       {
         "Nombre": "PRACTICA EN OFICINA",
-        "Sala": "CM6",
-        "Bloque": 2,
-        "Dia": "Martes",
+        "Sala": "LC-02",
+        "Bloque": 1,
+        "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(ARQ56-A)",
         "Instance": 0,
@@ -813,7 +813,7 @@
       {
         "Nombre": "PRACTICA EN OFICINA",
         "Sala": "S210",
-        "Bloque": 3,
+        "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(ARQ56-A)",
@@ -969,7 +969,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -979,7 +979,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -989,7 +989,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 6,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -999,7 +999,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 7,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1009,7 +1009,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 8,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1019,7 +1019,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 9,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1029,7 +1029,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 1,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1039,7 +1039,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 2,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1049,7 +1049,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 3,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1059,7 +1059,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 4,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1069,7 +1069,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 5,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1079,7 +1079,7 @@
       },
       {
         "Nombre": "PRODUCCION I",
-        "Sala": "LC-03",
+        "Sala": "K3",
         "Bloque": 6,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1089,7 +1089,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 7,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1099,7 +1099,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 8,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1109,7 +1109,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 9,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -1119,7 +1119,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 1,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1129,7 +1129,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 2,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1139,7 +1139,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 3,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1149,7 +1149,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 4,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1159,7 +1159,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 5,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1169,7 +1169,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 6,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1179,7 +1179,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 7,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1189,7 +1189,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 8,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1199,7 +1199,7 @@
       },
       {
         "Nombre": "PRODUCCION II",
-        "Sala": "IC8",
+        "Sala": "D105",
         "Bloque": 9,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -1546,7 +1546,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 7,
         "Dia": "Miercoles",
         "Satisfaccion": 10,
@@ -1556,7 +1556,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 8,
         "Dia": "Miercoles",
         "Satisfaccion": 10,
@@ -1566,7 +1566,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 9,
         "Dia": "Miercoles",
         "Satisfaccion": 10,
@@ -1576,7 +1576,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 1,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1586,7 +1586,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 2,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1596,7 +1596,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 3,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1606,7 +1606,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 4,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1616,7 +1616,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 5,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1626,7 +1626,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 6,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1636,7 +1636,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 7,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1646,7 +1646,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 8,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1656,7 +1656,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC6",
+        "Sala": "IC3",
         "Bloque": 9,
         "Dia": "Jueves",
         "Satisfaccion": 10,
@@ -1730,17 +1730,7 @@
     "Asignaturas": [
       {
         "Nombre": "TALLER DE INTEGRACIÓN PRO",
-        "Sala": "V205",
-        "Bloque": 1,
-        "Dia": "Lunes",
-        "Satisfaccion": 10,
-        "CodigoAsignatura": "(PRI66-A)",
-        "Instance": 0,
-        "Actividad": "TALLER"
-      },
-      {
-        "Nombre": "TALLER DE INTEGRACIÓN PRO",
-        "Sala": "V205",
+        "Sala": "V207",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -1750,7 +1740,7 @@
       },
       {
         "Nombre": "TALLER DE INTEGRACIÓN PRO",
-        "Sala": "V205",
+        "Sala": "V207",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -1760,7 +1750,7 @@
       },
       {
         "Nombre": "TALLER DE INTEGRACIÓN PRO",
-        "Sala": "V205",
+        "Sala": "V207",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -1770,7 +1760,7 @@
       },
       {
         "Nombre": "TALLER DE INTEGRACIÓN PRO",
-        "Sala": "V205",
+        "Sala": "V207",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -1780,8 +1770,18 @@
       },
       {
         "Nombre": "TALLER DE INTEGRACIÓN PRO",
-        "Sala": "V205",
+        "Sala": "V207",
         "Bloque": 8,
+        "Dia": "Lunes",
+        "Satisfaccion": 10,
+        "CodigoAsignatura": "(PRI66-A)",
+        "Instance": 0,
+        "Actividad": "TALLER"
+      },
+      {
+        "Nombre": "TALLER DE INTEGRACIÓN PRO",
+        "Sala": "V207",
+        "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 10,
         "CodigoAsignatura": "(PRI66-A)",
@@ -1834,7 +1834,7 @@
     "Asignaturas": [
       {
         "Nombre": "TERMODINÁMICA",
-        "Sala": "CRP43",
+        "Sala": "V205",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -1844,8 +1844,8 @@
       },
       {
         "Nombre": "TERMODINÁMICA",
-        "Sala": "CRP43",
-        "Bloque": 2,
+        "Sala": "V205",
+        "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(FIA41-B)",
@@ -1854,8 +1854,8 @@
       },
       {
         "Nombre": "TERMODINÁMICA",
-        "Sala": "CRP43",
-        "Bloque": 3,
+        "Sala": "V205",
+        "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(FIA41-B)",
@@ -1865,7 +1865,7 @@
       {
         "Nombre": "BALANCE DE MATERIA Y ENER",
         "Sala": "LFIS",
-        "Bloque": 4,
+        "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(IME61-A)",
@@ -1875,7 +1875,7 @@
       {
         "Nombre": "BALANCE DE MATERIA Y ENER",
         "Sala": "LFIS",
-        "Bloque": 5,
+        "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(IME61-A)",
@@ -1885,7 +1885,7 @@
       {
         "Nombre": "BALANCE DE MATERIA Y ENER",
         "Sala": "LFIS",
-        "Bloque": 6,
+        "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(IME61-A)",
@@ -1894,8 +1894,8 @@
       },
       {
         "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "LAMB",
-        "Bloque": 7,
+        "Sala": "LC-03",
+        "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 10,
         "CodigoAsignatura": "(IME83-A)",
@@ -1904,8 +1904,8 @@
       },
       {
         "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "LAMB",
-        "Bloque": 8,
+        "Sala": "LC-03",
+        "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 10,
         "CodigoAsignatura": "(IME83-A)",
@@ -1914,7 +1914,7 @@
       },
       {
         "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "LAMB",
+        "Sala": "LC-03",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -1924,7 +1924,27 @@
       },
       {
         "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "K3",
+        "Sala": "IC8",
+        "Bloque": 3,
+        "Dia": "Martes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(IME83-A)",
+        "Instance": 1,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "PURIFICACION Y SEPARACION",
+        "Sala": "IC8",
+        "Bloque": 4,
+        "Dia": "Martes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(IME83-A)",
+        "Instance": 1,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "PURIFICACION Y SEPARACION",
+        "Sala": "IC8",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1934,7 +1954,7 @@
       },
       {
         "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "K3",
+        "Sala": "IC8",
         "Bloque": 6,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1943,28 +1963,8 @@
         "Actividad": "TEORIA"
       },
       {
-        "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "K3",
-        "Bloque": 7,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(IME83-A)",
-        "Instance": 1,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "PURIFICACION Y SEPARACION",
-        "Sala": "K3",
-        "Bloque": 8,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(IME83-A)",
-        "Instance": 1,
-        "Actividad": "TEORIA"
-      },
-      {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1974,7 +1974,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -1984,8 +1984,8 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
-        "Bloque": 3,
+        "Sala": "V103",
+        "Bloque": 7,
         "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(INT52-I)",
@@ -1994,8 +1994,8 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
-        "Bloque": 4,
+        "Sala": "V103",
+        "Bloque": 8,
         "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(INT52-I)",
@@ -2004,7 +2004,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 9,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2014,7 +2014,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 1,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2024,7 +2024,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 2,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2034,7 +2034,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 3,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2044,7 +2044,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 4,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2054,7 +2054,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 5,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2064,7 +2064,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 6,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2074,7 +2074,7 @@
       },
       {
         "Nombre": "TERMODINAMICA",
-        "Sala": "CM5",
+        "Sala": "V103",
         "Bloque": 7,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2091,7 +2091,7 @@
     "Asignaturas": [
       {
         "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Sala": "CM4",
+        "Sala": "E1",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2101,17 +2101,7 @@
       },
       {
         "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Sala": "E6",
-        "Bloque": 2,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(IC804-A)",
-        "Instance": 1,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Sala": "E6",
+        "Sala": "CM4",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2121,8 +2111,18 @@
       },
       {
         "Nombre": "GESTIÓN DE PRODUCCIÓN",
-        "Sala": "E6",
+        "Sala": "CM4",
         "Bloque": 4,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(IC804-A)",
+        "Instance": 1,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "GESTIÓN DE PRODUCCIÓN",
+        "Sala": "CM4",
+        "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(IC804-A)",
@@ -2132,7 +2132,7 @@
       {
         "Nombre": "PRODUCCION",
         "Sala": "LSO",
-        "Bloque": 5,
+        "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 3,
         "CodigoAsignatura": "(IC904-A)",
@@ -2151,7 +2151,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2161,7 +2161,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2171,7 +2171,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2181,7 +2181,7 @@
       },
       {
         "Nombre": "PREPARCIÓN PARA EL PROCES",
-        "Sala": "CM4",
+        "Sala": "V102",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2191,7 +2191,7 @@
       },
       {
         "Nombre": "PREPARCIÓN PARA EL PROCES",
-        "Sala": "CM4",
+        "Sala": "V102",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2201,7 +2201,7 @@
       },
       {
         "Nombre": "PREPARCIÓN PARA EL PROCES",
-        "Sala": "CM4",
+        "Sala": "V102",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2211,7 +2211,37 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
+        "Bloque": 4,
+        "Dia": "Martes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT91-J)",
+        "Instance": 0,
+        "Actividad": "LABORATORIO"
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Sala": "V207",
+        "Bloque": 5,
+        "Dia": "Martes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT91-J)",
+        "Instance": 0,
+        "Actividad": "LABORATORIO"
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Sala": "V207",
+        "Bloque": 6,
+        "Dia": "Martes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT91-J)",
+        "Instance": 0,
+        "Actividad": "LABORATORIO"
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Sala": "V207",
         "Bloque": 7,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2221,7 +2251,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 8,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2231,7 +2261,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 9,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2241,7 +2271,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 1,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2251,7 +2281,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 2,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2261,7 +2291,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 3,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2271,7 +2301,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 4,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2281,7 +2311,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 5,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2291,7 +2321,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "V207",
         "Bloque": 6,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -2301,37 +2331,37 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 7,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-J)",
+        "CodigoAsignatura": "(INT91-I)",
         "Instance": 0,
         "Actividad": "LABORATORIO"
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 8,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-J)",
+        "CodigoAsignatura": "(INT91-I)",
         "Instance": 0,
         "Actividad": "LABORATORIO"
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 9,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-J)",
+        "CodigoAsignatura": "(INT91-I)",
         "Instance": 0,
         "Actividad": "LABORATORIO"
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 1,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2341,7 +2371,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 2,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2351,7 +2381,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 3,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2361,7 +2391,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 4,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2371,7 +2401,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 5,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2381,7 +2411,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 6,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2391,7 +2421,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 7,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2401,7 +2431,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 8,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -2411,39 +2441,9 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
+        "Sala": "IC2",
         "Bloque": 9,
         "Dia": "Jueves",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-I)",
-        "Instance": 0,
-        "Actividad": "LABORATORIO"
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
-        "Bloque": 1,
-        "Dia": "Viernes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-I)",
-        "Instance": 0,
-        "Actividad": "LABORATORIO"
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
-        "Bloque": 2,
-        "Dia": "Viernes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-I)",
-        "Instance": 0,
-        "Actividad": "LABORATORIO"
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Sala": "LC1",
-        "Bloque": 3,
-        "Dia": "Viernes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(INT91-I)",
         "Instance": 0,
@@ -2458,7 +2458,7 @@
     "Asignaturas": [
       {
         "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Sala": "V103",
+        "Sala": "E6",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2468,7 +2468,7 @@
       },
       {
         "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Sala": "V103",
+        "Sala": "E6",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2498,7 +2498,7 @@
       },
       {
         "Nombre": "REDES DE COMPUTADORES",
-        "Sala": "IC4",
+        "Sala": "CRP43",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2508,7 +2508,7 @@
       },
       {
         "Nombre": "REDES DE COMPUTADORES",
-        "Sala": "IC4",
+        "Sala": "CRP43",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2518,7 +2518,7 @@
       },
       {
         "Nombre": "REDES DE COMPUTADORES",
-        "Sala": "K1",
+        "Sala": "IC4",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2528,7 +2528,7 @@
       },
       {
         "Nombre": "REDES DE COMPUTADORES",
-        "Sala": "K1",
+        "Sala": "IC4",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2538,7 +2538,7 @@
       },
       {
         "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Sala": "E1",
+        "Sala": "K1",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -2548,7 +2548,7 @@
       },
       {
         "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Sala": "E1",
+        "Sala": "K1",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 10,
@@ -2558,7 +2558,7 @@
       },
       {
         "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Sala": "V103",
+        "Sala": "E1",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2568,7 +2568,7 @@
       },
       {
         "Nombre": "INTRODUCCIÓN A LA PROGRAM",
-        "Sala": "V103",
+        "Sala": "E1",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2578,7 +2578,7 @@
       },
       {
         "Nombre": "SEGURIDAD DE LA INFORMACI",
-        "Sala": "LC7",
+        "Sala": "LC3",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2588,7 +2588,7 @@
       },
       {
         "Nombre": "SEGURIDAD DE LA INFORMACI",
-        "Sala": "LC7",
+        "Sala": "LC3",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2625,7 +2625,37 @@
     "Asignaturas": [
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
+        "Bloque": 1,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(PRI64-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Sala": "K1",
+        "Bloque": 2,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(PRI64-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Sala": "K1",
+        "Bloque": 3,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(PRI64-A)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Sala": "K1",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2635,7 +2665,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2645,7 +2675,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2655,7 +2685,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2665,7 +2695,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2675,27 +2705,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
-        "Bloque": 9,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-A)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
-        "Bloque": 1,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-A)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2705,7 +2715,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2715,7 +2725,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -2725,18 +2735,8 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
+        "Sala": "K1",
         "Bloque": 5,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-A)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "ERGONOMÍA",
-        "Sala": "CRP43",
-        "Bloque": 6,
         "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(PRI64-A)",
@@ -2976,7 +2976,7 @@
     "Asignaturas": [
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2986,7 +2986,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -2996,7 +2996,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3006,7 +3006,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3016,7 +3016,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3026,7 +3026,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3036,7 +3036,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3046,7 +3046,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3056,7 +3056,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3066,7 +3066,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3076,7 +3076,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3086,7 +3086,7 @@
       },
       {
         "Nombre": "SISTEMAS DE GESTIÓN DE CA",
-        "Sala": "LC3",
+        "Sala": "LC7",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3230,7 +3230,7 @@
     "Asignaturas": [
       {
         "Nombre": "INTRODUCCION AL PROYECTO",
-        "Sala": "V103",
+        "Sala": "E6",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -3240,7 +3240,7 @@
       },
       {
         "Nombre": "INTRODUCCION AL PROYECTO",
-        "Sala": "V103",
+        "Sala": "E6",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -3250,8 +3250,8 @@
       },
       {
         "Nombre": "INTRODUCCION AL PROYECTO",
-        "Sala": "CRP43",
-        "Bloque": 7,
+        "Sala": "LAMB",
+        "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(ARQA2-A)",
@@ -3267,7 +3267,7 @@
     "Asignaturas": [
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3277,7 +3277,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3287,7 +3287,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3297,7 +3297,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3307,7 +3307,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3317,7 +3317,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3327,7 +3327,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3337,7 +3337,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3347,7 +3347,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3357,7 +3357,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3367,7 +3367,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3377,7 +3377,7 @@
       },
       {
         "Nombre": "GESTION DE EMPRESAS",
-        "Sala": "LPME",
+        "Sala": "LMIN",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3631,8 +3631,8 @@
     "Asignaturas": [
       {
         "Nombre": "FUNDAMENTOS DE LENGUAJE D",
-        "Sala": "CM4",
-        "Bloque": 2,
+        "Sala": "V102",
+        "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 10,
         "CodigoAsignatura": "(CCI63-A)",
@@ -3641,9 +3641,9 @@
       },
       {
         "Nombre": "FUNDAMENTOS DE LENGUAJE D",
-        "Sala": "V103",
+        "Sala": "LAMB",
         "Bloque": 5,
-        "Dia": "Lunes",
+        "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(CCI63-A)",
         "Instance": 1,
@@ -3651,9 +3651,9 @@
       },
       {
         "Nombre": "FUNDAMENTOS DE LENGUAJE D",
-        "Sala": "V103",
+        "Sala": "LAMB",
         "Bloque": 6,
-        "Dia": "Lunes",
+        "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(CCI63-A)",
         "Instance": 1,
@@ -3661,9 +3661,9 @@
       },
       {
         "Nombre": "FUNDAMENTOS DE LENGUAJE D",
-        "Sala": "V103",
+        "Sala": "LAMB",
         "Bloque": 7,
-        "Dia": "Lunes",
+        "Dia": "Martes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(CCI63-A)",
         "Instance": 1,
@@ -3672,7 +3672,7 @@
       {
         "Nombre": "COMPILADORES",
         "Sala": "E6",
-        "Bloque": 1,
+        "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 10,
         "CodigoAsignatura": "(CCI82-A)",
@@ -3681,7 +3681,17 @@
       },
       {
         "Nombre": "COMPILADORES",
-        "Sala": "CM4",
+        "Sala": "V102",
+        "Bloque": 2,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(CCI82-A)",
+        "Instance": 1,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "COMPILADORES",
+        "Sala": "V102",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3691,18 +3701,8 @@
       },
       {
         "Nombre": "COMPILADORES",
-        "Sala": "CM4",
+        "Sala": "V102",
         "Bloque": 4,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(CCI82-A)",
-        "Instance": 1,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "COMPILADORES",
-        "Sala": "CM4",
-        "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(CCI82-A)",
@@ -3718,7 +3718,37 @@
     "Asignaturas": [
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
+        "Bloque": 2,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(PRI64-DV1)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Sala": "E1",
+        "Bloque": 3,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(PRI64-DV1)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Sala": "E1",
+        "Bloque": 4,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(PRI64-DV1)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "ERGONOMÍA",
+        "Sala": "E1",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3728,7 +3758,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3738,7 +3768,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3748,7 +3778,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3758,7 +3788,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -3768,7 +3798,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3778,27 +3808,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
-        "Bloque": 2,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-DV1)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
-        "Bloque": 3,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-DV1)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3808,7 +3818,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3818,7 +3828,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 6,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3828,17 +3838,17 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 7,
         "Dia": "Martes",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-DV1)",
+        "CodigoAsignatura": "(PRI64-DV2)",
         "Instance": 0,
         "Actividad": "TEORIA"
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 8,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3848,7 +3858,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 9,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -3858,7 +3868,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 1,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3868,7 +3878,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 2,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3878,7 +3888,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 3,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3888,7 +3898,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 4,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3898,7 +3908,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 5,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3908,7 +3918,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 6,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3918,7 +3928,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 7,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3928,7 +3938,7 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 8,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -3938,19 +3948,9 @@
       },
       {
         "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 9,
         "Dia": "Miercoles",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI64-DV2)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "ERGONOMÍA",
-        "Sala": "E6",
-        "Bloque": 1,
-        "Dia": "Jueves",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(PRI64-DV2)",
         "Instance": 0,
@@ -3965,17 +3965,7 @@
     "Asignaturas": [
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
-        "Bloque": 1,
-        "Dia": "Lunes",
-        "Satisfaccion": 8,
-        "CodigoAsignatura": "(INT51-I)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -3985,7 +3975,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -3995,7 +3985,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -4005,7 +3995,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -4015,7 +4005,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -4025,7 +4015,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -4035,7 +4025,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 8,
@@ -4045,7 +4035,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -4055,7 +4045,17 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
+        "Bloque": 2,
+        "Dia": "Martes",
+        "Satisfaccion": 8,
+        "CodigoAsignatura": "(INT51-I)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "MICROECONOMIA",
+        "Sala": "LC-02",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -4065,7 +4065,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -4075,7 +4075,7 @@
       },
       {
         "Nombre": "MICROECONOMIA",
-        "Sala": "CM6",
+        "Sala": "LC-02",
         "Bloque": 5,
         "Dia": "Martes",
         "Satisfaccion": 8,
@@ -4122,8 +4122,8 @@
       },
       {
         "Nombre": "CIERRE Y ABANDONO DE FAEN",
-        "Sala": "V105",
-        "Bloque": 4,
+        "Sala": "V102",
+        "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(IMIA3-A)",
@@ -4132,8 +4132,8 @@
       },
       {
         "Nombre": "CIERRE Y ABANDONO DE FAEN",
-        "Sala": "V105",
-        "Bloque": 5,
+        "Sala": "V102",
+        "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(IMIA3-A)",
@@ -4229,7 +4229,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "IC3",
+        "Sala": "LC6",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4246,7 +4246,7 @@
     "Asignaturas": [
       {
         "Nombre": "TERRITORIO 3",
-        "Sala": "IC3",
+        "Sala": "LC6",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4256,7 +4256,7 @@
       },
       {
         "Nombre": "TERRITORIO 3",
-        "Sala": "IC3",
+        "Sala": "LC6",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4266,7 +4266,7 @@
       },
       {
         "Nombre": "TERRITORIO 3",
-        "Sala": "IC3",
+        "Sala": "LC6",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4276,7 +4276,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4286,7 +4286,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4296,7 +4296,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4306,7 +4306,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4316,7 +4316,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4326,7 +4326,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4336,7 +4336,7 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "V102",
+        "Sala": "CM5",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4346,8 +4346,8 @@
       },
       {
         "Nombre": "TALLER 9",
-        "Sala": "E6",
-        "Bloque": 2,
+        "Sala": "E1",
+        "Bloque": 1,
         "Dia": "Jueves",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(ARQ91-A)",
@@ -4363,7 +4363,7 @@
     "Asignaturas": [
       {
         "Nombre": "LABORATORIO DE CONTROL AU",
-        "Sala": "IM3",
+        "Sala": "LELE",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4373,7 +4373,7 @@
       },
       {
         "Nombre": "LABORATORIO DE CONTROL AU",
-        "Sala": "IM3",
+        "Sala": "LELE",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4383,7 +4383,7 @@
       },
       {
         "Nombre": "LABORATORIO DE CONTROL AU",
-        "Sala": "IM3",
+        "Sala": "LELE",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4393,7 +4393,7 @@
       },
       {
         "Nombre": "ROBÓTICA",
-        "Sala": "LRSM",
+        "Sala": "IM3",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4403,7 +4403,7 @@
       },
       {
         "Nombre": "ROBÓTICA",
-        "Sala": "IM2",
+        "Sala": "S314",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4413,7 +4413,7 @@
       },
       {
         "Nombre": "ROBÓTICA",
-        "Sala": "IM2",
+        "Sala": "S314",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4423,7 +4423,7 @@
       },
       {
         "Nombre": "ROBÓTICA",
-        "Sala": "IM2",
+        "Sala": "S314",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4433,7 +4433,7 @@
       },
       {
         "Nombre": "LABORATORIO DE CONTROL DI",
-        "Sala": "A106",
+        "Sala": "LCSI",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4443,7 +4443,7 @@
       },
       {
         "Nombre": "LABORATORIO DE CONTROL DI",
-        "Sala": "A106",
+        "Sala": "LCSI",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 10,
@@ -4453,7 +4453,7 @@
       },
       {
         "Nombre": "LABORATORIO DE CONTROL DI",
-        "Sala": "A106",
+        "Sala": "LCSI",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 10,
@@ -4463,7 +4463,7 @@
       },
       {
         "Nombre": "LABORATORIO DE ROBÓTICA",
-        "Sala": "LCSI",
+        "Sala": "A106",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 10,
@@ -4473,7 +4473,7 @@
       },
       {
         "Nombre": "LABORATORIO DE ROBÓTICA",
-        "Sala": "LCSI",
+        "Sala": "A106",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 10,
@@ -4483,7 +4483,7 @@
       },
       {
         "Nombre": "LABORATORIO DE ROBÓTICA",
-        "Sala": "LCSI",
+        "Sala": "A106",
         "Bloque": 4,
         "Dia": "Martes",
         "Satisfaccion": 10,
@@ -4500,7 +4500,7 @@
     "Asignaturas": [
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 1,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4510,7 +4510,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 2,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4520,7 +4520,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 3,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4530,7 +4530,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 4,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4540,7 +4540,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4550,7 +4550,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4560,7 +4560,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4570,7 +4570,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4580,7 +4580,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4590,7 +4590,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4600,7 +4600,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4610,7 +4610,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "LMIN",
+        "Sala": "LELM",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4620,7 +4620,17 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
+        "Bloque": 2,
+        "Dia": "Jueves",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT91-FB)",
+        "Instance": 0,
+        "Actividad": "LABORATORIO"
+      },
+      {
+        "Nombre": "TALLER DE TITULO",
+        "Sala": "E1",
         "Bloque": 3,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4630,7 +4640,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 4,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4640,7 +4650,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 5,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4650,7 +4660,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 6,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4660,7 +4670,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 7,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4670,7 +4680,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 8,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4680,7 +4690,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 9,
         "Dia": "Jueves",
         "Satisfaccion": 9,
@@ -4690,7 +4700,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 1,
         "Dia": "Viernes",
         "Satisfaccion": 9,
@@ -4700,7 +4710,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 2,
         "Dia": "Viernes",
         "Satisfaccion": 9,
@@ -4710,7 +4720,7 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 3,
         "Dia": "Viernes",
         "Satisfaccion": 9,
@@ -4720,18 +4730,8 @@
       },
       {
         "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
+        "Sala": "E1",
         "Bloque": 4,
-        "Dia": "Viernes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT91-FB)",
-        "Instance": 0,
-        "Actividad": "LABORATORIO"
-      },
-      {
-        "Nombre": "TALLER DE TITULO",
-        "Sala": "E6",
-        "Bloque": 5,
         "Dia": "Viernes",
         "Satisfaccion": 9,
         "CodigoAsignatura": "(INT91-FB)",
@@ -4747,7 +4747,47 @@
     "Asignaturas": [
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
+        "Bloque": 1,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT43-I)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Sala": "V105",
+        "Bloque": 2,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT43-I)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Sala": "V105",
+        "Bloque": 3,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT43-I)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Sala": "V105",
+        "Bloque": 4,
+        "Dia": "Lunes",
+        "Satisfaccion": 9,
+        "CodigoAsignatura": "(INT43-I)",
+        "Instance": 0,
+        "Actividad": "TEORIA"
+      },
+      {
+        "Nombre": "TEORIA DE SISTEMAS",
+        "Sala": "V105",
         "Bloque": 5,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4757,7 +4797,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 6,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4767,7 +4807,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 7,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4777,7 +4817,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 8,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4787,7 +4827,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 9,
         "Dia": "Lunes",
         "Satisfaccion": 9,
@@ -4797,7 +4837,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 1,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4807,7 +4847,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 2,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4817,7 +4857,7 @@
       },
       {
         "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Sala": "V105",
         "Bloque": 3,
         "Dia": "Martes",
         "Satisfaccion": 9,
@@ -4826,88 +4866,48 @@
         "Actividad": "TEORIA"
       },
       {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Sala": "LC6",
         "Bloque": 6,
         "Dia": "Martes",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT43-I)",
+        "CodigoAsignatura": "(PRI84-A)",
         "Instance": 0,
         "Actividad": "TEORIA"
       },
       {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Sala": "LC6",
         "Bloque": 7,
         "Dia": "Martes",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT43-I)",
+        "CodigoAsignatura": "(PRI84-A)",
         "Instance": 0,
         "Actividad": "TEORIA"
       },
       {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Sala": "LC6",
         "Bloque": 8,
         "Dia": "Martes",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT43-I)",
+        "CodigoAsignatura": "(PRI84-A)",
         "Instance": 0,
         "Actividad": "TEORIA"
       },
       {
-        "Nombre": "TEORIA DE SISTEMAS",
-        "Sala": "IC3",
+        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
+        "Sala": "LC6",
         "Bloque": 9,
         "Dia": "Martes",
         "Satisfaccion": 9,
-        "CodigoAsignatura": "(INT43-I)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
-        "Bloque": 1,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
         "CodigoAsignatura": "(PRI84-A)",
         "Instance": 0,
         "Actividad": "TEORIA"
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
-        "Bloque": 2,
-        "Dia": "Lunes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI84-A)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
-        "Bloque": 4,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI84-A)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
-        "Bloque": 5,
-        "Dia": "Martes",
-        "Satisfaccion": 9,
-        "CodigoAsignatura": "(PRI84-A)",
-        "Instance": 0,
-        "Actividad": "TEORIA"
-      },
-      {
-        "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 1,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4917,7 +4917,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 2,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4927,7 +4927,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 3,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4937,7 +4937,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 4,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4947,7 +4947,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 5,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4957,7 +4957,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 6,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4967,7 +4967,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 7,
         "Dia": "Miercoles",
         "Satisfaccion": 9,
@@ -4977,7 +4977,7 @@
       },
       {
         "Nombre": "TÉCNICAS DE NEGOCIACIÓN Y",
-        "Sala": "CRP33",
+        "Sala": "LC6",
         "Bloque": 8,
         "Dia": "Miercoles",
         "Satisfaccion": 9,

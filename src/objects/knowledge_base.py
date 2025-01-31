@@ -6,6 +6,7 @@ import json
 from aioxmpp import JID
 
 from performance.df_analysis import DFOperation, DFMetricsTracker
+import time
 
 @dataclass
 class AgentCapability:
@@ -74,7 +75,7 @@ class AgentKnowledgeBase:
 
     async def register_agent(self, jid: JID, capabilities: List[AgentCapability]) -> bool:
         """Enhanced registration with DF metrics tracking"""
-        start_time = datetime.now()
+        start_time = time.perf_counter()
         agent_id = str(jid).split("@")[0]  # Extract agent name from JID
         
         try:
@@ -93,14 +94,14 @@ class AgentKnowledgeBase:
                     self._capabilities[cap.service_type].add(str(jid))
                 
                 # Calculate response time
-                end_time = datetime.now()
-                response_time = (end_time - start_time).total_seconds() * 1000
+                end_time = time.perf_counter()
+                response_time = (end_time - start_time) * 1000
                 
                 # Log registration operation
                 await self.df_tracker.log_operation(DFOperation(
                     agent_id=agent_id,
                     operation="register",
-                    timestamp=end_time,
+                    timestamp=datetime.now(),
                     response_time_ms=response_time,
                     num_results=len(capabilities),  # Number of registered capabilities
                     status="success"
@@ -109,13 +110,13 @@ class AgentKnowledgeBase:
                 return True
                 
         except Exception as e:
-            end_time = datetime.now()
-            response_time = (end_time - start_time).total_seconds() * 1000
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
             await self.df_tracker.log_operation(DFOperation(
                 agent_id=agent_id,
                 operation="register",
-                timestamp=end_time,
+                timestamp=datetime.now(),
                 response_time_ms=response_time,
                 num_results=0,
                 status=f"error: {str(e)}"
@@ -124,7 +125,7 @@ class AgentKnowledgeBase:
 
     async def deregister_agent(self, jid: JID) -> bool:
         """Enhanced deregistration with DF metrics tracking"""
-        start_time = datetime.now()
+        start_time = time.perf_counter()
         agent_id = str(jid).split("@")[0]
         
         try:
@@ -155,14 +156,14 @@ class AgentKnowledgeBase:
                 del self._agents[jid_str]
                 
                 # Calculate response time
-                end_time = datetime.now()
-                response_time = (end_time - start_time).total_seconds() * 1000
+                end_time = time.perf_counter()
+                response_time = (end_time - start_time) * 1000
                 
                 # Log deregistration operation
                 await self.df_tracker.log_operation(DFOperation(
                     agent_id=agent_id,
                     operation="deregister",
-                    timestamp=end_time,
+                    timestamp=datetime.now(),
                     response_time_ms=response_time,
                     num_results=num_capabilities,  # Number of deregistered capabilities
                     status="success"
@@ -171,13 +172,13 @@ class AgentKnowledgeBase:
                 return True
                 
         except Exception as e:
-            end_time = datetime.now()
-            response_time = (end_time - start_time).total_seconds() * 1000
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
             await self.df_tracker.log_operation(DFOperation(
                 agent_id=agent_id,
                 operation="deregister",
-                timestamp=end_time,
+                timestamp=datetime.now(),
                 response_time_ms=response_time,
                 num_results=0,
                 status=f"error: {str(e)}"
@@ -186,7 +187,7 @@ class AgentKnowledgeBase:
 
     async def search(self, service_type: Optional[str] = None, properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
         """Enhanced search with DF metrics tracking"""
-        start_time = datetime.now()
+        start_time = time.perf_counter()
         agent_id = properties.get("agent_id", "unknown") if properties else "unknown"
         
         try:
@@ -230,14 +231,14 @@ class AgentKnowledgeBase:
                         results.append(agent)
 
             # Calculate response time
-            end_time = datetime.now()
-            response_time = (end_time - start_time).total_seconds() * 1000
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
             # Log operation
             await self.df_tracker.log_operation(DFOperation(
                 agent_id=agent_id,
                 operation="search",
-                timestamp=end_time,
+                timestamp=datetime.now(),
                 response_time_ms=response_time,
                 num_results=len(results),
                 status="success"
@@ -249,13 +250,13 @@ class AgentKnowledgeBase:
             return results
             
         except Exception as e:
-            end_time = datetime.now()
-            response_time = (end_time - start_time).total_seconds() * 1000
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
             await self.df_tracker.log_operation(DFOperation(
                 agent_id=agent_id,
                 operation="search",
-                timestamp=end_time,
+                timestamp=datetime.now(),
                 response_time_ms=response_time,
                 num_results=0,
                 status=f"error: {str(e)}"

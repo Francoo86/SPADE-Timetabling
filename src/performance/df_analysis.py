@@ -45,11 +45,18 @@ class DFMetricsTracker:
         """Log a DF operation with timing data"""
         async with self._lock:
             async with aiofiles.open(self.output_file, 'a', newline='') as f:
+                # Standardize agent ID format
+                agent_id = operation.agent_id
+                if agent_id.lower().startswith('sala'):
+                    agent_id = f"Agent_Sala_{agent_id[4:].upper()}"
+                elif not agent_id.startswith('Agent_'):
+                    agent_id = f"Agent_{agent_id}"
+
                 row = [
-                    operation.agent_id,
+                    agent_id,
                     operation.timestamp.isoformat(),
                     operation.operation,
-                    f"{operation.response_time_ms:.0f}",
+                    f"{operation.response_time_ms:.3f}",  # Increased precision to 3 decimal places
                     str(operation.num_results),
                     operation.status
                 ]
