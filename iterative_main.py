@@ -13,6 +13,7 @@ import logging
 from dotenv import load_dotenv
 import os
 
+
 # Import the original code
 from benchmarked_main import ApplicationRunner
 
@@ -93,11 +94,13 @@ class IterationRunner:
     def save_profile_stats(self, stats: pstats.Stats, iteration: int):
         """Save profiling statistics to files"""
         # Save full stats
-        stats_file = self.profile_dir / f"profile_stats_{iteration}.prof"
+        current_time = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
+        stats_file = self.profile_dir / f"profile_stats_{iteration}_{current_time}.prof"
         stats.dump_stats(str(stats_file))
-        
+
         # Save readable text summary
-        summary_file = self.profile_dir / f"profile_summary_{iteration}.txt"
+        summary_file = self.profile_dir / f"profile_summary_{iteration}_{current_time}.txt"
+
         with io.StringIO() as stream:
             # Sort by cumulative time and print top 50 functions
             stats.sort_stats('cumulative')
@@ -197,7 +200,7 @@ class IterationRunner:
         print("- profile_summary_N.txt: Human-readable summary for iteration N")
 
 async def main():
-    runner = IterationRunner(num_iterations=10)
+    runner = IterationRunner(num_iterations=1)
     await runner.run_iterations()
 
 if __name__ == "__main__":

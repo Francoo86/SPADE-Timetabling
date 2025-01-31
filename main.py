@@ -4,7 +4,7 @@ from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, PeriodicBehaviour
 from spade.message import Message
 from spade.template import Template
-from spade.container import Container
+
 import json
 import logging
 
