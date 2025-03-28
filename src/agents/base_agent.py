@@ -16,3 +16,12 @@ class TimeTablingAgent(Agent):
         self.name = name
         self.log = None
         self.kb = None
+        
+    def set_knowledge_base(self, kb):
+        """
+        Set the agent's knowledge base.
+        
+        Args:
+            kb: Knowledge base
+        """
+        self.kb = kb
