@@ -129,48 +129,48 @@ class AgentKnowledgeBase:
         agent_id = str(jid).split("@")[0]
         
         try:
-            async with self._lock:
-                jid_str = str(jid)
-                if jid_str not in self._agents:
+            async with asyncio.timeout(10):
+                async with self._lock:
+                    jid_str = str(jid)
+                    if jid_str not in self._agents:
+                        await self.df_tracker.log_operation(DFOperation(
+                            agent_id=agent_id,
+                            operation="deregister",
+                            timestamp=datetime.now(),
+                            response_time_ms=0,
+                            num_results=0,
+                            status="not_found"
+                        ))
+                        return False
+
+                    # Remove from capability indices
+                    agent_info = self._agents[jid_str]
+                    num_capabilities = 0
+                    for cap in agent_info.capabilities:
+                        if cap.service_type in self._capabilities:
+                            self._capabilities[cap.service_type].discard(jid_str)
+                            num_capabilities += 1
+                            if not self._capabilities[cap.service_type]:
+                                del self._capabilities[cap.service_type]
+
+                    # Remove agent info
+                    del self._agents[jid_str]
+                    
+                    # Calculate response time
+                    end_time = time.perf_counter()
+                    response_time = (end_time - start_time) * 1000
+                    
+                    # Log deregistration operation
                     await self.df_tracker.log_operation(DFOperation(
                         agent_id=agent_id,
                         operation="deregister",
                         timestamp=datetime.now(),
-                        response_time_ms=0,
-                        num_results=0,
-                        status="not_found"
+                        response_time_ms=response_time,
+                        num_results=num_capabilities,  # Number of deregistered capabilities
+                        status="success"
                     ))
-                    return False
-
-                # Remove from capability indices
-                agent_info = self._agents[jid_str]
-                num_capabilities = 0
-                for cap in agent_info.capabilities:
-                    if cap.service_type in self._capabilities:
-                        self._capabilities[cap.service_type].discard(jid_str)
-                        num_capabilities += 1
-                        if not self._capabilities[cap.service_type]:
-                            del self._capabilities[cap.service_type]
-
-                # Remove agent info
-                del self._agents[jid_str]
-                
-                # Calculate response time
-                end_time = time.perf_counter()
-                response_time = (end_time - start_time) * 1000
-                
-                # Log deregistration operation
-                await self.df_tracker.log_operation(DFOperation(
-                    agent_id=agent_id,
-                    operation="deregister",
-                    timestamp=datetime.now(),
-                    response_time_ms=response_time,
-                    num_results=num_capabilities,  # Number of deregistered capabilities
-                    status="success"
-                ))
-                
-                return True
-                
+                    
+                    return True
         except Exception as e:
             end_time = time.perf_counter()
             response_time = (end_time - start_time) * 1000
@@ -183,7 +183,8 @@ class AgentKnowledgeBase:
                 num_results=0,
                 status=f"error: {str(e)}"
             ))
-            raise
+            # raise custom exception or log error
+            raise Exception(f"Error deregistering agent {jid}: {str(e)}")
 
     async def search(self, service_type: Optional[str] = None, properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
         """Enhanced search with DF metrics tracking"""
@@ -261,14 +262,14 @@ class AgentKnowledgeBase:
                 num_results=0,
                 status=f"error: {str(e)}"
             ))
-            raise
+            raise Exception(f"Error searching for agents: {str(e)}")
     
     async def _cleanup_loop(self):
         """Periodically remove expired agent registrations"""
         while True:
             try:
                 await asyncio.sleep(60)  # Check every minute
-                await self._cleanup_expired()
+                # await self._cleanup_expired()
             except asyncio.CancelledError:
                 break
             except Exception as e:
