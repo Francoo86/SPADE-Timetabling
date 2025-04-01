@@ -50,3 +50,23 @@ class CommonTemplates:
         inform.set_metadata("protocol", "contract-net")
         
         return cfp | inform
+    
+    @staticmethod
+    def get_negotiation_template():
+        """Get a template for negotiation messages"""
+                # Template for CFP responses (proposals and refusals)
+        proposal_template = Template()
+        proposal_template.set_metadata("performative", FIPAPerformatives.PROPOSE)
+        proposal_template.set_metadata("protocol", "contract-net")
+        
+        refusal_template = Template()
+        refusal_template.set_metadata("performative", FIPAPerformatives.REFUSE)
+        refusal_template.set_metadata("protocol", "contract-net")
+        
+        # Template for assignment confirmations
+        confirmation_template = Template()
+        confirmation_template.set_metadata("performative", FIPAPerformatives.INFORM)
+        confirmation_template.set_metadata("protocol", "contract-net")
+        
+        # Combined template using ORTemplate
+        return proposal_template | refusal_template | confirmation_template
