@@ -546,8 +546,25 @@ class FinishedState(State):
         super().__init__()
     
     async def run(self):
-        await self.finish_negotiations()
-        self.kill()
+        self.agent.log.info("Entering FinishedState")
+        try:
+            # Add more granular timeouts for better diagnosis
+            async with asyncio.timeout(5):
+                self.agent.log.info("Starting finish_negotiations()")
+                await self.finish_negotiations()
+                self.agent.log.info("finish_negotiations() completed, killing state")
+                self.kill()
+                self.agent.log.info("State killed successfully")
+        except asyncio.TimeoutError as e:
+            self.agent.log.error(f"Timeout during negotiation finish: {str(e)}")
+            # Force kill on timeout
+            self.kill()
+            self.agent.log.info("State killed after timeout")
+        except Exception as e:
+            self.agent.log.error(f"Error in FinishedState: {str(e)}", exc_info=True)
+            # Force kill on exception
+            self.kill()
+            self.agent.log.info("State killed after exception")
         
     async def finish_negotiations(self):
         """Handle finished state and cleanup"""
@@ -561,20 +578,22 @@ class FinishedState(State):
             # Set agent state to finished
             self.agent.log.info("All subjects processed, finalizing agent")
             
-            # Notify next professor first - with proper error handling
-            next_professor_notified = await self.notify_next_professor()
-            
-            # Ensure notification is processed before cleanup
-            if next_professor_notified:
-                await asyncio.sleep(1.0)  # Slightly longer delay to ensure message is processed
-            
             # Start cleanup with proper error handling and await it
             try:
+                # First flush any metrics
+                if hasattr(self.agent, 'metrics_monitor'):
+                    await self.agent.metrics_monitor._flush_all()
+                    
+                # Perform cleanup
                 await self.agent.cleanup()
                 self.agent.log.info("Cleanup completed successfully")
+                
+                # Only notify next professor after cleanup is done
+                await self.notify_next_professor()
+                
             except Exception as e:
                 self.agent.log.error(f"Error during cleanup: {str(e)}")
-            
+                
         except Exception as e:
             self.agent.log.error(f"Error in finish_negotiations: {str(e)}")
             
@@ -592,21 +611,18 @@ class FinishedState(State):
             if professors:
                 next_professor = professors[0]
                 
-                # Create START message
+                # Create START message with acknowledgment request
                 msg = Message(to=str(next_professor.jid))
                 msg.set_metadata("performative", FIPAPerformatives.INFORM)
                 msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(next_orden))
+                msg.set_metadata("require-ack", "true")
                 msg.body = "START"
                 
                 await self.send(msg)
-                
-                # ensure the message is sent before proceeding
-                await asyncio.sleep(0.5)
-                
-                self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
-                return True
-                
+                self.agent.log.info(f"Notified next professor with order: {next_orden}.")
+            
+                return False
             else:
                 # No next professor means we're done - trigger system shutdown
                 self.agent.log.info("No next professor found - all professors completed")
