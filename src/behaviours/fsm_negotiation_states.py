@@ -211,7 +211,7 @@ class CollectingState(State):
             already_msgs_id = set()
             
             while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
-                msg = await self.receive(timeout=0.05)
+                msg = await self.receive(timeout=0.5)
                 
                 if msg:
                     # Skip already processed messages
@@ -558,22 +558,28 @@ class FinishedState(State):
                 f"Professor {self.agent.nombre} completed all negotiations in {total_time} ms"
             )
 
-            # Notify next professor first
-            await self.notify_next_professor()
+            # Set agent state to finished
+            self.agent.log.info("All subjects processed, finalizing agent")
             
-            # Brief delay to ensure notification is processed
-            await asyncio.sleep(0.5)
+            # Notify next professor first - with proper error handling
+            next_professor_notified = await self.notify_next_professor()
             
-            # Start cleanup with proper error handling
+            # Ensure notification is processed before cleanup
+            if next_professor_notified:
+                await asyncio.sleep(1.0)  # Slightly longer delay to ensure message is processed
+            
+            # Start cleanup with proper error handling and await it
             try:
                 await self.agent.cleanup()
+                self.agent.log.info("Cleanup completed successfully")
             except Exception as e:
                 self.agent.log.error(f"Error during cleanup: {str(e)}")
             
         except Exception as e:
             self.agent.log.error(f"Error in finish_negotiations: {str(e)}")
             
-    async def notify_next_professor(self):
+    async def notify_next_professor(self) -> bool:
+        """Notify next professor and return success status"""
         try:
             next_orden = self.agent.orden + 1
             
@@ -594,10 +600,13 @@ class FinishedState(State):
                 msg.body = "START"
                 
                 await self.send(msg)
-                self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
                 
-                # Wait briefly to ensure message is processed
-                await asyncio.sleep(0.2)
+                # ensure the message is sent before proceeding
+                await asyncio.sleep(0.5)
+                
+                self.agent.log.info(f"Successfully notified next professor with order: {next_orden}")
+                return True
+                
             else:
                 # No next professor means we're done - trigger system shutdown
                 self.agent.log.info("No next professor found - all professors completed")
@@ -607,25 +616,26 @@ class FinishedState(State):
                     await self.agent.metrics_monitor._flush_all()
                 
                 # Notify supervisor to begin shutdown
-                supervisor_agents = await self.agent._kb.search(service_type="supervisor")
-                if supervisor_agents:
-                    supervisor = supervisor_agents[0]
-                    shutdown_msg = Message(to=str(supervisor.jid))
-                    shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
-                    shutdown_msg.set_metadata("ontology", "system-control")
-                    shutdown_msg.set_metadata("content", "SHUTDOWN")
-                    
-                    await self.send(shutdown_msg)
-                    self.agent.log.info("Sent shutdown signal to supervisor")
-                    
-                    # Wait to ensure supervisor receives shutdown signal
-                    await asyncio.sleep(0.5)
-                else:
-                    self.agent.log.error("Could not find supervisor agent for shutdown")
-                    # Even without supervisor, proceed with cleanup
-                    await self.agent.cleanup()
+                try:
+                    supervisor_agents = await self.agent._kb.search(service_type="supervisor")
+                    if supervisor_agents:
+                        supervisor = supervisor_agents[0]
+                        shutdown_msg = Message(to=str(supervisor.jid))
+                        shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                        shutdown_msg.set_metadata("ontology", "system-control")
+                        shutdown_msg.set_metadata("content", "SHUTDOWN")
+                        
+                        await self.send(shutdown_msg)
+                        self.agent.log.info("Sent shutdown signal to supervisor")
+                        return True
+                    else:
+                        self.agent.log.error("Could not find supervisor agent for shutdown")
+                except Exception as e:
+                    self.agent.log.error(f"Error sending supervisor shutdown: {str(e)}")
+                
+                # Even without supervisor notification, proceed with cleanup
+                return False
                 
         except Exception as e:
             self.agent.log.error(f"Error in notify_next_professor: {str(e)}")
-            # On error, attempt cleanup to avoid stuck state
-            await self.agent.cleanup()
+            return False
