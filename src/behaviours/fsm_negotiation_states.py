@@ -194,7 +194,7 @@ class SetupState(CFPSenderState):
             cfp_count = await self.send_cfp_messages()
             self.parent.cfp_count = cfp_count
             
-            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()}")
+            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()} type: {current_subject.get_tipo()}")
             self.set_next_state(NegotiationStates.COLLECTING)
         else:
             self.set_next_state(NegotiationStates.FINISHED)
