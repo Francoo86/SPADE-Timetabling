@@ -10,3 +10,4 @@ old_logs/
 *.prof
 *.txt
 results_json_profiling/
+scenarios/
