@@ -44,6 +44,10 @@ class AgenteSupervisor(Agent):
         self.prof_storage = None
         
         self.finalizer : asyncio.Event = None
+        self.metrics_monitor = None
+        
+    def set_metrics_monitor(self, monitor):
+        self.metrics_monitor = monitor
         
     def add_finalizer_event(self, finalizer : asyncio.Event):
         self.finalizer = finalizer
@@ -161,7 +165,43 @@ class AgenteSupervisor(Agent):
             if msg:
                 try:
                     self.agent.log.info("Received shutdown signal - initiating system shutdown")
-                    # Generate final JSON files
-                    await self.agent.finish_system()
+                    
+                    # First stop metrics monitor to ensure clean metrics shutdown
+                    if hasattr(self.agent, 'metrics_monitor'):
+                        self.agent.log.info("Stopping metrics monitor...")
+                        await self.agent.metrics_monitor.stop()
+                        await self.agent.metrics_monitor._flush_all()  # Final flush
+                    
+                    # Generate final files with proper error handling
+                    try:
+                        self.agent.log.info("Generating room schedules JSON...")
+                        await self.agent.room_storage.generate_json_file()
+                        
+                        self.agent.log.info("Generating professor schedules JSON...")
+                        await self.agent.prof_storage.generate_json_file()
+                        
+                        # Force flush any pending updates
+                        await self.agent.room_storage.force_flush()
+                        await self.agent.prof_storage.force_flush()
+                        
+                    except Exception as e:
+                        self.agent.log.error(f"Error generating JSON files: {str(e)}")
+
+                    # Deregister from KB
+                    try:
+                        await self.agent._kb.deregister_agent(self.agent.jid)
+                        self.agent.log.info("Deregistered from knowledge base")
+                    except Exception as e:
+                        self.agent.log.error(f"Error deregistering from KB: {str(e)}")
+
+                    # Set completion event
+                    # if self.agent.finalizer:
+                        # await self.agent.finalizer.set()
+                        self.agent.log.info("Finalizer event set")
+                        
                 except Exception as e:
                     self.agent.log.error(f"Error during shutdown: {str(e)}")
+                    # Ensure finalizer is set even on error
+                    # if self.agent.finalizer:
+                        # await self.agent.finalizer.set()
+                self.agent.set("system_active", False)

@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Any
 from json_stuff.json_salas import SalaScheduleStorage
 import json
 import asyncio
-from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from datetime import datetime
 
 from objects.asignation_data import AsignacionSala
@@ -19,6 +19,9 @@ from .agent_logger import AgentLogger
 from fipa.common_templates import CommonTemplates
 from fipa.acl_message import FIPAPerformatives
 import jsonpickle
+
+from performance.rtt_stats import RTTLogger
+from sys import getsizeof
 
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
@@ -36,6 +39,8 @@ class AgenteSala(Agent):
         self._kb = None
         self.storage = None
         
+        self.responder_behaviour = ResponderSolicitudesBehaviour()
+        
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
 
@@ -45,7 +50,7 @@ class AgenteSala(Agent):
         await self.register_service()
         
         template = CommonTemplates.get_room_assigment_template()
-        self.add_behaviour(ResponderSolicitudesBehaviour(), template)
+        self.add_behaviour(self.responder_behaviour, template)
         
     def initialize_schedule(self):
         """Initialize empty schedule for all days"""
@@ -146,7 +151,20 @@ class AgenteSala(Agent):
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
     """Enhanced room responder behaviour to work with FSM professors"""
-    
+    def __init__(self):
+        super().__init__()
+        self.rtt_logger = None
+        self.rtt_initialized = False
+        
+    async def on_start(self):
+        """Initialize RTT logger on behaviour start"""
+        if self.rtt_initialized:
+            return
+        
+        self.rtt_logger = RTTLogger(str(self.agent.jid))
+        self.rtt_initialized = True
+        await self.rtt_logger.start()
+
     async def run(self):
         """Main behaviour loop with improved message handling"""
         try:
@@ -157,7 +175,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 return
 
             performative = msg.get_metadata("performative")
-            conversation_id = msg.get_metadata("conversation-id")
+            # conversation_id = msg.get_metadata("conversation-id")
 
             if performative == FIPAPerformatives.CFP:
                 await self.process_request(msg)
@@ -279,6 +297,15 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
                     reply.body = jsonpickle.encode(confirmation)
                     
+                    rtt_id = msg.get_metadata("rtt-id")
+                    await self.rtt_logger.end_request(
+                        rtt_id,
+                        response_performative=FIPAPerformatives.INFORM,  # Performative de respuesta
+                        message_size=getsizeof(reply.body),
+                        success=True,
+                        ontology="room-assignment"
+                    )
+            
                     await self.send(reply)
                     
                     # Update storage asynchronously

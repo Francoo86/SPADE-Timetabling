@@ -96,17 +96,12 @@ class AgenteProfesor(Agent):
         }
         
     def prepare_behaviours(self):
-        self.add_behaviour(self.negotiation_state_behaviour)
-        
-        # classroom_template = CommonTemplates.get_classroom_availability_template()
-        # self.add_behaviour(self.message_collector_behaviour, classroom_template)
+        negotiation_template = CommonTemplates.get_negotiation_template()
+        self.add_behaviour(self.negotiation_state_behaviour, negotiation_template)
 
     async def setup(self):
         """Setup the agent behaviors and structures."""
         try:
-            # self.web.start(hostname="127.0.0.1", port=10000 + self.orden)
-            # self.web.add_get("/status", self.get_professor_status, template=None)
-            # Initialize agent capabilities
             professor_capability = AgentCapability(
                 service_type="profesor",
                 properties={
@@ -209,31 +204,31 @@ class AgenteProfesor(Agent):
 
     async def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        async with self.prof_lock:
-            self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
-                        f"(total: {len(self.asignaturas)})")
+        # async with self.prof_lock:
+        self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
+                    f"(total: {len(self.asignaturas)})")
+        
+        if self.asignatura_actual >= len(self.asignaturas):
+            self.log.info(f" [MOVE] Already at last subject")
+            return
             
-            if self.asignatura_actual >= len(self.asignaturas):
-                self.log.info(f" [MOVE] Already at last subject")
-                return
-                
-            current = self.get_current_subject()
-            current_name = current.get_nombre()
-            current_code = current.get_codigo_asignatura()
-            self.asignatura_actual += 1
-            
-            if self.asignatura_actual < len(self.asignaturas):
-                next_subject = self.asignaturas[self.asignatura_actual]
-                if (next_subject.get_nombre() == current_name and 
-                    next_subject.get_codigo_asignatura() == current_code):
-                    self.current_instance_index += 1
-                    self.log.info(f" [MOVE] Moving to next instance ({self.current_instance_index}) "
-                                f"of {current_name}")
-                else:
-                    self.current_instance_index = 0
-                    self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
+        current = self.get_current_subject()
+        current_name = current.get_nombre()
+        current_code = current.get_codigo_asignatura()
+        self.asignatura_actual += 1
+        
+        if self.asignatura_actual < len(self.asignaturas):
+            next_subject = self.asignaturas[self.asignatura_actual]
+            if (next_subject.get_nombre() == current_name and 
+                next_subject.get_codigo_asignatura() == current_code):
+                self.current_instance_index += 1
+                self.log.info(f" [MOVE] Moving to next instance ({self.current_instance_index}) "
+                            f"of {current_name}")
             else:
-                self.log.info(f" [MOVE] Reached end of subjects")
+                self.current_instance_index = 0
+                self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
+        else:
+            self.log.info(f" [MOVE] Reached end of subjects")
         
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
@@ -363,44 +358,58 @@ class AgenteProfesor(Agent):
         return ''.join(c for c in name if c.isalnum())
 
     async def cleanup(self):
-        """Coordinated cleanup with timeout protection"""
+        """Simplified cleanup that avoids behavior killing but addresses locks"""
         try:
-            async with self.cleanup_lock:
-                if self.cleanup_state.is_cleaning:
-                    return
+            # Use a timeout for the entire cleanup operation
+            async with asyncio.timeout(10):  # 10 second total timeout
+                async with self.cleanup_lock:
+                    if self.cleanup_state.is_cleaning:
+                        self.log.warning("Cleanup already in progress, skipping...")
+                        return
+                        
+                    self.cleanup_state.is_cleaning = True
+                    self.log.info(f"Starting cleanup for professor {self.nombre}")
                     
-                self.cleanup_state.is_cleaning = True
-                
-                # Kill behaviors immediately rather than waiting
-                behaviours = list(self.behaviours)
-                for behaviour in behaviours:
-                    try:
-                        if behaviour:
-                            behaviour.kill()
-                    except Exception as e:
-                        self.log.error(f"Error killing behavior: {str(e)}")
+                    # 1. Flush metrics - with timeout
+                    if hasattr(self, 'metrics_monitor'):
+                        try:
+                            async with asyncio.timeout(2):
+                                await self.metrics_monitor._flush_all()
+                        except asyncio.TimeoutError:
+                            self.log.error("Metrics flush timed out, continuing")
                     
-                try:
+                    """
+                    # 2. Deregister from knowledge base - with timeout
                     if self._kb:
-                        await self._kb.deregister_agent(self.jid)
-                        
-                    # Force final storage update
+                        try:
+                            async with asyncio.timeout(2):
+                                await self._kb.deregister_agent(self.jid)
+                        except asyncio.TimeoutError:
+                            self.log.error("KB deregistration timed out, continuing") """
+                    
+                    # 3. Final storage flush - with timeout
                     if hasattr(self, 'storage') and self.storage:
-                        await self.storage.force_flush()
-                        
-                    await asyncio.sleep(0.5)  # Brief delay before stop
-                    await self.stop()
+                        try:
+                            async with asyncio.timeout(2):
+                                await self.storage.force_flush()
+                        except asyncio.TimeoutError:
+                            self.log.error("Storage flush timed out, continuing")
                     
-                except Exception as e:
-                    self.log.error(f"Error during agent stop: {str(e)}")
-                    # Force stop on error
+                    # 4. Brief pause then stop agent
+                    await asyncio.sleep(0.1)
                     await self.stop()
-                    
+                    self.log.info("Agent stopped successfully")
+        
+        except asyncio.TimeoutError:
+            self.log.error("Overall cleanup timed out, forcing stop")
+            await self.stop()
         except Exception as e:
-            self.log.error(f"Error in cleanup: {str(e)}")
+            self.log.error(f"Critical error in cleanup: {str(e)}")
+            await self.stop()
         finally:
-            async with self.cleanup_lock:
-                self.cleanup_state.is_cleaning = False
+            # Ensure the cleanup state is reset even if there was an error
+            self.cleanup_state.is_cleaning = False
+            self.log.info(f"Cleanup completed for professor {self.nombre}")
 
     async def export_schedule_json(self) -> Dict:
         return {

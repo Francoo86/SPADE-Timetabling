@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 import json
 from aioxmpp import JID
 
+from performance.df_analysis import DFOperation, DFMetricsTracker
+import time
+
 @dataclass
 class AgentCapability:
     """Represents an agent's capabilities and properties"""
@@ -34,6 +37,9 @@ class AgentKnowledgeBase:
         self._ttl = timedelta(seconds=ttl_seconds)
         self._lock = asyncio.Lock()
         self._cleanup_task = None
+        
+        # filename_with_timestamp = f"df_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        # self.df_tracker = DFMetricsTracker(output_file=filename_with_timestamp)
 
     @classmethod
     async def get_instance(cls) -> 'AgentKnowledgeBase':
@@ -55,6 +61,12 @@ class AgentKnowledgeBase:
         """Start the knowledge base and its maintenance tasks"""
         if not self._cleanup_task:
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+            
+    def set_scenario(self, scenario: str):
+        """Set the scenario for the knowledge base"""
+        self.scenario = scenario
+        # Update the metrics tracker with the new scenario
+        self.df_tracker = DFMetricsTracker(output_file=f"df_metrics_{scenario}.csv", scenario=scenario)
 
     async def stop(self):
         """Stop the knowledge base and cleanup"""
@@ -68,120 +80,202 @@ class AgentKnowledgeBase:
                 self._cleanup_task = None
 
     async def register_agent(self, jid: JID, capabilities: List[AgentCapability]) -> bool:
-        """
-        Register an agent with its capabilities
+        """Enhanced registration with DF metrics tracking"""
+        start_time = time.perf_counter()
+        agent_id = str(jid).split("@")[0]  # Extract agent name from JID
         
-        Args:
-            jid: Agent's XMPP JID
-            capabilities: List of agent's capabilities
+        try:
+            async with self._lock:
+                # Update agent info
+                self._agents[str(jid)] = AgentInfo(
+                    jid=jid,
+                    capabilities=capabilities,
+                    last_heartbeat=datetime.now()
+                )
+                
+                # Update capability indices
+                for cap in capabilities:
+                    if cap.service_type not in self._capabilities:
+                        self._capabilities[cap.service_type] = set()
+                    self._capabilities[cap.service_type].add(str(jid))
+                
+                # Calculate response time
+                end_time = time.perf_counter()
+                response_time = (end_time - start_time) * 1000
+                
+                # Log registration operation
+                await self.df_tracker.log_operation(DFOperation(
+                    agent_id=agent_id,
+                    operation="register",
+                    timestamp=datetime.now(),
+                    response_time_ms=response_time,
+                    num_results=len(capabilities),  # Number of registered capabilities
+                    status="success"
+                ))
+                
+                return True
+                
+        except Exception as e:
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
-        Returns:
-            bool: True if registration successful
-        """
-        async with self._lock:
-            now = datetime.now()
-            
-            # Update agent info
-            self._agents[str(jid)] = AgentInfo(
-                jid=jid,
-                capabilities=capabilities,
-                last_heartbeat=now
-            )
-            
-            # Update capability indices
-            for cap in capabilities:
-                if cap.service_type not in self._capabilities:
-                    self._capabilities[cap.service_type] = set()
-                self._capabilities[cap.service_type].add(str(jid))
-            
-            print(f"Registered agent {jid} with capabilities: {[cap.service_type for cap in capabilities]}")
-            print(f"Current capabilities: {self._capabilities}")
-            return True
+            await self.df_tracker.log_operation(DFOperation(
+                agent_id=agent_id,
+                operation="register",
+                timestamp=datetime.now(),
+                response_time_ms=response_time,
+                num_results=0,
+                status=f"error: {str(e)}"
+            ))
+            raise
 
     async def deregister_agent(self, jid: JID) -> bool:
-        """
-        Remove an agent from the knowledge base
+        """Enhanced deregistration with DF metrics tracking"""
+        start_time = time.perf_counter()
+        agent_id = str(jid).split("@")[0]
         
-        Args:
-            jid: Agent's XMPP JID
+        try:
+            async with asyncio.timeout(10):
+                async with self._lock:
+                    jid_str = str(jid)
+                    if jid_str not in self._agents:
+                        await self.df_tracker.log_operation(DFOperation(
+                            agent_id=agent_id,
+                            operation="deregister",
+                            timestamp=datetime.now(),
+                            response_time_ms=0,
+                            num_results=0,
+                            status="not_found"
+                        ))
+                        return False
+
+                    # Remove from capability indices
+                    agent_info = self._agents[jid_str]
+                    num_capabilities = 0
+                    for cap in agent_info.capabilities:
+                        if cap.service_type in self._capabilities:
+                            self._capabilities[cap.service_type].discard(jid_str)
+                            num_capabilities += 1
+                            if not self._capabilities[cap.service_type]:
+                                del self._capabilities[cap.service_type]
+
+                    # Remove agent info
+                    del self._agents[jid_str]
+                    
+                    # Calculate response time
+                    end_time = time.perf_counter()
+                    response_time = (end_time - start_time) * 1000
+                    
+                    # Log deregistration operation
+                    await self.df_tracker.log_operation(DFOperation(
+                        agent_id=agent_id,
+                        operation="deregister",
+                        timestamp=datetime.now(),
+                        response_time_ms=response_time,
+                        num_results=num_capabilities,  # Number of deregistered capabilities
+                        status="success"
+                    ))
+                    
+                    return True
+        except Exception as e:
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
-        Returns:
-            bool: True if deregistration successful
-        """
-        async with self._lock:
-            jid_str = str(jid)
-            if jid_str not in self._agents:
-                return False
+            await self.df_tracker.log_operation(DFOperation(
+                agent_id=agent_id,
+                operation="deregister",
+                timestamp=datetime.now(),
+                response_time_ms=response_time,
+                num_results=0,
+                status=f"error: {str(e)}"
+            ))
+            # raise custom exception or log error
+            raise Exception(f"Error deregistering agent {jid}: {str(e)}")
 
-            # Remove from capability indices
-            agent_info = self._agents[jid_str]
-            for cap in agent_info.capabilities:
-                if cap.service_type in self._capabilities:
-                    self._capabilities[cap.service_type].discard(jid_str)
-                    if not self._capabilities[cap.service_type]:
-                        del self._capabilities[cap.service_type]
-
-            # Remove agent info
-            del self._agents[jid_str]
-            return True
-
-    async def update_heartbeat(self, jid: JID) -> bool:
-        """Update agent's last heartbeat timestamp"""
-        async with self._lock:
-            jid_str = str(jid)
-            if jid_str in self._agents:
-                self._agents[jid_str].last_heartbeat = datetime.now()
-                return True
-            return False
-
-    async def search(self, 
-                    service_type: Optional[str] = None, 
-                    properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
-        """
-        Search for agents matching criteria
+    async def search(self, service_type: Optional[str] = None, properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
+        """Enhanced search with DF metrics tracking"""
+        start_time = time.perf_counter()
+        agent_id = properties.get("agent_id", "unknown") if properties else "unknown"
         
-        Args:
-            service_type: Type of service to search for
-            properties: Required agent properties
+        try:
+            # Check cache first
+            cache_params = {"service_type": service_type, "properties": properties}
+            cached_result = self.df_tracker.check_cache(agent_id, "search", cache_params)
             
-        Returns:
-            List[AgentInfo]: Matching agents
-        """
-        async with self._lock:
-            results = []
+            if cached_result:
+                # Log cache hit
+                await self.df_tracker.log_operation(DFOperation(
+                    agent_id=agent_id,
+                    operation="cache_hit",
+                    timestamp=datetime.now(),
+                    response_time_ms=0,
+                    num_results=len(cached_result),
+                    status="success"
+                ))
+                return cached_result
+
+            async with self._lock:
+                results = []
+                candidate_jids = (self._capabilities.get(service_type, set()) 
+                                if service_type else set(self._agents.keys()))
+                
+                for jid_str in candidate_jids:
+                    agent = self._agents.get(jid_str)
+                    if not agent:
+                        continue
+                        
+                    if properties:
+                        for cap in agent.capabilities:
+                            if cap.service_type == service_type:
+                                matches = all(
+                                    key in cap.properties and cap.properties[key] == value
+                                    for key, value in properties.items()
+                                )
+                                if matches:
+                                    results.append(agent)
+                                    break
+                    else:
+                        results.append(agent)
+
+            # Calculate response time
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
             
-            # Get candidate agents
-            candidate_jids = (self._capabilities.get(service_type, set()) 
-                            if service_type else set(self._agents.keys()))
+            # Log operation
+            await self.df_tracker.log_operation(DFOperation(
+                agent_id=agent_id,
+                operation="search",
+                timestamp=datetime.now(),
+                response_time_ms=response_time,
+                num_results=len(results),
+                status="success"
+            ))
             
-            # Filter by properties if specified
-            for jid_str in candidate_jids:
-                agent = self._agents.get(jid_str)
-                if not agent:
-                    continue
-                    
-                if properties:
-                    # Check if agent has matching capability properties
-                    for cap in agent.capabilities:
-                        if cap.service_type == service_type:
-                            matches = all(
-                                key in cap.properties and cap.properties[key] == value
-                                for key, value in properties.items()
-                            )
-                            if matches:
-                                results.append(agent)
-                                break
-                else:
-                    results.append(agent)
-                    
+            # Update cache
+            self.df_tracker.update_cache(agent_id, "search", cache_params, results)
+            
             return results
-
+            
+        except Exception as e:
+            end_time = time.perf_counter()
+            response_time = (end_time - start_time) * 1000
+            
+            await self.df_tracker.log_operation(DFOperation(
+                agent_id=agent_id,
+                operation="search",
+                timestamp=datetime.now(),
+                response_time_ms=response_time,
+                num_results=0,
+                status=f"error: {str(e)}"
+            ))
+            raise Exception(f"Error searching for agents: {str(e)}")
+    
     async def _cleanup_loop(self):
         """Periodically remove expired agent registrations"""
         while True:
             try:
                 await asyncio.sleep(60)  # Check every minute
-                await self._cleanup_expired()
+                # await self._cleanup_expired()
             except asyncio.CancelledError:
                 break
             except Exception as e:

@@ -26,6 +26,12 @@ class SalaScheduleStorage:
         self._write_lock = asyncio.Lock()
         self._output_path = Path(os.getcwd()) / "agent_output"
         self._output_path.mkdir(exist_ok=True)
+        
+    def set_scenario(self, scenario: str) -> None:
+        """Set the scenario for output path"""
+        self._output_path = Path(os.getcwd()) / "agent_output" / scenario
+        self._output_path.mkdir(parents=True, exist_ok=True)
+        print(f"[DEBUG] Output path set to {self._output_path}")
 
     @classmethod
     async def get_instance(cls) -> 'SalaScheduleStorage':
