@@ -20,8 +20,9 @@ class DFOperation:
 class DFMetricsTracker:
     """Tracks metrics for Directory Facilitator operations"""
     
-    def __init__(self, output_file: str = "df_metrics.csv"):
-        self.output_file = Path("agent_output") / output_file
+    def __init__(self, output_file: str = "df_metrics.csv", scenario : str = "small"):
+        self.scenario = scenario
+        self.output_file = Path("agent_output") / self.scenario / output_file
         self._lock = asyncio.Lock()
         self._cache: Dict[str, Dict] = {}  # Simple cache for DF operations
         self.output_file.parent.mkdir(parents=True, exist_ok=True)

@@ -38,8 +38,8 @@ class AgentKnowledgeBase:
         self._lock = asyncio.Lock()
         self._cleanup_task = None
         
-        filename_with_timestamp = f"df_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        self.df_tracker = DFMetricsTracker(output_file=filename_with_timestamp)
+        # filename_with_timestamp = f"df_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        # self.df_tracker = DFMetricsTracker(output_file=filename_with_timestamp)
 
     @classmethod
     async def get_instance(cls) -> 'AgentKnowledgeBase':
@@ -61,6 +61,12 @@ class AgentKnowledgeBase:
         """Start the knowledge base and its maintenance tasks"""
         if not self._cleanup_task:
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+            
+    def set_scenario(self, scenario: str):
+        """Set the scenario for the knowledge base"""
+        self.scenario = scenario
+        # Update the metrics tracker with the new scenario
+        self.df_tracker = DFMetricsTracker(output_file=f"df_metrics_{scenario}.csv", scenario=scenario)
 
     async def stop(self):
         """Stop the knowledge base and cleanup"""

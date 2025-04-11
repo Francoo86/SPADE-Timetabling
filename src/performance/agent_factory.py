@@ -13,18 +13,22 @@ FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.abspath(os.path.join(FILE_PATH, "..", "..", "metrics"))
 
 class AgentFactory:
-    def __init__(self):
+    def __init__(self, scenario: str = "small"):
         # get todays date
         today = datetime.now()
 
         mas_metrics_file = f"mas_metrics_{today.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         request_metrics_file = f"request_metrics_{today.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         
-        mas_metrics_file = os.path.join(OUTPUT_DIR, mas_metrics_file)
-        request_metrics_file = os.path.join(OUTPUT_DIR, request_metrics_file)
+        # set scenario in metrics monitor
+        mas_metrics_file = os.path.join(OUTPUT_DIR, scenario, mas_metrics_file)
+        request_metrics_file = os.path.join(OUTPUT_DIR, scenario, request_metrics_file)
         
-        if not os.path.exists(OUTPUT_DIR):
-            os.makedirs(OUTPUT_DIR)
+        # mas_metrics_file = os.path.join(OUTPUT_DIR, mas_metrics_file)
+        # request_metrics_file = os.path.join(OUTPUT_DIR, request_metrics_file)
+        
+        if not os.path.exists(os.path.join(OUTPUT_DIR, scenario)):
+            os.makedirs(os.path.join(OUTPUT_DIR, scenario), exist_ok=True)
         
         self.metrics_monitor = MetricsMonitor(
             output_file=mas_metrics_file,

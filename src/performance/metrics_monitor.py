@@ -11,9 +11,10 @@ import aiofiles
 
 class MetricsMonitor:
     def __init__(self, output_file: str = "mas_metrics.csv", request_log_file: str = "request_metrics.csv",
-                 flush_interval: int = 30, buffer_size: int = 1000):
-        self.output_file = output_file
-        self.request_log_file = request_log_file
+                 flush_interval: int = 30, buffer_size: int = 1000, scenario: str = "small"):
+        self.output_file = os.path.join("agent_output", scenario, output_file)
+        self.request_log_file = os.path.join("agent_output", scenario, request_log_file)
+        self.scenario = scenario
         self.flush_interval = flush_interval
         self.buffer_size = buffer_size
         self.write_lock = Lock()
