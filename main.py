@@ -331,7 +331,7 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("30profs.json")
+            professors_data = self.load_json("inputOfProfs.json")
             rooms_data = self.load_json("inputOfSala.json")
             
             if not professors_data or not rooms_data:

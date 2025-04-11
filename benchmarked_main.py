@@ -37,7 +37,7 @@ class ApplicationAgent(Agent):
     Main application controller agent that manages the lifecycle of other agents
     """
     def __init__(self, jid: str, password: str, room_data: List[dict], 
-                 professor_data: List[dict]):
+                 professor_data: List[dict], scenario: str = "small"):
         super().__init__(jid, password, verify_security=False)
         self.room_data = room_data
         self.professor_data = professor_data
@@ -57,6 +57,8 @@ class ApplicationAgent(Agent):
         # ULTIMATUM
         self.end_event = asyncio.Event()
         self.factory = AgentFactory()
+        
+        self.scenario = scenario
     
     async def get_system_status(self, request):
         """Web endpoint to get overall system status"""
@@ -104,10 +106,14 @@ class ApplicationAgent(Agent):
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
         self._kb = await AgentKnowledgeBase.get_instance()
+        self._kb.set_scenario(self.scenario)
         
         # Initialize storage instances
         self.prof_storage = await ProfesorScheduleStorage.get_instance()
         self.room_storage = await SalaScheduleStorage.get_instance()
+        
+        self.prof_storage.set_scenario(self.scenario)
+        self.room_storage.set_scenario(self.scenario)
         
         # Add startup coordinator behavior
         startup_template = Template()
@@ -419,10 +425,11 @@ class ApplicationAgent(Agent):
 class ApplicationRunner:
     """Manages the SPADE application lifecycle"""
     
-    def __init__(self, xmpp_server: str, password: str):
+    def __init__(self, xmpp_server: str, password: str, scenario : str = "small"):
         self.xmpp_server = xmpp_server
         self.password = password
         self.app_agent: Optional[ApplicationAgent] = None
+        self.scenario = scenario
         
     def load_json(self, filename: str) -> List[dict]:
         """Load JSON data from file"""
@@ -438,8 +445,8 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("inputOfProfesores.json")
-            rooms_data = self.load_json("inputOfSala.json")
+            professors_data = self.load_json(f"scenarios/{self.scenario}/profesores.json")
+            rooms_data = self.load_json(f"scenarios/{self.scenario}/salas.json")
             
             if not professors_data or not rooms_data:
                 logger.error("Failed to load required data files")
@@ -512,7 +519,7 @@ def main():
         sys.exit(1)
         
     # Run the application
-    runner = ApplicationRunner(xmpp_server, password)
+    runner = ApplicationRunner(xmpp_server, password, "small")
     asyncio.run(runner.run())
 
 if __name__ == "__main__":

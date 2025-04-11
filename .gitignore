@@ -12,3 +12,4 @@ old_logs/
 results_json_profiling/
 scenarios/
 agent_output/
+iteration_summary/
