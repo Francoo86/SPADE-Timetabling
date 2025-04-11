@@ -11,3 +11,4 @@ old_logs/
 *.txt
 results_json_profiling/
 scenarios/
+agent_output/
