@@ -18,12 +18,13 @@ import os
 from benchmarked_main import ApplicationRunner
 
 class IterationRunner:
-    def __init__(self, num_iterations: int):
+    def __init__(self, num_iterations: int, scenario: str = "small"):
         self.num_iterations = num_iterations
         self.results = []
         self.setup_logging()
-        self.profile_dir = Path('profiling_results')
-        self.profile_dir.mkdir(exist_ok=True)
+        self.profile_dir = Path(f'profiling_results/{scenario}')
+        self.profile_dir.mkdir(exist_ok=True, parents=True)
+        self.scenario = scenario
         
     def setup_logging(self):
         """Setup logging for iteration runs"""
@@ -45,7 +46,7 @@ class IterationRunner:
         
         try:
             # Create new runner instance for this iteration
-            runner = ApplicationRunner(self.xmpp_server, self.password)
+            runner = ApplicationRunner(self.xmpp_server, self.password, scenario=self.scenario)
             
             # Start profiling and run the system
             profiler.enable()
@@ -144,8 +145,8 @@ class IterationRunner:
 
     def save_results(self):
         """Save results to JSON file"""
-        path_json = Path('results_json_profiling')
-        path_json.mkdir(exist_ok=True)
+        path_json = Path(f'results_json_profiling/{self.scenario}')
+        path_json.mkdir(exist_ok=True, parents=True)
         output_file = path_json / f"iteration_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(output_file, 'w') as f:
             json.dump(self.results, f, indent=2)
@@ -185,8 +186,10 @@ class IterationRunner:
             print(f"Avg Professor Assignments: {summary['avg_professor_assignments']:.2f}")
             print(f"Avg Room Utilization: {summary['avg_room_utilization']:.2f}")
             
+            json_summary_path = Path(f'iteration_summary/{self.scenario}')
+            json_summary_path.mkdir(exist_ok=True, parents=True)
             # Save summary
-            with open("iteration_summary.json", 'w') as f:
+            with open(f"{json_summary_path}/summary.json", 'w') as f:
                 json.dump(summary, f, indent=2)
         else:
             print("No successful iterations to analyze")
@@ -199,9 +202,26 @@ class IterationRunner:
         print("- profile_stats_N.prof: Raw profiling data for iteration N")
         print("- profile_summary_N.txt: Human-readable summary for iteration N")
 
-async def main():
-    runner = IterationRunner(num_iterations=1)
+async def main(iterations: int = 1, scenario : str = "small"):
+    runner = IterationRunner(num_iterations=iterations, scenario=scenario)
     await runner.run_iterations()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+
+    try:
+        # Check for command line arguments
+        parser = argparse.ArgumentParser(description="Run iterations of the timetabling system with profiling")
+        parser.add_argument("--iterations", type=int, default=1, help="Number of iterations to run")
+        parser.add_argument("--scenario", type=str, default="small", help="Scenario to use for the iterations (small, medium, full)")
+        args = parser.parse_args()
+        
+        iterations = args.iterations
+        scenario = args.scenario
+
+        print(f"Running {iterations} iterations with scenario '{scenario}'")
+        
+        asyncio.run(main())
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
