@@ -56,7 +56,7 @@ class ApplicationAgent(Agent):
         
         # ULTIMATUM
         self.end_event = asyncio.Event()
-        self.factory = AgentFactory()
+        self.factory = AgentFactory(scenario=scenario)
         
         self.scenario = scenario
     
@@ -458,7 +458,8 @@ class ApplicationRunner:
                 app_jid,
                 self.password,
                 rooms_data,
-                professors_data
+                professors_data,
+                scenario=self.scenario
             )
             
             self.app_agent = app_agent
@@ -519,7 +520,7 @@ def main():
         sys.exit(1)
         
     # Run the application
-    runner = ApplicationRunner(xmpp_server, password, "small")
+    runner = ApplicationRunner(xmpp_server, password, "medium")
     asyncio.run(runner.run())
 
 if __name__ == "__main__":

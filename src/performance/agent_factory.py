@@ -19,6 +19,7 @@ class AgentFactory:
 
         mas_metrics_file = f"mas_metrics_{today.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
         request_metrics_file = f"request_metrics_{today.strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+        self.scenario = scenario
         
         # set scenario in metrics monitor
         mas_metrics_file = os.path.join(OUTPUT_DIR, scenario, mas_metrics_file)
@@ -39,7 +40,7 @@ class AgentFactory:
 
     async def create_professor(self, jid: str, password: str, nombre: str, asignaturas: list, orden: int) -> AgenteProfesor:
         """Create professor agent with non-blocking metrics monitoring"""
-        agent = AgenteProfesor(jid, password, nombre, asignaturas, orden)
+        agent = AgenteProfesor(jid, password, nombre, asignaturas, orden, self.scenario)
         agent.metrics_monitor = self.metrics_monitor
         
         # Store original methods
@@ -98,7 +99,7 @@ class AgentFactory:
     async def create_classroom(self, jid: str, password: str, codigo: str, campus: str, 
                              capacidad: int, turno: int) -> AgenteSala:
         """Create classroom agent with non-blocking metrics monitoring"""
-        agent = AgenteSala(jid, password, codigo, campus, capacidad, turno)
+        agent = AgenteSala(jid, password, codigo, campus, capacidad, turno, self.scenario)
         agent.metrics_monitor = self.metrics_monitor
         
         # Store original methods

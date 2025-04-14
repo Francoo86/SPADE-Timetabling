@@ -29,7 +29,7 @@ class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
     SERVICE_NAME = AGENT_NAME.lower()
     
-    def __init__(self, jid: str, password: str, nombre: str, asignaturas: List[Asignatura], orden: int):
+    def __init__(self, jid: str, password: str, nombre: str, asignaturas: List[Asignatura], orden: int, scenario : str = ""):
         super().__init__(jid, password)
         self.nombre = nombre
         self.asignaturas = asignaturas
@@ -50,6 +50,8 @@ class AgenteProfesor(Agent):
         self.prof_lock = asyncio.Lock()
         self.cleanup_lock = asyncio.Lock()
         self.cleanup_state = CleanupState()
+        
+        self.scenario = scenario
         
         # inicializar una fuente de verdad de los behaviors
         self.negotiation_state_behaviour = NegotiationFSM(profesor_agent=self)

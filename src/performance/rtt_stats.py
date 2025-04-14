@@ -37,7 +37,8 @@ class RTTMeasurement:
         ]
 
 class RTTLogger:
-    def __init__(self, agent_name: str):
+    def __init__(self, agent_name: str, scenario_name: str):
+        """Initialize the RTT logger"""
         self.agent_name = agent_name
         self._pending_requests: Dict[str, dict] = {}
         self._lock = asyncio.Lock()
@@ -46,7 +47,7 @@ class RTTLogger:
         # Set up output directory and file with fixed name
         self._output_path = Path("agent_output/rtt_logs")
         self._output_path.mkdir(parents=True, exist_ok=True)
-        self._csv_path = self._output_path / "rtt_measurements_last_straw.csv"
+        self._csv_path = self._output_path / f"rtt_measurements_{scenario_name}.csv"
         
     async def start(self):
         """Initialize the logger and start background writer"""

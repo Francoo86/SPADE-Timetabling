@@ -26,7 +26,7 @@ from sys import getsizeof
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
 
-    def __init__(self, jid, password, codigo: str, campus: str, capacidad: int, turno: int):
+    def __init__(self, jid, password, codigo: str, campus: str, capacidad: int, turno: int, scenario : str = ""):
         super().__init__(jid, password)
         self.codigo = codigo
         self.campus = campus
@@ -38,6 +38,7 @@ class AgenteSala(Agent):
         self.log = AgentLogger("Sala" + self.codigo)
         self._kb = None
         self.storage = None
+        self.scenario = scenario
         
         self.responder_behaviour = ResponderSolicitudesBehaviour()
         
@@ -161,7 +162,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         if self.rtt_initialized:
             return
         
-        self.rtt_logger = RTTLogger(str(self.agent.jid))
+        self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
         self.rtt_initialized = True
         await self.rtt_logger.start()
 

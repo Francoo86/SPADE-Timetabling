@@ -83,7 +83,7 @@ class CFPSenderState(State):
         if self.rtt_initialized:
             return
         
-        self.rtt_logger = RTTLogger(str(self.agent.jid))
+        self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
         self.rtt_initialized = True
         await self.rtt_logger.start()
         
@@ -225,7 +225,7 @@ class SetupState(CFPSenderState):
 class CollectingState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
-        self.rtt_logger = RTTLogger(str(self.parent.agent.jid))
+        self.rtt_logger = RTTLogger(str(self.parent.agent.jid), self.parent.agent.scenario)
         super().__init__()
     
     async def run(self):

@@ -221,7 +221,7 @@ if __name__ == "__main__":
 
         print(f"Running {iterations} iterations with scenario '{scenario}'")
         
-        asyncio.run(main())
+        asyncio.run(main(iterations=iterations, scenario=scenario))
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
