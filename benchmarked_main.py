@@ -118,7 +118,7 @@ class ApplicationAgent(Agent):
         # Add startup coordinator behavior
         startup_template = Template()
         startup_template.set_metadata("conversation-id", "startup-sequence")
-        self.add_behaviour(self.StartupCoordinatorBehaviour(), startup_template)
+        self.add_behaviour(self.StartupCoordinatorBehaviour(factory=self.factory), startup_template)
         
         # Add monitoring behavior
         monitor_template = Template()
@@ -127,9 +127,9 @@ class ApplicationAgent(Agent):
 
     class StartupCoordinatorBehaviour(CyclicBehaviour):
         """Coordinates the startup sequence of all agents"""
-        def __init__(self):
+        def __init__(self, factory : AgentFactory):
             super().__init__()
-            self.factory = AgentFactory()
+            self.factory = factory
         
         async def on_start(self):
             """Initialize startup sequence"""
