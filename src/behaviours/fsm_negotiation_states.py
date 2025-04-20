@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 from aioxmpp import JID
 from objects.helper.quick_rejector import RoomQuickRejectFilter
 from performance.rtt_stats import RTTLogger
-from sys import getsizeof
 import uuid
 
 # States for the FSM
@@ -70,7 +69,8 @@ class CFPSenderState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
         self.room_filter = RoomQuickRejectFilter()
-        self.rtt_logger = None
+        # self.rtt_logger = parent.agent.rtt_logger
+        # self.rtt_logger : 'RTTLogger' = None
         self.rtt_initialized = False
         super().__init__()
         
@@ -80,12 +80,13 @@ class CFPSenderState(State):
         return ''.join(c for c in name if c.isalnum())
     
     async def on_start(self):
-        if self.rtt_initialized:
-            return
+        pass
+        # if self.rtt_initialized:
+            # return
         
-        self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
-        self.rtt_initialized = True
-        await self.rtt_logger.start()
+        # self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
+        # self.rtt_initialized = True
+        # await self.rtt_logger.start()
         
     async def send_cfp_messages(self):
         """Send CFP messages to classroom agents"""
@@ -155,7 +156,8 @@ class CFPSenderState(State):
                 cfp_id = f"cfp-{str(uuid.uuid4())}"
                 msg.set_metadata("rtt-id", cfp_id)
                 
-                await self.rtt_logger.start_request(
+                await self.parent.agent.rtt_logger.start_request(
+                    agent_name=self.parent.agent.nombre,
                     conversation_id=cfp_id,
                     performative=FIPAPerformatives.CFP,
                     receiver=str(room.jid),
@@ -222,15 +224,18 @@ class SetupState(CFPSenderState):
 class CollectingState(State):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
-        self.rtt_logger = RTTLogger(str(self.parent.agent.jid), self.parent.agent.scenario)
+        # self.rtt_logger = RTTLogger(str(self.parent.agent.jid), self.parent.agent.scenario)
         super().__init__()
         
     async def __log_response(self, msg : Message):
-        await self.rtt_logger.record_message_received(
+        await self.parent.agent.rtt_logger.end_request(
+            agent_name=self.parent.agent.nombre,
             conversation_id=msg.get_metadata("rtt-id"),
-            performative=msg.get_metadata("performative"),
-            sender=str(msg.sender),
-            ontology="classroom-availability"
+            response_performative=msg.get_metadata("performative"),
+#             sender=str(msg.sender),
+            ontology="classroom-availability",
+            message_size=len(msg.body),
+            success=True
         )
     
     async def run(self):

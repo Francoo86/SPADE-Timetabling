@@ -20,17 +20,18 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
     """Enhanced room responder behaviour to work with FSM professors"""
     def __init__(self):
         super().__init__()
-        self.rtt_logger = None
+        self.rtt_logger : 'RTTLogger' = None
         self.rtt_initialized = False
         
     async def on_start(self):
         """Initialize RTT logger on behaviour start"""
-        if self.rtt_initialized:
-            return
+        self.rtt_logger = self.agent.rtt_logger
+        # if self.rtt_initialized:
+            # return
         
-        self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
-        self.rtt_initialized = True
-        await self.rtt_logger.start()
+        # self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
+        # self.rtt_initialized = True
+        # await self.rtt_logger.start()
 
     async def run(self):
         """Main behaviour loop with improved message handling"""
@@ -72,13 +73,14 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             async with asyncio.timeout(1.0):
                 available_blocks = self.get_available_blocks(vacancies)
                 
-                await self.rtt_logger.record_message_received(
-                    conversation_id=msg.get_metadata("rtt-id"),
-                    performative=FIPAPerformatives.CFP,
-                    sender=str(msg.sender),
-                    ontology="classroom-availability",
-                    message_size=getsizeof(msg.body)
-                )
+                #await self.rtt_logger.record_message_received(
+                #    agent_name=self.agent.name,
+                #    conversation_id=msg.get_metadata("rtt-id"),
+                #    performative=FIPAPerformatives.CFP,
+                #    sender=str(msg.sender),
+                #    ontology="classroom-availability",
+                #    message_size=len(msg.body)
+                #)
                 
                 if available_blocks:
                     availability = ClassroomAvailability(
@@ -92,6 +94,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply.body = jsonpickle.encode(availability)
                     
                     await self.rtt_logger.record_message_sent(
+                        agent_name=self.agent.name,
                         conversation_id=msg.get_metadata("rtt-id"),
                         performative=FIPAPerformatives.PROPOSE,
                         receiver=str(msg.sender),
@@ -105,6 +108,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply.body = "No blocks available"
                     
                     await self.rtt_logger.record_message_sent(
+                        agent_name=self.agent.name,
                         conversation_id=msg.get_metadata("rtt-id"),
                         performative=FIPAPerformatives.REFUSE,
                         receiver=str(msg.sender),
