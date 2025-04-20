@@ -15,7 +15,7 @@ from typing import Dict, Optional
 import asyncio
 import aiofiles
 from pathlib import Path
-import os
+from jade_migration.asyncio_singleton import AsyncioSingleton
 
 @dataclass
 class RTTMeasurement:
@@ -45,9 +45,8 @@ class RTTMeasurement:
             self.ontology
         ]
 
-class RTTLogger:
-    def __init__(self, agent_name: str, scenario_name: str):
-        self.agent_name = agent_name
+class RTTLogger(metaclass=AsyncioSingleton):                
+    def __init__(self, scenario_name: str):
         self._pending_requests: Dict[str, dict] = {}
         self._lock = asyncio.Lock()
         self._write_queue = asyncio.Queue()
@@ -55,7 +54,10 @@ class RTTLogger:
         # Set up output directory and file
         self._output_path = Path("agent_output/rtt_logs") / scenario_name
         self._output_path.mkdir(parents=True, exist_ok=True)
-        self._csv_path = self._output_path / f"rtt_measurements_{scenario_name}.csv"
+        
+        # Create a unique filename based on current timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self._csv_path = self._output_path / f"rtt_measurements_{scenario_name}_{timestamp}.csv"
         
         # For tracking all outgoing messages, not just those with start_request
         self._all_outgoing_messages: Dict[str, dict] = {}
@@ -64,7 +66,6 @@ class RTTLogger:
         self._pending_requests_lock = asyncio.Lock()
         self._all_outgoing_messages_lock = asyncio.Lock()
         self._queue_lock = asyncio.Lock()
-        
         
     async def start(self):
         """Initialize the logger and start background writer"""
@@ -100,14 +101,16 @@ class RTTLogger:
             except asyncio.CancelledError:
                 pass
             
-    async def start_request(self, conversation_id: str,
+    async def start_request(self, 
+                        agent_name: str,
+                        conversation_id: str,
                         performative: str,
                         receiver: str,
                         additional_info: Dict = None,
                         ontology: str = "NOT-SPECIFIED") -> None:
         # For CFP to multiple classrooms, add a way to track expected response count
         if not conversation_id:
-            print(f"Warning: Empty conversation_id in start_request from {self.agent_name}")
+            print(f"Warning: Empty conversation_id in start_request from {agent_name}")
             return
             
         start_data = {
@@ -128,15 +131,15 @@ class RTTLogger:
         async with self._all_outgoing_messages_lock:
             self._all_outgoing_messages[conversation_id] = start_data
             
-        print(f"DEBUG: {self.agent_name} starting request {conversation_id} to {receiver}")
+        print(f"DEBUG: {agent_name} starting request {conversation_id} to {receiver}")
             
-    async def record_message_sent(self, conversation_id: str, 
+    async def record_message_sent(self, agent_name: str, conversation_id: str, 
                                performative: str, 
                                receiver: str,
                                ontology: str = "NOT-SPECIFIED") -> None:
         """Record any outgoing message, even without formal start_request"""
         if not conversation_id:
-            print(f"Warning: Empty conversation_id in record_message_sent from {self.agent_name}")
+            print(f"Warning: Empty conversation_id in record_message_sent from {agent_name}")
             return
             
         async with self._lock:
@@ -149,15 +152,15 @@ class RTTLogger:
                     'receiver': receiver,
                     'ontology': ontology
                 }
-                print(f"DEBUG: {self.agent_name} recording message {conversation_id} to {receiver}")
+                print(f"DEBUG: {agent_name} recording message {conversation_id} to {receiver}")
             
-    async def record_message_received(self, conversation_id: str, 
+    async def record_message_received(self, agent_name: str, conversation_id: str, 
                                 performative: str,
                                 sender: str,
                                 message_size: int = 0,
                                 ontology: str = "NOT-SPECIFIED") -> None:
         if not conversation_id:
-            print(f"Warning: Empty conversation_id in record_message_received from {self.agent_name}")
+            print(f"Warning: Empty conversation_id in record_message_received from {agent_name}")
             return
             
         # First, quickly check if message exists without holding the main lock
@@ -176,7 +179,7 @@ class RTTLogger:
             # Create measurement
             measurement = RTTMeasurement(
                 timestamp=datetime.now(),
-                sender=self.agent_name,
+                sender=agent_name,
                 receiver=sender,
                 conversation_id=conversation_id,
                 performative=performative,
@@ -190,11 +193,12 @@ class RTTLogger:
             async with self._queue_lock:
                 await self._write_queue.put(measurement)
                 
-            print(f"DEBUG: {self.agent_name} received response for {conversation_id} from {sender}, RTT={rtt:.3f}ms")
+            print(f"DEBUG: {agent_name} received response for {conversation_id} from {sender}, RTT={rtt:.3f}ms")
         else:
-            print(f"DEBUG: {self.agent_name} received message {conversation_id} from {sender} with no matching sent message")
+            print(f"DEBUG: {agent_name} received message {conversation_id} from {sender} with no matching sent message")
                 
     async def end_request(self,
+                         agent_name: str,
                          conversation_id: str,
                          response_performative: str = None,
                          message_size: int = 0,
@@ -203,7 +207,7 @@ class RTTLogger:
                          ontology: str = "NOT-SPECIFIED") -> Optional[float]:
         """Record end of a request and calculate RTT accurately"""
         if not conversation_id:
-            print(f"Warning: Empty conversation_id in end_request from {self.agent_name}")
+            print(f"Warning: Empty conversation_id in end_request from {agent_name}")
             return None
             
         async with self._lock:
@@ -227,7 +231,7 @@ class RTTLogger:
                 # Create measurement
                 measurement = RTTMeasurement(
                     timestamp=datetime.now(),
-                    sender=self.agent_name,
+                    sender=agent_name,
                     receiver=request_data['receiver'],
                     conversation_id=conversation_id,
                     performative=response_performative or request_data['performative'],
@@ -265,8 +269,9 @@ class RTTLogger:
                     # Check for stale entries in pending requests
                     for conv_id, data in self._pending_requests.items():
                         if now - data.get('start_time_wall', 0) > STALE_THRESHOLD_SECONDS:
+                            agent_name = data.get('agent_name', "UNKNOWN")
                             stale_convs.append(conv_id)
-                            print(f"DEBUG: Removing stale request {conv_id} from {self.agent_name}")
+                            print(f"DEBUG: Removing stale request {conv_id} from {agent_name}")
                     
                     # Remove the stale entries
                     for conv_id in stale_convs:
