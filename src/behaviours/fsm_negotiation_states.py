@@ -156,9 +156,9 @@ class CFPSenderState(State):
                 msg.set_metadata("rtt-id", cfp_id)
                 
                 await self.rtt_logger.start_request(
-                    cfp_id,
-                    FIPAPerformatives.CFP,
-                    str(room.jid),
+                    conversation_id=cfp_id,
+                    performative=FIPAPerformatives.CFP,
+                    receiver=str(room.jid),
                     ontology="classroom-availability"
                 )
                 
@@ -190,17 +190,14 @@ class SetupState(CFPSenderState):
             self.parent.assignation_data.clear()
             self.parent.negotiation_start_time = datetime.now()
             
-            # Clear tracking sets for new round
             self.parent.responding_rooms.clear()
             self.parent.expected_rooms.clear()
             self.parent.response_times.clear()
             
-            # Send CFPs and track sent count
             cfp_count = await self.send_cfp_messages()
             self.parent.cfp_count = cfp_count
             
             if cfp_count > 0:
-                # Only go to collecting state if we actually sent CFPs
                 self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()} type: {current_subject.get_actividad()}")
                 self.set_next_state(NegotiationStates.COLLECTING)
             else:
@@ -261,12 +258,19 @@ class CollectingState(State):
                         await self.handle_proposal(msg)
                     elif msg.get_metadata("performative") == "refuse":
                         refuses_received += 1
+                        
+                    await self.rtt_logger.end_request(
+                        conversation_id=msg.get_metadata("rtt-id"),
+                        response_performative=msg.get_metadata("performative"),
+                        message_size=getsizeof(msg.body),
+                        success=True,
+                        ontology="classroom-availability"
+                    )
                 
                 # Log progress
                 if len(self.parent.responding_rooms) == self.parent.cfp_count:
                     self.agent.log.info("Received all expected responses")
                     
-                    # Continue waiting until minimum time to prevent rapid cycling
                     if asyncio.get_event_loop().time() >= min_end_time:
                         break
                         
@@ -479,12 +483,13 @@ class EvaluatingState(CFPSenderState):
             id_prop = f"assign-{str(uuid.uuid4())}"
             msg.set_metadata("rtt-id", id_prop)
             
-            await self.rtt_logger.start_request(
-                id_prop,
-                FIPAPerformatives.ACCEPT_PROPOSAL,
-                str(original_msg.sender),
-                ontology="room-assignment"
-            )
+            # TODO: Remove this because we only need CFP -> PROPOSE/REFUSE.
+            #await self.rtt_logger.start_request(
+            #    id_prop,
+            #    FIPAPerformatives.ACCEPT_PROPOSAL,
+            #    str(original_msg.sender),
+            #    ontology="room-assignment"
+            #)
 
             # Send message and wait for confirmation
             await self.send(msg)
@@ -498,13 +503,13 @@ class EvaluatingState(CFPSenderState):
                 if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
                     confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
                     
-                    await self.rtt_logger.end_request(
-                        id_prop,  # Usar el nuevo ID
-                        response_performative=FIPAPerformatives.INFORM,  # Respuesta
-                        message_size=getsizeof(confirmation_msg.body),
-                        success=True,
-                        ontology="room-assignment"
-                    )
+                    #await self.rtt_logger.end_request(
+                    #    id_prop,
+                    #     response_performative=FIPAPerformatives.INFORM,
+                    #     message_size=getsizeof(confirmation_msg.body),
+                    #     success=True,
+                    #     ontology="room-assignment"
+                    # )
 
                     # Process confirmed assignments
                     for assignment in confirmation_data.get_confirmed_assignments():
@@ -527,14 +532,14 @@ class EvaluatingState(CFPSenderState):
 
                 await asyncio.sleep(0.05)
         except Exception as e:
-            await self.rtt_logger.end_request(
-                conv_id,
-                "ERROR",
-                0,
-                success=False,
-                extra_info={"error": str(e)},
-                ontology="room-assignment"
-            )
+            #await self.rtt_logger.end_request(
+            #    conv_id,
+            #     "ERROR",
+            #     0,
+            #     success=False,
+            #     extra_info={"error": str(e)},
+            #     ontology="room-assignment"
+            # )
             self.agent.log.error(f"Error in send_batch_assignment: {str(e)}")
     
         return False

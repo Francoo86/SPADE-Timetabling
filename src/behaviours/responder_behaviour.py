@@ -51,6 +51,14 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
 
         except Exception as e:
             self.agent.log.error(f"Error in room responder: {str(e)}")
+            
+    def __create_reply(self, msg: Message, performative : str):
+        reply = msg.make_reply()
+        reply.set_metadata("performative", performative)
+        reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
+        reply.set_metadata("ontology", "classroom-availability")
+        reply.set_metadata("rtt-id", msg.get_metadata("rtt-id"))
+        return reply
 
     async def process_request(self, msg: Message):
         """Process incoming room requests with improved error handling"""
@@ -64,31 +72,45 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             async with asyncio.timeout(1.0):
                 available_blocks = self.get_available_blocks(vacancies)
                 
+                self.rtt_logger.record_message_received(
+                    conversation_id=msg.get_metadata("rtt-id"),
+                    performative=FIPAPerformatives.CFP,
+                    sender=str(msg.sender),
+                    ontology="classroom-availability",
+                    message_size=getsizeof(msg.body)
+                )
+                
                 if available_blocks:
-                    # Create availability response
                     availability = ClassroomAvailability(
                         codigo=self.agent.codigo,
                         campus=self.agent.campus,
                         capacidad=self.agent.capacidad,
                         available_blocks=available_blocks
                     )
-                    
-                    # Send proposal with response tracking
-                    reply = msg.make_reply()
-                    reply.set_metadata("performative", FIPAPerformatives.PROPOSE)
-                    reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
-                    reply.set_metadata("ontology", "classroom-availability")
+
+                    reply = self.__create_reply(msg, FIPAPerformatives.PROPOSE)
                     reply.body = jsonpickle.encode(availability)
+                    
+                    self.rtt_logger.record_message_sent(
+                        conversation_id=msg.get_metadata("rtt-id"),
+                        performative=FIPAPerformatives.PROPOSE,
+                        receiver=str(msg.sender),
+                        ontology="classroom-availability",
+                    )
                     
                     await self.send(reply)
                     self.agent.log.debug(f"Sent proposal to {msg.sender} for {subject_name}")
                 else:
-                    # Send refuse with reason
-                    reply = msg.make_reply()
-                    reply.set_metadata("performative", FIPAPerformatives.REFUSE)
-                    reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
-                    reply.set_metadata("ontology", "classroom-availability")
+                    reply = self.__create_reply(msg, FIPAPerformatives.REFUSE)
                     reply.body = "No blocks available"
+                    
+                    self.rtt_logger.record_message_sent(
+                        conversation_id=msg.get_metadata("rtt-id"),
+                        performative=FIPAPerformatives.REFUSE,
+                        sender=str(msg.sender),
+                        ontology="classroom-availability",
+                        message_size=getsizeof(reply.body)
+                    )
                     
                     await self.send(reply)
                     self.agent.log.debug(f"Sent refuse to {msg.sender} - no blocks available")
@@ -164,18 +186,17 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
                     reply.body = jsonpickle.encode(confirmation)
                     
-                    rtt_id = msg.get_metadata("rtt-id")
-                    await self.rtt_logger.end_request(
-                        rtt_id,
-                        response_performative=FIPAPerformatives.INFORM,  # Performative de respuesta
-                        message_size=getsizeof(reply.body),
-                        success=True,
-                        ontology="room-assignment"
-                    )
+                    # rtt_id = msg.get_metadata("rtt-id")
+                    # await self.rtt_logger.end_request(
+                    #     rtt_id,
+                    #     response_performative=FIPAPerformatives.INFORM,  # Performative de respuesta
+                    #     message_size=getsizeof(reply.body),
+                    #     success=True,
+                    #     ontology="room-assignment"
+                    # )
             
                     await self.send(reply)
                     
-                    # Update storage asynchronously
                     asyncio.create_task(self.update_schedule_storage())
                     
         except asyncio.TimeoutError:
