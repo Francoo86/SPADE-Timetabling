@@ -12,6 +12,7 @@ from objects.static.agent_enums import Day
 from .agent_logger import AgentLogger
 from fipa.common_templates import CommonTemplates
 from behaviours.responder_behaviour import ResponderSolicitudesBehaviour
+from src.performance.rtt_stats import RTTLogger
 
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
@@ -32,6 +33,9 @@ class AgenteSala(Agent):
         
         self.responder_behaviour = ResponderSolicitudesBehaviour()
         
+    def set_rtt_logger(self, rtt_logger: RTTLogger):
+        self.rtt_logger = rtt_logger
+
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
 

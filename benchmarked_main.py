@@ -21,6 +21,7 @@ from json_stuff.json_profesores import ProfesorScheduleStorage
 from src.fipa.acl_message import FIPAPerformatives
 
 from src.performance.agent_factory import AgentFactory
+from src.performance.rtt_stats import RTTLogger
 import time
 
 # Configure logging
@@ -46,6 +47,7 @@ class ApplicationAgent(Agent):
         self.supervisor_agent: Optional[Agent] = None
         self.is_running = True
         self._kb = None
+        self.rtt_logger : 'RTTLogger' = None
         
         self._rooms_ready = False
         self._professors_ready = False
@@ -114,6 +116,11 @@ class ApplicationAgent(Agent):
         
         self.prof_storage.set_scenario(self.scenario)
         self.room_storage.set_scenario(self.scenario)
+        
+        # Initialize RTT logger
+        logger.info("Initializing RTT logger...")
+        self.rtt_logger = await RTTLogger(self.scenario)
+        await self.rtt_logger.start()
         
         # Add startup coordinator behavior
         startup_template = Template()
@@ -251,6 +258,7 @@ class ApplicationAgent(Agent):
                     
                     room.set_storage(self.agent.room_storage)
                     room.set_knowledge_base(self.agent._kb)
+                    room.set_rtt_logger(self.agent.rtt_logger)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
@@ -294,6 +302,7 @@ class ApplicationAgent(Agent):
                     
                     professor.set_storage(self.agent.prof_storage)
                     professor.set_knowledge_base(self.agent._kb)
+                    professor.set_rtt_logger(self.agent.rtt_logger)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
                     logger.info(f"Professor agent started: {prof_jid}")
