@@ -15,7 +15,7 @@ from behaviours.monitoring import InitialWaitBehaviour
 from fipa.common_templates import CommonTemplates
 from json_stuff.json_profesores import ProfesorScheduleStorage
 from behaviours.fsm_negotiation_states import NegotiationFSM
-
+from src.performance.rtt_stats import RTTLogger
 from datetime import datetime
 
 class CleanupState:
@@ -29,7 +29,7 @@ class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
     SERVICE_NAME = AGENT_NAME.lower()
     
-    def __init__(self, jid: str, password: str, nombre: str, asignaturas: List[Asignatura], orden: int):
+    def __init__(self, jid: str, password: str, nombre: str, asignaturas: List[Asignatura], orden: int, scenario : str = ""):
         super().__init__(jid, password)
         self.nombre = nombre
         self.asignaturas = asignaturas
@@ -45,16 +45,21 @@ class AgenteProfesor(Agent):
         self._kb = None
         # self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
+        self.rtt_logger = None
         
         # Lock para replicar el synchronized de Java
         self.prof_lock = asyncio.Lock()
         self.cleanup_lock = asyncio.Lock()
         self.cleanup_state = CleanupState()
         
+        self.scenario = scenario
+        
         # inicializar una fuente de verdad de los behaviors
         self.negotiation_state_behaviour = NegotiationFSM(profesor_agent=self)
         # self.negotiation_state_behaviour = NegotiationStateBehaviour(self, self.batch_proposals)
         # self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
+    def set_rtt_logger(self, rtt_logger: RTTLogger):
+        self.rtt_logger = rtt_logger
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb

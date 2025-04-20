@@ -209,7 +209,7 @@ class ApplicationAgent(Agent):
                         password=self.agent.password,
                         nombre=prof_data.get("Nombre"),  # Need to pass actual professor attributes
                         asignaturas=prof_data.get("Asignaturas"),
-                        orden=i
+                        orden=i,
                     )
                     professor.set_storage(self.agent.prof_storage)
                     professor.set_knowledge_base(self.agent._kb)

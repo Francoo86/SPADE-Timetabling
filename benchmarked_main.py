@@ -21,6 +21,7 @@ from json_stuff.json_profesores import ProfesorScheduleStorage
 from src.fipa.acl_message import FIPAPerformatives
 
 from src.performance.agent_factory import AgentFactory
+from src.performance.rtt_stats import RTTLogger
 import time
 
 # Configure logging
@@ -46,6 +47,7 @@ class ApplicationAgent(Agent):
         self.supervisor_agent: Optional[Agent] = None
         self.is_running = True
         self._kb = None
+        self.rtt_logger : 'RTTLogger' = None
         
         self._rooms_ready = False
         self._professors_ready = False
@@ -56,7 +58,7 @@ class ApplicationAgent(Agent):
         
         # ULTIMATUM
         self.end_event = asyncio.Event()
-        self.factory = AgentFactory()
+        self.factory = AgentFactory(scenario=scenario)
         
         self.scenario = scenario
     
@@ -115,10 +117,15 @@ class ApplicationAgent(Agent):
         self.prof_storage.set_scenario(self.scenario)
         self.room_storage.set_scenario(self.scenario)
         
+        # Initialize RTT logger
+        logger.info("Initializing RTT logger...")
+        self.rtt_logger = await RTTLogger(self.scenario)
+        await self.rtt_logger.start()
+        
         # Add startup coordinator behavior
         startup_template = Template()
         startup_template.set_metadata("conversation-id", "startup-sequence")
-        self.add_behaviour(self.StartupCoordinatorBehaviour(), startup_template)
+        self.add_behaviour(self.StartupCoordinatorBehaviour(factory=self.factory), startup_template)
         
         # Add monitoring behavior
         monitor_template = Template()
@@ -127,9 +134,9 @@ class ApplicationAgent(Agent):
 
     class StartupCoordinatorBehaviour(CyclicBehaviour):
         """Coordinates the startup sequence of all agents"""
-        def __init__(self):
+        def __init__(self, factory : AgentFactory):
             super().__init__()
-            self.factory = AgentFactory()
+            self.factory = factory
         
         async def on_start(self):
             """Initialize startup sequence"""
@@ -251,6 +258,7 @@ class ApplicationAgent(Agent):
                     
                     room.set_storage(self.agent.room_storage)
                     room.set_knowledge_base(self.agent._kb)
+                    room.set_rtt_logger(self.agent.rtt_logger)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
@@ -294,6 +302,7 @@ class ApplicationAgent(Agent):
                     
                     professor.set_storage(self.agent.prof_storage)
                     professor.set_knowledge_base(self.agent._kb)
+                    professor.set_rtt_logger(self.agent.rtt_logger)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
                     logger.info(f"Professor agent started: {prof_jid}")
@@ -458,7 +467,8 @@ class ApplicationRunner:
                 app_jid,
                 self.password,
                 rooms_data,
-                professors_data
+                professors_data,
+                scenario=self.scenario
             )
             
             self.app_agent = app_agent
@@ -519,7 +529,7 @@ def main():
         sys.exit(1)
         
     # Run the application
-    runner = ApplicationRunner(xmpp_server, password, "small")
+    runner = ApplicationRunner(xmpp_server, password, "medium")
     asyncio.run(runner.run())
 
 if __name__ == "__main__":
