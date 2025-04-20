@@ -60,6 +60,12 @@ class RTTLogger:
         # For tracking all outgoing messages, not just those with start_request
         self._all_outgoing_messages: Dict[str, dict] = {}
         
+        # better lock system
+        self._pending_requests_lock = asyncio.Lock()
+        self._all_outgoing_messages_lock = asyncio.Lock()
+        self._queue_lock = asyncio.Lock()
+        
+        
     async def start(self):
         """Initialize the logger and start background writer"""
         # Write headers only if file doesn't exist
@@ -95,30 +101,34 @@ class RTTLogger:
                 pass
             
     async def start_request(self, conversation_id: str,
-                           performative: str,
-                           receiver: str,
-                           additional_info: Dict = None,
-                           ontology: str = "NOT-SPECIFIED") -> None:
-        """Record start of a request with precise timing"""
+                        performative: str,
+                        receiver: str,
+                        additional_info: Dict = None,
+                        ontology: str = "NOT-SPECIFIED") -> None:
+        # For CFP to multiple classrooms, add a way to track expected response count
         if not conversation_id:
             print(f"Warning: Empty conversation_id in start_request from {self.agent_name}")
             return
             
-        async with self._lock:
-            start_data = {
-                'start_time': time.perf_counter_ns(),  # Use perf_counter for precise timing
-                'start_time_wall': time.time(),  # Wall clock time for timeout detection
-                'performative': performative,
-                'receiver': receiver,
-                'additional_info': additional_info,
-                'ontology': ontology
-            }
-            
+        start_data = {
+            'start_time': time.perf_counter_ns(),
+            'start_time_wall': time.time(),
+            'performative': performative,
+            'receiver': receiver,
+            'additional_info': additional_info,
+            'ontology': ontology,
+            'expected_responses': additional_info.get('expected_responses', 1) if additional_info else 1,
+            'responses_received': 0
+        }
+        
+        # Use the appropriate lock
+        async with self._pending_requests_lock:
             self._pending_requests[conversation_id] = start_data
+        
+        async with self._all_outgoing_messages_lock:
             self._all_outgoing_messages[conversation_id] = start_data
             
-            # Log immediately that we're starting a request (for debugging)
-            print(f"DEBUG: {self.agent_name} starting request {conversation_id} to {receiver}")
+        print(f"DEBUG: {self.agent_name} starting request {conversation_id} to {receiver}")
             
     async def record_message_sent(self, conversation_id: str, 
                                performative: str, 
@@ -142,46 +152,48 @@ class RTTLogger:
                 print(f"DEBUG: {self.agent_name} recording message {conversation_id} to {receiver}")
             
     async def record_message_received(self, conversation_id: str, 
-                                   performative: str,
-                                   sender: str,
-                                   message_size: int = 0,
-                                   ontology: str = "NOT-SPECIFIED") -> None:
-        """Record any received message, calculating RTT if we sent a corresponding message"""
+                                performative: str,
+                                sender: str,
+                                message_size: int = 0,
+                                ontology: str = "NOT-SPECIFIED") -> None:
         if not conversation_id:
             print(f"Warning: Empty conversation_id in record_message_received from {self.agent_name}")
             return
             
-        async with self._lock:
-            # Check if we have a matching outgoing message
-            outgoing_data = self._all_outgoing_messages.get(conversation_id)
+        # First, quickly check if message exists without holding the main lock
+        outgoing_exists = False
+        async with self._all_outgoing_messages_lock:
+            outgoing_exists = conversation_id in self._all_outgoing_messages
+            if outgoing_exists:
+                outgoing_data = self._all_outgoing_messages[conversation_id].copy()  # Make a copy to reduce lock time
+        
+        if outgoing_exists:
+            # Process measurement without holding lock
+            end_time_ns = time.perf_counter_ns()
+            start_time_ns = outgoing_data['start_time']
+            rtt = (end_time_ns - start_time_ns) / 1_000_000
             
-            if outgoing_data:
-                # Calculate RTT in milliseconds
-                end_time_ns = time.perf_counter_ns()
-                start_time_ns = outgoing_data['start_time']
-                rtt = (end_time_ns - start_time_ns) / 1_000_000  # Convert ns to ms
-                
-                # Create and queue measurement
-                measurement = RTTMeasurement(
-                    timestamp=datetime.now(),
-                    sender=self.agent_name,
-                    receiver=sender,
-                    conversation_id=conversation_id,
-                    performative=performative,
-                    rtt=rtt,
-                    message_size=message_size,
-                    success=True,
-                    ontology=outgoing_data.get('ontology', ontology)
-                )
-                
+            # Create measurement
+            measurement = RTTMeasurement(
+                timestamp=datetime.now(),
+                sender=self.agent_name,
+                receiver=sender,
+                conversation_id=conversation_id,
+                performative=performative,
+                rtt=rtt,
+                message_size=message_size,
+                success=True,
+                ontology=outgoing_data.get('ontology', ontology)
+            )
+            
+            # Queue for writing (using a separate lock if needed)
+            async with self._queue_lock:
                 await self._write_queue.put(measurement)
-                print(f"DEBUG: {self.agent_name} received response for {conversation_id} from {sender}, RTT={rtt:.3f}ms")
                 
-                # Don't remove from _all_outgoing_messages to allow for multiple responses
-            else:
-                # Log that we received a message without a matching sent message
-                print(f"DEBUG: {self.agent_name} received message {conversation_id} from {sender} with no matching sent message")
-            
+            print(f"DEBUG: {self.agent_name} received response for {conversation_id} from {sender}, RTT={rtt:.3f}ms")
+        else:
+            print(f"DEBUG: {self.agent_name} received message {conversation_id} from {sender} with no matching sent message")
+                
     async def end_request(self,
                          conversation_id: str,
                          response_performative: str = None,
@@ -274,19 +286,35 @@ class RTTLogger:
             return
             
     async def _background_writer(self):
-        """Background task to write measurements to CSV"""
+        """Background task to write measurements to CSV with batching"""
         try:
             while True:
-                measurement = await self._write_queue.get()
-                try:
-                    async with aiofiles.open(self._csv_path, mode='a', newline='') as f:
-                        row = ','.join(measurement.to_csv_row()) + '\n'
-                        await f.write(row)
-                except Exception as e:
-                    print(f"Error writing RTT measurement: {e}")
-                finally:
-                    self._write_queue.task_done()
+                # Process in small batches to handle bursts more efficiently
+                batch = []
+                for _ in range(min(50, self._write_queue.qsize())):
+                    try:
+                        measurement = self._write_queue.get_nowait()
+                        batch.append(measurement)
+                    except asyncio.QueueEmpty:
+                        break
+                        
+                if not batch and not self._write_queue.empty():
+                    measurement = await self._write_queue.get()
+                    batch.append(measurement)
                     
+                if batch:
+                    try:
+                        async with aiofiles.open(self._csv_path, mode='a', newline='') as f:
+                            rows = [','.join(m.to_csv_row()) + '\n' for m in batch]
+                            await f.write(''.join(rows))
+                    except Exception as e:
+                        print(f"Error writing RTT measurements batch: {e}")
+                    finally:
+                        for _ in range(len(batch)):
+                            self._write_queue.task_done()
+                else:
+                    # If no batch was formed, wait a bit
+                    await asyncio.sleep(0.01) 
         except asyncio.CancelledError:
             # Flush remaining measurements
             while not self._write_queue.empty():

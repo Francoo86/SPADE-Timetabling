@@ -72,7 +72,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             async with asyncio.timeout(1.0):
                 available_blocks = self.get_available_blocks(vacancies)
                 
-                self.rtt_logger.record_message_received(
+                await self.rtt_logger.record_message_received(
                     conversation_id=msg.get_metadata("rtt-id"),
                     performative=FIPAPerformatives.CFP,
                     sender=str(msg.sender),
@@ -91,7 +91,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply = self.__create_reply(msg, FIPAPerformatives.PROPOSE)
                     reply.body = jsonpickle.encode(availability)
                     
-                    self.rtt_logger.record_message_sent(
+                    await self.rtt_logger.record_message_sent(
                         conversation_id=msg.get_metadata("rtt-id"),
                         performative=FIPAPerformatives.PROPOSE,
                         receiver=str(msg.sender),
@@ -104,12 +104,11 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply = self.__create_reply(msg, FIPAPerformatives.REFUSE)
                     reply.body = "No blocks available"
                     
-                    self.rtt_logger.record_message_sent(
+                    await self.rtt_logger.record_message_sent(
                         conversation_id=msg.get_metadata("rtt-id"),
                         performative=FIPAPerformatives.REFUSE,
-                        sender=str(msg.sender),
+                        receiver=str(msg.sender),
                         ontology="classroom-availability",
-                        message_size=getsizeof(reply.body)
                     )
                     
                     await self.send(reply)

@@ -224,6 +224,14 @@ class CollectingState(State):
         self.parent = parent
         self.rtt_logger = RTTLogger(str(self.parent.agent.jid), self.parent.agent.scenario)
         super().__init__()
+        
+    async def __log_response(self, msg : Message):
+        await self.rtt_logger.record_message_received(
+            conversation_id=msg.get_metadata("rtt-id"),
+            performative=msg.get_metadata("performative"),
+            sender=str(msg.sender),
+            ontology="classroom-availability"
+        )
     
     async def run(self):
         try:
@@ -259,13 +267,7 @@ class CollectingState(State):
                     elif msg.get_metadata("performative") == "refuse":
                         refuses_received += 1
                         
-                    await self.rtt_logger.end_request(
-                        conversation_id=msg.get_metadata("rtt-id"),
-                        response_performative=msg.get_metadata("performative"),
-                        message_size=getsizeof(msg.body),
-                        success=True,
-                        ontology="classroom-availability"
-                    )
+                    await self.__log_response(msg)
                 
                 # Log progress
                 if len(self.parent.responding_rooms) == self.parent.cfp_count:
