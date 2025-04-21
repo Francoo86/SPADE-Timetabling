@@ -14,9 +14,10 @@ from fipa.acl_message import FIPAPerformatives
 import jsonpickle
 
 from performance.rtt_stats import RTTLogger
-from sys import getsizeof
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
+    MAX_BLOQUE_DIURNO = 9
+    
     """Enhanced room responder behaviour to work with FSM professors"""
     def __init__(self):
         super().__init__()
@@ -26,12 +27,6 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
     async def on_start(self):
         """Initialize RTT logger on behaviour start"""
         self.rtt_logger = self.agent.rtt_logger
-        # if self.rtt_initialized:
-            # return
-        
-        # self.rtt_logger = RTTLogger(str(self.agent.jid), self.agent.scenario)
-        # self.rtt_initialized = True
-        # await self.rtt_logger.start()
 
     async def run(self):
         """Main behaviour loop with improved message handling"""
@@ -128,8 +123,10 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         available_blocks = {}
         for day, assignments in self.agent.horario_ocupado.items():
             free_blocks = []
-            for block_idx, assignment in enumerate(assignments):
-                if assignment is None:
+            #for block_idx, assignment in enumerate(assignments):
+            for block_idx in range(self.MAX_BLOQUE_DIURNO):
+                if block_idx < len(assignments) and assignments[block_idx] is None:
+                # if assignment is None:
                     free_blocks.append(block_idx + 1)
             if free_blocks:
                 available_blocks[day.name] = free_blocks
