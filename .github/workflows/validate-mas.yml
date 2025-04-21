@@ -2,9 +2,9 @@ name: Advanced Python Validation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, code-cleanup ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, code-cleanup ]
   workflow_dispatch:
 
 jobs:
