@@ -1,0 +1,80 @@
+name: Advanced Python Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  advanced-validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black mypy pytest bandit radon vulture
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Check code complexity with radon
+      run: |
+        mkdir -p code_quality_reports
+        # Analiza la complejidad ciclomática - flag problemas con CC > 10
+        radon cc --min C --show-complexity --average . > code_quality_reports/complexity_report.txt
+        
+    - name: Security scan with bandit
+      run: |
+        # Escanea vulnerabilidades de seguridad en el código
+        bandit -r . -f txt -o code_quality_reports/security_report.txt || true
+        
+    - name: Find unused code with vulture
+      run: |
+        # Identifica código muerto o no utilizado
+        vulture . --min-confidence 80 > code_quality_reports/dead_code_report.txt || true
+        
+    - name: Check custom patterns
+      run: |
+        # Buscar antipatrones específicos para sistemas multiagente
+        echo "Buscando anti-patrones en código de agentes..." > code_quality_reports/custom_patterns.txt
+        
+        # Ejemplo: Detectar bloqueos potenciales en código asíncrono
+        grep -r "asyncio.Lock()" --include="*.py" . | grep -v "async with" >> code_quality_reports/custom_patterns.txt || true
+        
+        # Ejemplo: Detectar timeouts faltantes en esperas asíncronas
+        grep -r "await.*receive(" --include="*.py" . | grep -v "timeout" >> code_quality_reports/custom_patterns.txt || true
+        
+        # Ejemplo: Verificar uso adecuado de asyncio.shield para operaciones críticas
+        grep -r "await .*update_" --include="*.py" . | grep -v "shield" >> code_quality_reports/custom_patterns.txt || true
+        
+        # Ejemplo: Buscar posibles race conditions en FSM
+        grep -r "set_next_state" --include="*.py" . >> code_quality_reports/custom_patterns.txt || true
+        
+    - name: Generate metrics for agent communication patterns
+      run: |
+        echo "Analizando patrones de comunicación entre agentes..." > code_quality_reports/agent_communication.txt
+        
+        # Contar diferentes tipos de performativas FIPA utilizadas
+        echo "Performativas FIPA:" >> code_quality_reports/agent_communication.txt
+        grep -r "FIPAPerformatives" --include="*.py" . | grep -o "FIPAPerformatives\.[A-Z_]*" | sort | uniq -c >> code_quality_reports/agent_communication.txt || true
+        
+        # Analizar estados FSM
+        echo -e "\nEstados FSM:" >> code_quality_reports/agent_communication.txt
+        grep -r "NegotiationStates\." --include="*.py" . | sort | uniq -c >> code_quality_reports/agent_communication.txt || true
+        
+    - name: Upload advanced code quality reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: advanced-code-quality-reports
+        path: code_quality_reports/
