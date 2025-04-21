@@ -74,7 +74,7 @@ jobs:
         grep -r "NegotiationStates\." --include="*.py" . | sort | uniq -c >> code_quality_reports/agent_communication.txt || true
         
     - name: Upload advanced code quality reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: advanced-code-quality-reports
         path: code_quality_reports/
