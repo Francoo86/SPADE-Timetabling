@@ -38,7 +38,6 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 return
 
             performative = msg.get_metadata("performative")
-            # conversation_id = msg.get_metadata("conversation-id")
 
             if performative == FIPAPerformatives.CFP:
                 await self.process_request(msg)
