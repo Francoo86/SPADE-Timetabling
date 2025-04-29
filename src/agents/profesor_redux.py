@@ -19,12 +19,6 @@ from src.performance.rtt_stats import RTTLogger
 from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
 from datetime import datetime
 
-class CleanupState:
-    """Track cleanup state to avoid deadlocks"""
-    is_cleaning: bool = False
-    negotiation_done: bool = False
-    message_collector_done: bool = False
-
 # TODO: Usar la clase TimetableAgent en lugar de Agent
 class AgenteProfesor(Agent):
     AGENT_NAME = "Profesor"
@@ -47,11 +41,10 @@ class AgenteProfesor(Agent):
         # self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
         self.rtt_logger = None
+        self.cleanup_lock = asyncio.Lock()
         
         # Lock para replicar el synchronized de Java
         self.prof_lock = asyncio.Lock()
-        self.cleanup_lock = asyncio.Lock()
-        self.cleanup_state = CleanupState()
         
         self.scenario = scenario
         self.performance_monitor = CentralizedPerformanceMonitor(
@@ -69,15 +62,6 @@ class AgenteProfesor(Agent):
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
-        
-    def mark_collector_done(self):
-        self.cleanup_state.message_collector_done = True
-        
-    def mark_negotiation_done(self):
-        self.cleanup_state.negotiation_done = True
-        
-    def mark_as_done(self):
-        self.cleanup_state.is_cleaning = True
 
     def _initialize_data_structures(self):
         """Initialize all data structures needed for the agent."""
@@ -375,11 +359,11 @@ class AgenteProfesor(Agent):
             # Use a timeout for the entire cleanup operation
             async with asyncio.timeout(10):  # 10 second total timeout
                 async with self.cleanup_lock:
-                    if self.cleanup_state.is_cleaning:
+                    if self.is_cleaning_up:
                         self.log.warning("Cleanup already in progress, skipping...")
                         return
                         
-                    self.cleanup_state.is_cleaning = True
+                    self.is_cleaning_up = True
                     self.log.info(f"Starting cleanup for professor {self.nombre}")
                     
                     # 1. Flush metrics - with timeout
@@ -420,7 +404,7 @@ class AgenteProfesor(Agent):
             await self.stop()
         finally:
             # Ensure the cleanup state is reset even if there was an error
-            self.cleanup_state.is_cleaning = False
+            self.is_cleaning_up = False
             self.log.info(f"Cleanup completed for professor {self.nombre}")
 
     async def export_schedule_json(self) -> Dict:

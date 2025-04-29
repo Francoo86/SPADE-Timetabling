@@ -283,6 +283,7 @@ class AgentKnowledgeBase:
             
             # Update cache
             # self.df_tracker.update_cache(agent_id, "search", cache_params, results)
+            self.update_cache(agent_id, "search", cache_params, results)
             
             return results
             
