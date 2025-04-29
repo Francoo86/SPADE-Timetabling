@@ -37,6 +37,7 @@ class AgentKnowledgeBase:
         self._ttl = timedelta(seconds=ttl_seconds)
         self._lock = asyncio.Lock()
         self._cleanup_task = None
+        self._cache = {}
         
         # filename_with_timestamp = f"df_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         # self.df_tracker = DFMetricsTracker(output_file=filename_with_timestamp)
@@ -56,6 +57,35 @@ class AgentKnowledgeBase:
         if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
+    
+    def __make_hashable(self, obj):
+        """Convert a dictionary into a hashable format"""
+        if isinstance(obj, dict):
+            return frozenset((k, self.__make_hashable(v)) for k, v in sorted(obj.items()))
+        elif isinstance(obj, list):
+            return tuple(self.__make_hashable(elem) for elem in obj)
+        elif isinstance(obj, set):
+            return frozenset(self.__make_hashable(elem) for elem in obj)
+        return obj
+    
+    def _generate_cache_key(self, agent_id: str, operation: str, params: Dict) -> str:
+        """Generate a cache key from parameters"""
+        try:
+            hashable_params = self.__make_hashable(params)
+            return f"{agent_id}:{operation}:{hash(hashable_params)}"
+        except Exception:
+            # Fallback if hashing fails
+            return f"{agent_id}:{operation}:{datetime.now().timestamp()}"
+
+    def check_cache(self, agent_id: str, operation: str, params: Dict) -> Optional[Dict]:
+        """Check if operation result is in cache"""
+        cache_key = self._generate_cache_key(agent_id, operation, params)
+        return self._cache.get(cache_key)
+
+    def update_cache(self, agent_id: str, operation: str, params: Dict, result: Dict):
+        """Update cache with operation result"""
+        cache_key = self._generate_cache_key(agent_id, operation, params)
+        self._cache[cache_key] = result
 
     async def start(self):
         """Start the knowledge base and its maintenance tasks"""
@@ -66,7 +96,7 @@ class AgentKnowledgeBase:
         """Set the scenario for the knowledge base"""
         self.scenario = scenario
         # Update the metrics tracker with the new scenario
-        self.df_tracker = DFMetricsTracker(output_file=f"df_metrics_{scenario}.csv", scenario=scenario)
+        # self.df_tracker = DFMetricsTracker(output_file=f"df_metrics_{scenario}.csv", scenario=scenario)
 
     async def stop(self):
         """Stop the knowledge base and cleanup"""
@@ -104,14 +134,14 @@ class AgentKnowledgeBase:
                 response_time = (end_time - start_time) * 1000
                 
                 # Log registration operation
-                await self.df_tracker.log_operation(DFOperation(
-                    agent_id=agent_id,
-                    operation="register",
-                    timestamp=datetime.now(),
-                    response_time_ms=response_time,
-                    num_results=len(capabilities),  # Number of registered capabilities
-                    status="success"
-                ))
+                # await self.df_tracker.log_operation(DFOperation(
+                #     agent_id=agent_id,
+                #     operation="register",
+                #     timestamp=datetime.now(),
+                #     response_time_ms=response_time,
+                #     num_results=len(capabilities),  # Number of registered capabilities
+                #     status="success"
+                # ))
                 
                 return True
                 
@@ -119,14 +149,14 @@ class AgentKnowledgeBase:
             end_time = time.perf_counter()
             response_time = (end_time - start_time) * 1000
             
-            await self.df_tracker.log_operation(DFOperation(
-                agent_id=agent_id,
-                operation="register",
-                timestamp=datetime.now(),
-                response_time_ms=response_time,
-                num_results=0,
-                status=f"error: {str(e)}"
-            ))
+            # await self.df_tracker.log_operation(DFOperation(
+            #     agent_id=agent_id,
+            #     operation="register",
+            #     timestamp=datetime.now(),
+            #     response_time_ms=response_time,
+            #     num_results=0,
+            #     status=f"error: {str(e)}"
+            # ))
             raise
 
     async def deregister_agent(self, jid: JID) -> bool:
@@ -138,16 +168,16 @@ class AgentKnowledgeBase:
             async with asyncio.timeout(10):
                 async with self._lock:
                     jid_str = str(jid)
-                    if jid_str not in self._agents:
-                        await self.df_tracker.log_operation(DFOperation(
-                            agent_id=agent_id,
-                            operation="deregister",
-                            timestamp=datetime.now(),
-                            response_time_ms=0,
-                            num_results=0,
-                            status="not_found"
-                        ))
-                        return False
+                    # if jid_str not in self._agents:
+                    #     await self.df_tracker.log_operation(DFOperation(
+                    #         agent_id=agent_id,
+                    #         operation="deregister",
+                    #         timestamp=datetime.now(),
+                    #         response_time_ms=0,
+                    #         num_results=0,
+                    #         status="not_found"
+                    #     ))
+                    #     return False 
 
                     # Remove from capability indices
                     agent_info = self._agents[jid_str]
@@ -167,28 +197,28 @@ class AgentKnowledgeBase:
                     response_time = (end_time - start_time) * 1000
                     
                     # Log deregistration operation
-                    await self.df_tracker.log_operation(DFOperation(
-                        agent_id=agent_id,
-                        operation="deregister",
-                        timestamp=datetime.now(),
-                        response_time_ms=response_time,
-                        num_results=num_capabilities,  # Number of deregistered capabilities
-                        status="success"
-                    ))
+                    # await self.df_tracker.log_operation(DFOperation(
+                    #     agent_id=agent_id,
+                    #     operation="deregister",
+                    #     timestamp=datetime.now(),
+                    #     response_time_ms=response_time,
+                    #     num_results=num_capabilities,  # Number of deregistered capabilities
+                    #     status="success"
+                    # ))
                     
                     return True
         except Exception as e:
             end_time = time.perf_counter()
             response_time = (end_time - start_time) * 1000
             
-            await self.df_tracker.log_operation(DFOperation(
-                agent_id=agent_id,
-                operation="deregister",
-                timestamp=datetime.now(),
-                response_time_ms=response_time,
-                num_results=0,
-                status=f"error: {str(e)}"
-            ))
+            # await self.df_tracker.log_operation(DFOperation(
+            #     agent_id=agent_id,
+            #     operation="deregister",
+            #     timestamp=datetime.now(),
+            #     response_time_ms=response_time,
+            #     num_results=0,
+            #     status=f"error: {str(e)}"
+            # ))
             # raise custom exception or log error
             raise Exception(f"Error deregistering agent {jid}: {str(e)}")
 
@@ -200,18 +230,18 @@ class AgentKnowledgeBase:
         try:
             # Check cache first
             cache_params = {"service_type": service_type, "properties": properties}
-            cached_result = self.df_tracker.check_cache(agent_id, "search", cache_params)
+            cached_result = self.check_cache(agent_id, "search", cache_params)
             
             if cached_result:
                 # Log cache hit
-                await self.df_tracker.log_operation(DFOperation(
-                    agent_id=agent_id,
-                    operation="cache_hit",
-                    timestamp=datetime.now(),
-                    response_time_ms=0,
-                    num_results=len(cached_result),
-                    status="success"
-                ))
+                # await self.df_tracker.log_operation(DFOperation(
+                #     agent_id=agent_id,
+                #     operation="cache_hit",
+                #     timestamp=datetime.now(),
+                #     response_time_ms=0,
+                #     num_results=len(cached_result),
+                #     status="success"
+                # ))
                 return cached_result
 
             async with self._lock:
@@ -242,17 +272,18 @@ class AgentKnowledgeBase:
             response_time = (end_time - start_time) * 1000
             
             # Log operation
-            await self.df_tracker.log_operation(DFOperation(
-                agent_id=agent_id,
-                operation="search",
-                timestamp=datetime.now(),
-                response_time_ms=response_time,
-                num_results=len(results),
-                status="success"
-            ))
+            # await self.df_tracker.log_operation(DFOperation(
+            #     agent_id=agent_id,
+            #     operation="search",
+            #     timestamp=datetime.now(),
+            #     response_time_ms=response_time,
+            #     num_results=len(results),
+            #     status="success"
+            # ))
             
             # Update cache
-            self.df_tracker.update_cache(agent_id, "search", cache_params, results)
+            # self.df_tracker.update_cache(agent_id, "search", cache_params, results)
+            self.update_cache(agent_id, "search", cache_params, results)
             
             return results
             
@@ -260,14 +291,14 @@ class AgentKnowledgeBase:
             end_time = time.perf_counter()
             response_time = (end_time - start_time) * 1000
             
-            await self.df_tracker.log_operation(DFOperation(
-                agent_id=agent_id,
-                operation="search",
-                timestamp=datetime.now(),
-                response_time_ms=response_time,
-                num_results=0,
-                status=f"error: {str(e)}"
-            ))
+            # await self.df_tracker.log_operation(DFOperation(
+            #     agent_id=agent_id,
+            #     operation="search",
+            #     timestamp=datetime.now(),
+            #     response_time_ms=response_time,
+            #     num_results=0,
+            #     status=f"error: {str(e)}"
+            # ))
             raise Exception(f"Error searching for agents: {str(e)}")
     
     async def _cleanup_loop(self):

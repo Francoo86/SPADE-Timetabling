@@ -20,13 +20,13 @@ class MetricsMonitor:
         self.write_lock = Lock()
         
         # Use deques for better performance with fixed size
-        self.metrics_buffer: Deque[Dict] = deque(maxlen=buffer_size)
+        # self.metrics_buffer: Deque[Dict] = deque(maxlen=buffer_size)
         self.request_buffer: Deque[Dict] = deque(maxlen=buffer_size)
         
         # Metrics storage (in-memory)
-        self.rtt_measurements: Deque[float] = deque(maxlen=1000)
-        self.df_measurements: Deque[float] = deque(maxlen=1000)
-        self.cpu_measurements: Deque[float] = deque(maxlen=1000)
+        # self.rtt_measurements: Deque[float] = deque(maxlen=1000)
+        # self.df_measurements: Deque[float] = deque(maxlen=1000)
+        # self.cpu_measurements: Deque[float] = deque(maxlen=1000)
         self.negotiation_times: Dict[str, List[float]] = {}
         self.current_negotiations: Dict[str, float] = {}
 
@@ -47,13 +47,15 @@ class MetricsMonitor:
                     'start_time', 'end_time', 'duration', 'status', 'details'
                 ])
                 
-        if not os.path.exists(self.output_file):
-            with open(self.output_file, 'w') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    'timestamp', 'rtt_avg', 'rtt_max', 
-                    'df_avg', 'cpu_avg', 'cpu_max'
-                ])
+       # if not os.path.exists(self.output_file):
+       #     with open(self.output_file, 'w') as f:
+       #         writer = csv.writer(f)
+       #         writer.writerow([
+                    # 'timestamp', 'rtt_avg', 'rtt_max', 
+                    
+                    # 'df_avg', 'cpu_avg', 'cpu_max'
+        #            'cpu_avg', 'cpu_max'
+        #        ]) 
 
     async def start(self):
         """Start the metrics monitor and periodic flush"""
@@ -74,27 +76,27 @@ class MetricsMonitor:
             # Final flush
             await self._flush_all()
 
-    def measure_rtt(self, agent_id: str, start_time: float, end_time: float):
-        """Non-blocking RTT measurement"""
-        rtt = end_time - start_time
-        self.rtt_measurements.append(rtt)
+    # def measure_rtt(self, agent_id: str, start_time: float, end_time: float):
+    #    """Non-blocking RTT measurement"""
+    #    rtt = end_time - start_time
+    #    self.rtt_measurements.append(rtt)
         # Schedule metrics update without waiting
-        asyncio.create_task(self._schedule_metrics_update())
-        return rtt
+    #    asyncio.create_task(self._schedule_metrics_update())
+    #    return rtt
         
-    def measure_df_response(self, num_requests: int, total_time: float):
-        """Non-blocking DF response measurement"""
-        df_time = total_time / num_requests
-        self.df_measurements.append(df_time)
-        asyncio.create_task(self._schedule_metrics_update())
-        return df_time
+    # def measure_df_response(self, num_requests: int, total_time: float):
+    #     """Non-blocking DF response measurement"""
+    #     # df_time = total_time / num_requests
+    #     # self.df_measurements.append(df_time)
+    #     # asyncio.create_task(self._schedule_metrics_update())
+    #     # return df_time
         
-    def measure_cpu_usage(self):
-        """Non-blocking CPU measurement"""
-        cpu_percent = psutil.cpu_percent(interval=0.1)  # Reduced interval
-        self.cpu_measurements.append(cpu_percent)
-        asyncio.create_task(self._schedule_metrics_update())
-        return cpu_percent
+    # def measure_cpu_usage(self):
+    #    """Non-blocking CPU measurement"""
+    #    cpu_percent = psutil.cpu_percent(interval=0.1)  # Reduced interval
+    #    self.cpu_measurements.append(cpu_percent)
+    #    asyncio.create_task(self._schedule_metrics_update())
+    #    return cpu_percent
         
     def start_negotiation(self, professor_id: str, subject_name: str):
         """Start tracking a negotiation process"""
@@ -165,23 +167,23 @@ class MetricsMonitor:
 
     async def _schedule_metrics_update(self):
         """Add metrics update to buffer"""
-        if not self.rtt_measurements and not self.df_measurements and not self.cpu_measurements:
+        if not self.rtt_measurements and not self.cpu_measurements:
             return
             
-        metrics = {
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'rtt_avg': f"{sum(self.rtt_measurements)/len(self.rtt_measurements):.6f}" if self.rtt_measurements else "0.0",
-            'rtt_max': f"{max(self.rtt_measurements):.6f}" if self.rtt_measurements else "0.0",
-            'df_avg': f"{sum(self.df_measurements)/len(self.df_measurements):.6f}" if self.df_measurements else "0.0",
-            'cpu_avg': f"{sum(self.cpu_measurements)/len(self.cpu_measurements):.6f}" if self.cpu_measurements else "0.0",
-            'cpu_max': f"{max(self.cpu_measurements):.6f}" if self.cpu_measurements else "0.0"
-        }
+        # metrics = {
+        #    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        #    'rtt_avg': f"{sum(self.rtt_measurements)/len(self.rtt_measurements):.6f}" if self.rtt_measurements else "0.0",
+        #    # 'rtt_max': f"{max(self.rtt_measurements):.6f}" if self.rtt_measurements else "0.0",
+            # 'df_avg': f"{sum(self.df_measurements)/len(self.df_measurements):.6f}" if self.df_measurements else "0.0",
+            # 'cpu_avg': f"{sum(self.cpu_measurements)/len(self.cpu_measurements):.6f}" if self.cpu_measurements else "0.0",
+        #    'cpu_max': f"{max(self.cpu_measurements):.6f}" if self.cpu_measurements else "0.0"
+        #}
         
-        self.metrics_buffer.append(metrics)
+        # self.metrics_buffer.append(metrics)
         
-        # Flush if buffer is full
-        if len(self.metrics_buffer) >= self.buffer_size:
-            asyncio.create_task(self._flush_metrics())
+        # # Flush if buffer is full
+        # if len(self.metrics_buffer) >= self.buffer_size:
+        #    asyncio.create_task(self._flush_metrics())
 
     async def _periodic_flush(self):
         """Periodically flush buffers to files"""
@@ -191,33 +193,35 @@ class MetricsMonitor:
 
     async def _flush_all(self):
         """Flush all buffers to files"""
-        await self._flush_metrics()
+        # await self._flush_metrics()
         await self._flush_requests()
 
-    async def _flush_metrics(self):
-        """Flush metrics buffer to file"""
-        if not self.metrics_buffer:
-            return
+    #async def _flush_metrics(self):
+    #    """Flush metrics buffer to file"""
+    #    if not self.metrics_buffer:
+    #        return
             
-        metrics_to_write = list(self.metrics_buffer)
-        self.metrics_buffer.clear()
+    #    metrics_to_write = list(self.metrics_buffer)
+    #    self.metrics_buffer.clear()
         
-        try:
-            async with self.write_lock:
-                async with asyncio.timeout(5):  # 5 second timeout
-                    async with aiofiles.open(self.output_file, mode='a') as f:
-                        for metrics in metrics_to_write:
-                            csv_line = (
-                                f"{metrics['timestamp']},"
-                                f"{metrics['rtt_avg']},"
-                                f"{metrics['rtt_max']},"
-                                f"{metrics['df_avg']},"
-                                f"{metrics['cpu_avg']},"
-                                f"{metrics['cpu_max']}\n"
-                            )
-                            await f.write(csv_line)
-        except Exception as e:
-            print(f"Error flushing metrics: {str(e)}")
+    #     try:
+    #         async with self.write_lock:
+    #             async with asyncio.timeout(5):
+    #                 async with aiofiles.open(self.output_file, mode='a') as f:
+    #                     for metrics in metrics_to_write:
+    #                         csv_line = (
+    #                             f"{metrics['timestamp']},"
+    #                             f"{metrics['rtt_avg']},"
+    #                             f"{metrics['rtt_max']},"
+    #                             # f"{metrics['df_avg']},"
+    #                             f"{metrics['cpu_avg']},"
+    #                             f"{metrics['cpu_max']}\n"
+    #                         )
+    #                         await f.write(csv_line)
+    #     except asyncio.TimeoutError as e:
+    #         print(f"Timeout flushing metrics: {str(e)}")
+    #     except Exception as e:
+    # #        print(f"Error flushing metrics: {str(e)}")
 
     async def _flush_requests(self):
         """Flush request buffer to file"""
@@ -244,15 +248,17 @@ class MetricsMonitor:
                                 f"\"{request['details']}\"\n"
                             )
                             await f.write(csv_line)
+        except asyncio.CancelledError as e:
+            print(f"CancelledError flushing requests: {str(e)}")
         except Exception as e:
             print(f"Error flushing requests: {str(e)}")
 
     def generate_summary(self) -> Dict:
         """Generate summary statistics"""
         return {
-            'rtt': self._calculate_stats(list(self.rtt_measurements)),
-            'df': self._calculate_stats(list(self.df_measurements)), 
-            'cpu': self._calculate_stats(list(self.cpu_measurements)),
+            #'rtt': self._calculate_stats(list(self.rtt_measurements)),
+            # 'df': self._calculate_stats(list(self.df_measurements)), 
+            #'cpu': self._calculate_stats(list(self.cpu_measurements)),
             'negotiations': {
                 key: self._calculate_stats(times)
                 for key, times in self.negotiation_times.items()

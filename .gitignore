@@ -13,3 +13,7 @@ results_json_profiling/
 scenarios/
 agent_output/
 iteration_summary/
+# yappi files
+*.pstat
+*.callgrind
+*.python-version

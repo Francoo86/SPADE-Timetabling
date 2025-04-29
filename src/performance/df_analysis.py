@@ -63,6 +63,7 @@ class DFMetricsTracker:
                 ]
                 await f.write(','.join(row) + '\n')
 
+    # TODO: Remove this because it causes an unnecessary overhead
     def _make_hashable(self, obj):
         """Convert a dictionary into a hashable format"""
         if isinstance(obj, dict):

@@ -12,6 +12,7 @@ from .agent_logger import AgentLogger
 from pathlib import Path
 import os
 from fipa.acl_message import FIPAPerformatives
+from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
 
 class SupervisorState:
     def __init__(self, professor_jids: List[str]):
@@ -33,7 +34,7 @@ class SupervisorState:
 class AgenteSupervisor(Agent):
     CHECK_INTERVAL = 5  # seconds
 
-    def __init__(self, jid: str, password: str, professor_jids: List[str]):
+    def __init__(self, jid: str, password: str, professor_jids: List[str], scenario: str):
         super().__init__(jid, password)
         self.professor_jids = professor_jids
         self.state = None
@@ -45,6 +46,13 @@ class AgenteSupervisor(Agent):
         
         self.finalizer : asyncio.Event = None
         self.metrics_monitor = None
+        self.scenario = scenario
+        
+        self.performance_monitor = CentralizedPerformanceMonitor(
+            agent_identifier=self.jid,
+            agent_type="supervisor",
+            scenario=self.scenario
+        )
         
     def set_metrics_monitor(self, monitor):
         self.metrics_monitor = monitor
@@ -61,6 +69,7 @@ class AgenteSupervisor(Agent):
 
     async def setup(self):
         """Initialize the supervisor agent"""
+        await self.performance_monitor.start_monitoring()
         self.state = SupervisorState(self.professor_jids)
         
         # Store initial state in knowledge base

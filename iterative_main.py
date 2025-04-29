@@ -12,6 +12,7 @@ from typing import List, Dict, Tuple
 import logging
 from dotenv import load_dotenv
 import os
+import yappi
 
 
 # Import the original code
@@ -43,6 +44,8 @@ class IterationRunner:
         
         # Create profiler for this iteration
         profiler = cProfile.Profile()
+        yappi.set_clock_type("CPU")
+        yappi.clear_stats()
         
         try:
             # Create new runner instance for this iteration
@@ -50,7 +53,9 @@ class IterationRunner:
             
             # Start profiling and run the system
             profiler.enable()
+            yappi.start()
             await runner.run()
+            yappi.stop()
             profiler.disable()
             
             # Calculate metrics
@@ -85,12 +90,48 @@ class IterationRunner:
                 "error": str(e)
             }
             
+            if yappi.is_running():
+                yappi.stop()
+                
+        self.save_yappi_stats(iteration)
+            
         # Create stats object from profiler
         stats = pstats.Stats(profiler)
         
         # Ensure cleanup between iterations
         await asyncio.sleep(2)
         return result, stats
+    
+    def save_yappi_stats(self, iteration: int):
+        """Save Yappi profiling statistics to files"""
+        current_time = datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
+        
+        # Save callgrind format for visualization tools
+        callgrind_file = self.profile_dir / f"yappi_callgrind_{iteration}_{current_time}.callgrind"
+        yappi.get_func_stats().save(str(callgrind_file), type="callgrind")
+        
+        # Save pstat format
+        pstat_file = self.profile_dir / f"yappi_pstat_{iteration}_{current_time}.pstat"
+        yappi.get_func_stats().save(str(pstat_file), type="pstat")
+        
+        # Save human-readable text summary
+        text_file = self.profile_dir / f"yappi_summary_{iteration}_{current_time}.txt"
+        with open(text_file, 'w') as f:
+            yappi.get_func_stats().print_all(out=f, columns={
+                0: ("name", 80),
+                1: ("ncall", 10),
+                2: ("tsub", 10),
+                3: ("ttot", 10),
+                4: ("tavg", 10),
+            })
+        
+        # Save thread stats
+        threads_file = self.profile_dir / f"yappi_threads_{iteration}_{current_time}.txt"
+        with open(threads_file, 'w') as f:
+            yappi.get_thread_stats().print_all(out=f)
+        
+        # Clear stats for next iteration
+        yappi.clear_stats()
 
     def save_profile_stats(self, stats: pstats.Stats, iteration: int):
         """Save profiling statistics to files"""
