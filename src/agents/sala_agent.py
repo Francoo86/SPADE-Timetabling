@@ -13,6 +13,7 @@ from .agent_logger import AgentLogger
 from fipa.common_templates import CommonTemplates
 from behaviours.responder_behaviour import ResponderSolicitudesBehaviour
 from src.performance.rtt_stats import RTTLogger
+from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
 
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
@@ -30,7 +31,13 @@ class AgenteSala(Agent):
         self._kb = None
         self.storage = None
         self.scenario = scenario
+        self.performance_monitor = CentralizedPerformanceMonitor(
+            agent_identifier=self.jid,
+            agent_type="sala",
+            scenario=self.scenario
+        )
         
+
         self.responder_behaviour = ResponderSolicitudesBehaviour()
         
     def set_rtt_logger(self, rtt_logger: RTTLogger):
@@ -41,6 +48,7 @@ class AgenteSala(Agent):
 
     async def setup(self):
         """Initialize agent setup"""
+        await self.performance_monitor.start_monitoring()
         self.initialize_schedule()
         await self.register_service()
         

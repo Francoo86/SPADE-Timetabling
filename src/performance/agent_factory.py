@@ -1,4 +1,5 @@
 from .metrics_monitor import MetricsMonitor
+from .lightweight_monitor import CentralizedPerformanceMonitor
 from agents.sala_agent import AgenteSala
 from agents.profesor_redux import AgenteProfesor
 from agents.supervisor import AgenteSupervisor
@@ -10,7 +11,7 @@ import os
 
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 # GO TWO DIRECTORIES UP
-OUTPUT_DIR = os.path.abspath(os.path.join(FILE_PATH, "..", "..", "metrics"))
+OUTPUT_DIR = os.path.abspath(os.path.join(FILE_PATH, "..", "..", "agent_output", "Metrics"))
 
 class AgentFactory:
     def __init__(self, scenario: str = "small"):
@@ -37,6 +38,7 @@ class AgentFactory:
         )
         
         asyncio.create_task(self.metrics_monitor.start())
+        asyncio.create_task(CentralizedPerformanceMonitor.initialize(self.scenario))
 
     async def create_professor(self, jid: str, password: str, nombre: str, asignaturas: list, orden: int) -> AgenteProfesor:
         """Create professor agent with non-blocking metrics monitoring"""
@@ -157,7 +159,7 @@ class AgentFactory:
 
     async def create_supervisor(self, jid: str, password: str, professor_jids: list) -> AgenteSupervisor:
         """Create supervisor agent with non-blocking metrics monitoring"""
-        agent = AgenteSupervisor(jid, password, professor_jids)
+        agent = AgenteSupervisor(jid, password, professor_jids, self.scenario)
         agent.set_metrics_monitor(self.metrics_monitor)
         
         # Add CPU monitoring behavior

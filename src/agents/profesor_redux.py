@@ -16,6 +16,7 @@ from fipa.common_templates import CommonTemplates
 from json_stuff.json_profesores import ProfesorScheduleStorage
 from behaviours.fsm_negotiation_states import NegotiationFSM
 from src.performance.rtt_stats import RTTLogger
+from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
 from datetime import datetime
 
 class CleanupState:
@@ -53,6 +54,11 @@ class AgenteProfesor(Agent):
         self.cleanup_state = CleanupState()
         
         self.scenario = scenario
+        self.performance_monitor = CentralizedPerformanceMonitor(
+            agent_identifier=self.nombre,
+            agent_type=self.AGENT_NAME,
+            scenario=self.scenario
+        )
         
         # inicializar una fuente de verdad de los behaviors
         self.negotiation_state_behaviour = NegotiationFSM(profesor_agent=self)
@@ -107,6 +113,7 @@ class AgenteProfesor(Agent):
     async def setup(self):
         """Setup the agent behaviors and structures."""
         try:
+            await self.performance_monitor.start_monitoring()
             professor_capability = AgentCapability(
                 service_type="profesor",
                 properties={
