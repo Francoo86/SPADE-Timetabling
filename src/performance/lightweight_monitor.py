@@ -77,7 +77,7 @@ class CentralizedPerformanceMonitor:
         self.monitoring_task = None
         self.is_monitoring = False
     
-    async def start_monitoring(self, interval_sec: float = 1):
+    async def start_monitoring(self, interval_sec: float = 2.5):
         """
         Start monitoring with reduced overhead
         

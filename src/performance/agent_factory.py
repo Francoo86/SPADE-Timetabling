@@ -182,7 +182,7 @@ class AgentFactory:
     async def create_supervisor(self, jid: str, password: str, professor_jids: list) -> AgenteSupervisor:
         """Create supervisor agent with non-blocking metrics monitoring"""
         agent = AgenteSupervisor(jid, password, professor_jids, self.scenario)
-        # agent.set_metrics_monitor(self.metrics_monitor)
+        agent.metrics_monitor = self.metrics_monitor
         
         # Add CPU monitoring behavior
         # class CPUMonitorBehaviour(PeriodicBehaviour):

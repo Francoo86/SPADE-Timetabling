@@ -658,7 +658,7 @@ class FinishedState(State):
                 msg.set_metadata("performative", FIPAPerformatives.INFORM)
                 msg.set_metadata("conversation-id", "negotiation-start")
                 msg.set_metadata("nextOrden", str(next_orden))
-                msg.set_metadata("require-ack", "true")
+                # msg.set_metadata("require-ack", "true")
                 msg.body = "START"
                 
                 await self.send(msg)

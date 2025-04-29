@@ -248,6 +248,8 @@ class MetricsMonitor:
                                 f"\"{request['details']}\"\n"
                             )
                             await f.write(csv_line)
+        except asyncio.CancelledError as e:
+            print(f"CancelledError flushing requests: {str(e)}")
         except Exception as e:
             print(f"Error flushing requests: {str(e)}")
 
