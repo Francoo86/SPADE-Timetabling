@@ -1,8 +1,8 @@
 from .metrics_monitor import MetricsMonitor
 from .lightweight_monitor import CentralizedPerformanceMonitor
-from agents.sala_agent import AgenteSala
-from agents.profesor_redux import AgenteProfesor
-from agents.supervisor import AgenteSupervisor
+from ..agents.sala_agent import AgenteSala
+from ..agents.profesor_redux import AgenteProfesor
+from ..agents.supervisor import AgenteSupervisor
 # from spade.behaviour import PeriodicBehaviour
 import time
 from datetime import datetime

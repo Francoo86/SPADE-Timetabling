@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 import os
 import yappi
 
-
 # Import the original code
 from benchmarked_main import ApplicationRunner
 
@@ -53,9 +52,9 @@ class IterationRunner:
             
             # Start profiling and run the system
             profiler.enable()
-            yappi.start()
+            #yappi.start()
             await runner.run()
-            yappi.stop()
+            #yappi.stop()
             profiler.disable()
             
             # Calculate metrics
@@ -90,10 +89,10 @@ class IterationRunner:
                 "error": str(e)
             }
             
-            if yappi.is_running():
-                yappi.stop()
+            # if yappi.is_running():
+            #     yappi.stop()
                 
-        self.save_yappi_stats(iteration)
+        # self.save_yappi_stats(iteration)
             
         # Create stats object from profiler
         stats = pstats.Stats(profiler)
