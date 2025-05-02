@@ -432,7 +432,8 @@ class EvaluatingState(CFPSenderState):
                         subject_name=current_subject.get_nombre(),
                         satisfaction=batch_proposal.get_satisfaction_score(),
                         classroom_code=batch_proposal.get_room_code(),
-                        vacancy=current_subject.get_vacantes()
+                        vacancy=current_subject.get_vacantes(),
+                        prof_name=self.agent.nombre
                     ))
 
                     total_assigned += 1

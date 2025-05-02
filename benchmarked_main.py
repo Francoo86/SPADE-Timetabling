@@ -10,13 +10,10 @@ import logging
 import sys
 
 from pathlib import Path
-from src.agents.profesor_redux import AgenteProfesor
-from src.agents.sala_agent import AgenteSala
-from src.agents.supervisor import AgenteSupervisor
 from src.objects.knowledge_base import AgentKnowledgeBase
 
-from json_stuff.json_salas import SalaScheduleStorage
-from json_stuff.json_profesores import ProfesorScheduleStorage
+from src.json_stuff.json_salas import SalaScheduleStorage
+from src.json_stuff.json_profesores import ProfesorScheduleStorage
 from src.fipa.acl_message import FIPAPerformatives
 
 from src.performance.agent_factory import AgentFactory
@@ -136,6 +133,7 @@ class ApplicationAgent(Agent):
         def __init__(self, factory : AgentFactory):
             super().__init__()
             self.factory = factory
+            self.rooms = []
         
         async def on_start(self):
             """Initialize startup sequence"""
@@ -261,6 +259,7 @@ class ApplicationAgent(Agent):
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
+                    self.rooms.append(room)
                     rooms_started += 1
                     
                 except Exception as e:
@@ -341,6 +340,7 @@ class ApplicationAgent(Agent):
                 supervisor.add_finalizer_event(self.agent.end_event)
                 supervisor.set_storages(self.agent.room_storage, self.agent.prof_storage)
                 supervisor.set_knowledge_base(self.agent._kb)
+                supervisor.set_room_agents(self.rooms)
                 await supervisor.start(auto_register=True)
                 self.agent.supervisor_agent = supervisor
                 logger.info(f"Supervisor agent started: {supervisor_jid}")

@@ -54,6 +54,11 @@ class AgenteSupervisor(Agent):
             scenario=self.scenario
         )
         
+        self.room_agents = []
+        
+    def set_room_agents(self, room_agents: List[Agent]):
+        self.room_agents = room_agents
+        
     def set_metrics_monitor(self, monitor):
         self.metrics_monitor = monitor
         
@@ -184,7 +189,8 @@ class AgenteSupervisor(Agent):
                     # Generate final files with proper error handling
                     try:
                         self.agent.log.info("Generating room schedules JSON...")
-                        await self.agent.room_storage.generate_json_file()
+                        # await self.agent.room_storage.generate_json_file()
+                        await self.agent.room_storage.generate_supervisor_final_report(self.agent.room_agents)
                         
                         self.agent.log.info("Generating professor schedules JSON...")
                         await self.agent.prof_storage.generate_json_file()

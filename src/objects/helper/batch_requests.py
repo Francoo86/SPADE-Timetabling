@@ -21,6 +21,7 @@ class AssignmentRequest:
     satisfaction: int
     classroom_code: str
     vacancy: int
+    prof_name: str = None  # Optional attribute for professor name
 
     def to_dict(self) -> dict:
         """Convert the request to a dictionary for serialization."""
@@ -30,7 +31,8 @@ class AssignmentRequest:
             "subject_name": self.subject_name,
             "satisfaction": self.satisfaction,
             "classroom_code": self.classroom_code,
-            "vacancy": self.vacancy
+            "vacancy": self.vacancy,
+            "professor": self.prof_name
         }
 
     @classmethod
@@ -42,7 +44,8 @@ class AssignmentRequest:
             subject_name=data["subject_name"],
             satisfaction=data["satisfaction"],
             classroom_code=data["classroom_code"],
-            vacancy=data["vacancy"]
+            vacancy=data["vacancy"],
+            prof_name=data.get("professor")
         )
 
 class BatchAssignmentRequest:

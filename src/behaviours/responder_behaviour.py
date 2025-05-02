@@ -5,15 +5,15 @@ from typing import Dict, List
 import json
 import asyncio
 
-from objects.asignation_data import AsignacionSala
-from objects.helper.batch_proposals import ClassroomAvailability
-from objects.helper.batch_requests import BatchAssignmentRequest
-from objects.helper.confirmed_assignments import BatchAssignmentConfirmation, ConfirmedAssignment
+from ..objects.asignation_data import AsignacionSala
+from ..objects.helper.batch_proposals import ClassroomAvailability
+from ..objects.helper.batch_requests import BatchAssignmentRequest
+from ..objects.helper.confirmed_assignments import BatchAssignmentConfirmation, ConfirmedAssignment
 
-from fipa.acl_message import FIPAPerformatives
+from ..fipa.acl_message import FIPAPerformatives
 import jsonpickle
 
-from performance.rtt_stats import RTTLogger
+from ..performance.rtt_stats import RTTLogger
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
     MAX_BLOQUE_DIURNO = 9
@@ -164,7 +164,8 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     new_assignment = AsignacionSala(
                         subject_name,
                         satisfaction,
-                        float(assignment.vacancy) / self.agent.capacidad
+                        float(assignment.vacancy) / self.agent.capacidad,
+                        assignment.prof_name
                     )
                     
                     self.agent.horario_ocupado[day][block] = new_assignment
@@ -196,7 +197,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             
                     await self.send(reply)
                     
-                    asyncio.create_task(self.update_schedule_storage())
+                    # asyncio.create_task(self.update_schedule_storage())
                     
         except asyncio.TimeoutError:
             self.agent.log.error(f"Timeout confirming assignment from {msg.sender}")

@@ -59,6 +59,7 @@ class AsignacionSala:
     nombre_asignatura: str
     satisfaccion: int
     capacidad: float
+    profesor: Optional[str] = None
 
     def get_nombre_asignatura(self) -> str:
         return self.nombre_asignatura
@@ -69,11 +70,15 @@ class AsignacionSala:
     def get_capacidad(self) -> float:
         return self.capacidad
     
+    def get_profesor(self) -> Optional[str]:
+        return self.profesor
+    
     def to_dict(self) -> dict:
         return {
             "nombre_asignatura": self.nombre_asignatura,
             "satisfaccion": self.satisfaccion,
-            "capacidad": self.capacidad
+            "capacidad": self.capacidad,
+            "profesor": self.profesor
         }
 
 @dataclass

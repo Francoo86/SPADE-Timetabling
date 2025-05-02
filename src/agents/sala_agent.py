@@ -1,17 +1,17 @@
 from spade.agent import Agent
 from spade.behaviour import PeriodicBehaviour
 from typing import Dict, List, Optional, Any
-from json_stuff.json_salas import SalaScheduleStorage
-from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from ..json_stuff.json_salas import SalaScheduleStorage
+from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from datetime import datetime
 
-from objects.asignation_data import AsignacionSala
+from ..objects.asignation_data import AsignacionSala
 
-from objects.static.agent_enums import Day
+from ..objects.static.agent_enums import Day
 
 from .agent_logger import AgentLogger
-from fipa.common_templates import CommonTemplates
-from behaviours.responder_behaviour import ResponderSolicitudesBehaviour
+from ..fipa.common_templates import CommonTemplates
+from ..behaviours.responder_behaviour import ResponderSolicitudesBehaviour
 from src.performance.rtt_stats import RTTLogger
 from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
 
@@ -151,3 +151,15 @@ class AgenteSala(Agent):
                 self.log.info(f"Room {self.agent.codigo} deregistered from directory")
         except Exception as e:
             self.log.error(f"Agent Sala{self.agent.codigo}:Error during cleanup: {str(e)}")
+            
+    def get_campus(self) -> str:
+        """Get campus of the room"""
+        return self.campus
+    
+    def get_codigo(self) -> str:
+        """Get room code"""
+        return self.codigo
+    
+    def get_horario_ocupado(self) -> Dict[Day, List[Optional[AsignacionSala]]]:
+        """Get the occupied schedule"""
+        return self.horario_ocupado
