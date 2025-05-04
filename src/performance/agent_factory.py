@@ -1,4 +1,4 @@
-from .metrics_monitor import MetricsMonitor
+from .metrics_monitor import ActionsMonitor
 from .lightweight_monitor import CentralizedPerformanceMonitor
 from ..agents.sala_agent import AgenteSala
 from ..agents.profesor_redux import AgenteProfesor
@@ -29,7 +29,7 @@ class AgentFactory:
         if not os.path.exists(os.path.join(OUTPUT_DIR, scenario)):
             os.makedirs(os.path.join(OUTPUT_DIR, scenario), exist_ok=True)
         
-        self.metrics_monitor = MetricsMonitor(
+        self.metrics_monitor = ActionsMonitor(
             output_file=mas_metrics_file,
             request_log_file=request_metrics_file
         )

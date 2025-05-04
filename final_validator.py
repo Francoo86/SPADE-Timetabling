@@ -165,12 +165,12 @@ def print_results(matches, mismatches):
     else:
         print("No mismatches found.")
 
-def validate_scenarios():
+def validate_scenarios(scenario : str = "small"):
     import json
     import os
     
     CURRENT_FILE = os.path.dirname(os.path.abspath(__file__))
-    CURRENT_SCENARIO = os.path.join(CURRENT_FILE, "agent_output", "small")
+    CURRENT_SCENARIO = os.path.join(CURRENT_FILE, "agent_output", scenario)
     # Example usage with your JSON data
     profesores_json = json.load(open(os.path.join(CURRENT_SCENARIO, "Horarios_asignados.json"), encoding="latin-1"))
     
@@ -188,5 +188,10 @@ def validate_scenarios():
     else:
         print("Failed to process the data.")
 
-validate_scenarios()
-# This script validates the scenarios by checking the matches and mismatches between professors and rooms.
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Validate professor and room assignments.")
+    parser.add_argument("--scenario", type=str, default="small", help="Scenario to validate (default: small), choices: small, medium, full.")
+    args = parser.parse_args()
+    
+    validate_scenarios(args.scenario)

@@ -9,7 +9,7 @@ from collections import deque
 from asyncio import Lock
 import aiofiles
 
-class MetricsMonitor:
+class ActionsMonitor:
     def __init__(self, output_file: str = "mas_metrics.csv", request_log_file: str = "request_metrics.csv",
                  flush_interval: int = 30, buffer_size: int = 1000, scenario: str = "small"):
         self.output_file = os.path.join("agent_output", scenario, output_file)
