@@ -42,20 +42,20 @@ class IterationRunner:
         start_time = time.time()
         
         # Create profiler for this iteration
-        profiler = cProfile.Profile()
-        yappi.set_clock_type("CPU")
-        yappi.clear_stats()
+        #profiler = cProfile.Profile()
+        #yappi.set_clock_type("CPU")
+        #yappi.clear_stats()
         
         try:
             # Create new runner instance for this iteration
             runner = ApplicationRunner(self.xmpp_server, self.password, scenario=self.scenario)
             
             # Start profiling and run the system
-            profiler.enable()
+            #profiler.enable()
             #yappi.start()
             await runner.run()
             #yappi.stop()
-            profiler.disable()
+            #profiler.disable()
             
             # Calculate metrics
             duration = time.time() - start_time
@@ -95,11 +95,12 @@ class IterationRunner:
         # self.save_yappi_stats(iteration)
             
         # Create stats object from profiler
-        stats = pstats.Stats(profiler)
+        #stats = pstats.Stats(profiler)
         
         # Ensure cleanup between iterations
         await asyncio.sleep(2)
-        return result, stats
+        # return result, stats
+        return result, None
     
     def save_yappi_stats(self, iteration: int):
         """Save Yappi profiling statistics to files"""
@@ -173,7 +174,7 @@ class IterationRunner:
             self.results.append(result)
             
             # Save profiling results
-            self.save_profile_stats(stats, i + 1)
+            # self.save_profile_stats(stats, i + 1)
             
             # Save intermediate results
             self.save_results()
