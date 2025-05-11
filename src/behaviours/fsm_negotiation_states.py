@@ -262,14 +262,14 @@ class CollectingState(State):
                     sender = str(msg.sender)
                     already_msgs_id.add(msg.id)
                     
-                    # Track response regardless of type
+                    # In JADE this is done by an internal count.
                     if sender in self.parent.expected_rooms:
                         self.parent.responding_rooms.add(sender)
                     
-                    if msg.get_metadata("performative") == "propose":
+                    if msg.get_metadata("performative") == FIPAPerformatives.PROPOSE:
                         proposes_received += 1
                         await self.handle_proposal(msg)
-                    elif msg.get_metadata("performative") == "refuse":
+                    elif msg.get_metadata("performative") == FIPAPerformatives.REFUSE:
                         refuses_received += 1
                         
                     await self.__log_response(msg)

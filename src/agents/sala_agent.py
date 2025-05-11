@@ -31,11 +31,13 @@ class AgenteSala(Agent):
         self._kb = None
         self.storage = None
         self.scenario = scenario
+
+        """
         self.performance_monitor = CentralizedPerformanceMonitor(
             agent_identifier=self.jid,
             agent_type="sala",
             scenario=self.scenario
-        )
+        )"""
         
 
         self.responder_behaviour = ResponderSolicitudesBehaviour()
@@ -48,7 +50,7 @@ class AgenteSala(Agent):
 
     async def setup(self):
         """Initialize agent setup"""
-        await self.performance_monitor.start_monitoring()
+        # await self.performance_monitor.start_monitoring()
         self.initialize_schedule()
         await self.register_service()
         

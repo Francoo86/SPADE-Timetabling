@@ -35,7 +35,7 @@ class AgentFactory:
         )
         
         asyncio.create_task(self.metrics_monitor.start())
-        asyncio.create_task(CentralizedPerformanceMonitor.initialize(self.scenario))
+        # asyncio.create_task(CentralizedPerformanceMonitor.initialize(self.scenario))
         
     async def patch_agent(self, agent: Agent, agent_type: str, agent_name: str):
         # assume it is registering

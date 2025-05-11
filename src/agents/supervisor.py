@@ -48,11 +48,12 @@ class AgenteSupervisor(Agent):
         self.metrics_monitor = None
         self.scenario = scenario
         
+        """
         self.performance_monitor = CentralizedPerformanceMonitor(
             agent_identifier=self.jid,
             agent_type="supervisor",
             scenario=self.scenario
-        )
+        )"""
         
         self.room_agents = []
         
@@ -74,7 +75,7 @@ class AgenteSupervisor(Agent):
 
     async def setup(self):
         """Initialize the supervisor agent"""
-        await self.performance_monitor.start_monitoring()
+        # await self.performance_monitor.start_monitoring()
         self.state = SupervisorState(self.professor_jids)
         
         # Store initial state in knowledge base

@@ -97,9 +97,9 @@ class ApplicationAgent(Agent):
         return status
         
     async def setup(self):
-        self.web.start(hostname="127.0.0.1", port=20000)
-        self.web.add_get("/status", self.get_system_status, template=None)
-        self.web.add_get("/agents", self.get_agent_status, template=None)
+        # self.web.start(hostname="127.0.0.1", port=20000)
+        # self.web.add_get("/status", self.get_system_status, template=None)
+        # self.web.add_get("/agents", self.get_agent_status, template=None)
     
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
