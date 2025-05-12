@@ -28,13 +28,15 @@ class NegotiationStates:
 class NegotiationFSM(FSMBehaviour):
     """FSM for handling professor negotiations"""
     MAX_RETRIES = 3
+    BASE_TIMEOUT = 5 # 1 second, relative to 1000ms in JADE
+    BACKOFF_OFFSET = 1 # also 1 second, relative to 1000ms in JADE
     
     def __init__(self, profesor_agent):
         super().__init__()
         self.agent = profesor_agent
         # Rather than saving it here we could save it in the agent
         self.proposals = asyncio.Queue()
-        self.timeout = 5  # seconds
+        self.timeout = 0  # seconds
         self.bloques_pendientes = 0
         self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent, fsm_behaviour=self)
         self.assignation_data = AssignationData()
@@ -44,6 +46,7 @@ class NegotiationFSM(FSMBehaviour):
         self.response_times: Dict[str, float] = {}  # Track response times per room
         
         self.cfp_count = 0  # Track number of CFPs sent
+        self.received_proposals = 0 # Track number of proposals received
         self.negotiation_start_time = None
         self.retry_count = 0
     
@@ -64,6 +67,7 @@ class NegotiationFSM(FSMBehaviour):
         
         # A FALLBACK ONLY
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.SETUP)
+        self.add_transition(NegotiationStates.COLLECTING, NegotiationStates.COLLECTING)
         
 class CFPSenderState(State):
     def __init__(self, parent: NegotiationFSM):
@@ -89,6 +93,9 @@ class CFPSenderState(State):
         # await self.rtt_logger.start()
         
     async def send_cfp_messages(self):
+        self.parent.cfp_count = 0
+        self.parent.received_proposals = 0
+        
         """Send CFP messages to classroom agents"""
         try:
             current_subject = self.agent.get_current_subject()
@@ -169,6 +176,7 @@ class CFPSenderState(State):
                 cfp_count += 1
             self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
             self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
+            self.parent.cfp_count = cfp_count
             return cfp_count
         except Exception as e:
             self.agent.log.error(f"Error sending proposal requests: {str(e)}")
@@ -187,45 +195,51 @@ class SetupState(CFPSenderState):
             return
 
         current_subject = self.agent.get_current_subject()
-        if current_subject:
-            self.parent.bloques_pendientes = current_subject.get_horas()
-            self.parent.assignation_data.clear()
-            self.parent.negotiation_start_time = datetime.now()
-            
-            self.parent.responding_rooms.clear()
-            self.parent.expected_rooms.clear()
-            self.parent.response_times.clear()
-            
-            cfp_count = await self.send_cfp_messages()
-            self.parent.cfp_count = cfp_count
-            
-            if cfp_count > 0:
-                self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()} type: {current_subject.get_actividad()}")
-                self.set_next_state(NegotiationStates.COLLECTING)
-            else:
-                # Handle the case where no rooms are available
-                self.agent.log.warning(f"No suitable rooms found for {current_subject.get_nombre()} (retry {self.parent.retry_count + 1}/{self.parent.MAX_RETRIES})")
-                
-                # Increment retry count
-                self.parent.retry_count += 1
-                
-                # If we've reached max retries, move to the next subject
-                if self.parent.retry_count >= self.parent.MAX_RETRIES:
-                    self.agent.log.info(f"Max retries reached for {current_subject.get_nombre()}, moving to next subject")
-                    await self.agent.move_to_next_subject()
-                    self.parent.retry_count = 0
-                
-                # Stay in SETUP state to retry or try with new subject
-                self.set_next_state(NegotiationStates.SETUP)
-        else:
-            # No more subjects to process
+        if not current_subject:
+            self.agent.log.error("No current subject available for negotiation")
             self.set_next_state(NegotiationStates.FINISHED)
+            return
 
-class CollectingState(State):
+        self.parent.bloques_pendientes = current_subject.get_horas()
+        self.parent.assignation_data.clear()
+        
+        # SPADE specific stuff, JADE doesn't have it.
+        self.parent.responding_rooms.clear()
+        self.parent.expected_rooms.clear()
+        self.parent.response_times.clear()
+        
+        self.parent.negotiation_start_time = datetime.now()
+        
+        await self.send_cfp_messages()
+        # self.parent.cfp_count = cfp_count
+        cfp_count = self.parent.cfp_count
+        
+        if cfp_count > 0:
+            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()} type: {current_subject.get_actividad()}")
+            self.set_next_state(NegotiationStates.COLLECTING)
+            self.parent.timeout = self.parent.BASE_TIMEOUT
+        else:
+            # NOTE: THIS SHOULDN'T EVEN HAPPEN...
+            # Handle the case where no rooms are available
+            self.agent.log.warning(f"No suitable rooms found for {current_subject.get_nombre()} (retry {self.parent.retry_count + 1}/{self.parent.MAX_RETRIES})")
+            
+            # Increment retry count
+            self.parent.retry_count += 1
+            
+            # If we've reached max retries, move to the next subject
+            if self.parent.retry_count >= self.parent.MAX_RETRIES:
+                self.agent.log.info(f"Max retries reached for {current_subject.get_nombre()}, moving to next subject")
+                await self.agent.move_to_next_subject()
+                self.parent.retry_count = 0
+            
+            # Stay in SETUP state to retry or try with new subject
+            self.set_next_state(NegotiationStates.SETUP)
+
+class CollectingState(CFPSenderState):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
         # self.rtt_logger = RTTLogger(str(self.parent.agent.jid), self.parent.agent.scenario)
-        super().__init__()
+        super().__init__(parent=parent)
         
     async def __log_response(self, msg : Message):
         await self.parent.agent.rtt_logger.end_request(
@@ -259,6 +273,8 @@ class CollectingState(State):
                         self.agent.log.warning(f"Skipping already processed message: {msg.id}")
                         continue
                     
+                    self.parent.received_proposals += 1
+                    
                     sender = str(msg.sender)
                     already_msgs_id.add(msg.id)
                     
@@ -275,11 +291,12 @@ class CollectingState(State):
                     await self.__log_response(msg)
                 
                 # Log progress
-                if len(self.parent.responding_rooms) == self.parent.cfp_count:
+                if self.parent.received_proposals >= self.parent.cfp_count and self.parent.cfp_count > 0:
                     self.agent.log.info("Received all expected responses")
+                    break
                     
-                    if asyncio.get_event_loop().time() >= min_end_time:
-                        break
+                    #if asyncio.get_event_loop().time() >= min_end_time:
+                    #    break
                         
                 await asyncio.sleep(0.05)
             
@@ -301,6 +318,8 @@ class CollectingState(State):
             if not self.parent.proposals.empty():
                 self.set_next_state(NegotiationStates.EVALUATING)
             else:
+                await self.handle_no_proposals()
+                """
                 self.parent.retry_count += 1
                 
                 if self.parent.retry_count >= self.parent.MAX_RETRIES:
@@ -310,11 +329,33 @@ class CollectingState(State):
                 else:
                     self.agent.log.info(f"No proposals received (retry {self.parent.retry_count}/{self.parent.MAX_RETRIES})")
                 
-                self.set_next_state(NegotiationStates.SETUP)
+                self.set_next_state(NegotiationStates.SETUP) """
         
         except Exception as e:
             self.agent.log.error(f"Error in collecting state: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
+            
+    async def handle_no_proposals(self):
+        self.parent.retry_count += 1
+        
+        if self.parent.retry_count >= self.parent.MAX_RETRIES:
+            current_subject = self.agent.get_current_subject()
+            
+            if self.parent.bloques_pendientes == current_subject.get_horas():
+                await self.agent.move_to_next_subject()
+            else:
+                self.parent.assignation_data.set_sala_asignada(None)
+            
+            self.parent.retry_count = 0
+            self.set_next_state(NegotiationStates.SETUP)
+        else:
+            backoff_time = (2 ** self.parent.retry_count) * self.parent.BACKOFF_OFFSET
+            self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
+            
+            self.agent.log.info(f"Retrying with timeout {self.parent.timeout:.2f}s (retry {self.parent.retry_count}/{self.parent.MAX_RETRIES})")
+            await self.send_cfp_messages()
+            
+            self.set_next_state(NegotiationStates.COLLECTING)
             
     async def handle_proposal(self, msg: Message):
         """
@@ -375,6 +416,7 @@ class EvaluatingState(CFPSenderState):
                     try:
                         async with asyncio.timeout(5):  # 5 second timeout
                             await self.send_cfp_messages()
+                            self.parent.timeout = self.parent.BASE_TIMEOUT
                             self.set_next_state(NegotiationStates.COLLECTING)
                     except asyncio.TimeoutError:
                         self.agent.log.error("Timeout sending CFPs")
@@ -571,6 +613,9 @@ class EvaluatingState(CFPSenderState):
                 # Add timeout for retry
                 try:
                     async with asyncio.timeout(5):
+                        backoff_time = 2 ** self.parent.retry_count * self.parent.BACKOFF_OFFSET
+                        self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
+                        
                         await self.send_cfp_messages()
                         self.set_next_state(NegotiationStates.COLLECTING)
                 except asyncio.TimeoutError:
@@ -578,6 +623,7 @@ class EvaluatingState(CFPSenderState):
                     self.set_next_state(NegotiationStates.SETUP)
                     
         except Exception as e:
+            # NOTE: Also this shouldn't happen.
             self.agent.log.error(f"Error in handle_proposal_failure: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
 
