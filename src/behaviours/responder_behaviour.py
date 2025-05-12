@@ -135,69 +135,60 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
     async def confirm_assignment(self, msg: Message):
         """Handle assignment confirmation with improved verification"""
         try:
-            # Parse batch assignment request
             request_data : BatchAssignmentRequest = jsonpickle.decode(msg.body)
-            assignments = []
+            confirmed_assignments = []
             
-            # Process assignments with validation
             async with asyncio.timeout(1.0):
                 for assignment in request_data.get_assignments():
                     if assignment.classroom_code != self.agent.codigo:
-                        self.agent.log.debug(f"Skipping request for different room: {assignment.classroom_code}")
+                        self.agent.log.debug(f"[DEBUG] Skipping request for different room: {assignment.classroom_code}")
                         continue
 
-                    day = assignment.day
                     block = assignment.block - 1
-                    subject_name = assignment.subject_name
-                    satisfaction = assignment.satisfaction
+                    day = assignment.day
+                    assignments_for_day = self.agent.horario_ocupado.get(day)
 
-                    # Verify block availability
-                    if block < 0 or block >= len(self.agent.horario_ocupado[day]):
-                        self.agent.log.warning(f"Invalid block requested: {block + 1}")
-                        continue
+                    self.agent.log.debug(f"[DEBUG] Processing request for {assignment.subject_name} " +
+                                        f"Day: {day} Block: {assignment.block}")
 
-                    if self.agent.horario_ocupado[day][block] is not None:
-                        self.agent.log.warning(f"Block {block + 1} already assigned")
-                        continue
+                    if (assignments_for_day is not None and 
+                        block >= 0 and 
+                        block < len(assignments_for_day) and
+                        assignments_for_day[block] is None):
 
-                    # Create and store assignment
-                    new_assignment = AsignacionSala(
-                        subject_name,
-                        satisfaction,
-                        float(assignment.vacancy) / self.agent.capacidad,
-                        assignment.prof_name
-                    )
-                    
-                    self.agent.horario_ocupado[day][block] = new_assignment
-                    
-                    assignments.append(ConfirmedAssignment(
-                        day,
-                        block + 1,
-                        self.agent.codigo,
-                        satisfaction
-                    ))
+                        capacity_fraction = float(assignment.vacancy) / self.agent.capacidad
+                        new_assignment = AsignacionSala(
+                            assignment.subject_name,
+                            assignment.satisfaction,
+                            capacity_fraction,
+                            assignment.prof_name
+                        )
+                        
+                        assignments_for_day[block] = new_assignment
+                        
+                        confirmed_assignments.append(ConfirmedAssignment(
+                            day,
+                            assignment.block,
+                            self.agent.codigo,
+                            assignment.satisfaction
+                        ))
 
-                # Send confirmation for successful assignments
-                if assignments:
-                    confirmation = BatchAssignmentConfirmation(assignments)
+                        self.agent.log.debug(f"[DEBUG] Successfully assigned {assignment.subject_name} " +
+                                        f"to block {assignment.block} on {day}")
+                    else:
+                        self.agent.log.debug(f"[DEBUG] Could not assign - assignments_for_day is None? {assignments_for_day is None} " +
+                                        f"valid block? {(block >= 0 and block < (len(assignments_for_day) if assignments_for_day is not None else 0))} " +
+                                        f"block empty? {(assignments_for_day is not None and block >= 0 and block < len(assignments_for_day) and assignments_for_day[block] is None)}")
+
+                if confirmed_assignments:
+                    confirmation = BatchAssignmentConfirmation(confirmed_assignments)
                     reply = msg.make_reply()
                     reply.set_metadata("performative", FIPAPerformatives.INFORM)
                     reply.set_metadata("ontology", "room-assignment")
                     reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
                     reply.body = jsonpickle.encode(confirmation)
                     
-                    # rtt_id = msg.get_metadata("rtt-id")
-                    # await self.rtt_logger.end_request(
-                    #     rtt_id,
-                    #     response_performative=FIPAPerformatives.INFORM,  # Performative de respuesta
-                    #     message_size=getsizeof(reply.body),
-                    #     success=True,
-                    #     ontology="room-assignment"
-                    # )
-            
                     await self.send(reply)
-                    
-                    # asyncio.create_task(self.update_schedule_storage())
                     
         except asyncio.TimeoutError:
             self.agent.log.error(f"Timeout confirming assignment from {msg.sender}")
