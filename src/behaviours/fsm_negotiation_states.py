@@ -298,11 +298,9 @@ class CollectingState(State):
                 self.agent.log.warning("All rooms refused - adding delay before retry")
                 await asyncio.sleep(1.0)  # Add a 1-second delay to really slow down the spam
             
-            # Only transition to EVALUATING if we have actual proposals
             if not self.parent.proposals.empty():
                 self.set_next_state(NegotiationStates.EVALUATING)
             else:
-                # All responses were refusals or no responses - handle as a retry
                 self.parent.retry_count += 1
                 
                 if self.parent.retry_count >= self.parent.MAX_RETRIES:
