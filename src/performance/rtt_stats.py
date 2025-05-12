@@ -67,6 +67,9 @@ class RTTLogger(metaclass=AsyncioSingleton):
         self._all_outgoing_messages_lock = asyncio.Lock()
         self._queue_lock = asyncio.Lock()
         
+        self._writer_task = None
+        self._cleanup_task = None
+        
     async def start(self):
         """Initialize the logger and start background writer"""
         # Write headers only if file doesn't exist
@@ -87,14 +90,14 @@ class RTTLogger(metaclass=AsyncioSingleton):
         
     async def stop(self):
         """Stop the logger and cleanup"""
-        if hasattr(self, '_writer_task') and self._writer_task:
+        if self._writer_task:
             self._writer_task.cancel()
             try:
                 await self._writer_task
             except asyncio.CancelledError:
                 pass
                 
-        if hasattr(self, '_cleanup_task') and self._cleanup_task:
+        if self._cleanup_task:
             self._cleanup_task.cancel()
             try:
                 await self._cleanup_task

@@ -41,7 +41,9 @@ class AgenteProfesor(Agent):
         # self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
         self.rtt_logger = None
+        self.storage = None
         self.cleanup_lock = asyncio.Lock()
+        self.metrics_monitor = None
         
         # Lock para replicar el synchronized de Java
         self.prof_lock = asyncio.Lock()
@@ -77,19 +79,6 @@ class AgenteProfesor(Agent):
         
         # Initialize daily block assignments
         self.bloques_asignados_por_dia = {day: {} for day in Day}
-    
-    async def get_professor_status(self, request):
-        current = self.get_current_subject()
-        return {
-            "name": self.nombre,
-            "order": self.orden,
-            "current_subject": current.get_nombre() if current else None,
-            "total_subjects": len(self.asignaturas),
-            "completed_subjects": self.asignatura_actual,
-            "negotiation_state": self.current_state.name if hasattr(self, "current_state") else None,
-            "pending_blocks": self.bloques_pendientes if hasattr(self, "bloques_pendientes") else 0,
-            "schedule": self.horario_json
-        }
         
     def prepare_behaviours(self):
         negotiation_template = CommonTemplates.get_negotiation_template()
@@ -271,7 +260,7 @@ class AgenteProfesor(Agent):
     async def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, satisfaccion: int):
         """Update the schedule information with a new assignment."""
         try:
-            if not hasattr(self, 'storage') or not self.storage:
+            if not self.storage:
                 self.log.error("Storage not properly initialized")
                 return
                 
@@ -368,7 +357,7 @@ class AgenteProfesor(Agent):
                     self.log.info(f"Starting cleanup for professor {self.nombre}")
                     
                     # 1. Flush metrics - with timeout
-                    if hasattr(self, 'metrics_monitor'):
+                    if self.metrics_monitor:
                         try:
                             async with asyncio.timeout(2):
                                 await self.metrics_monitor._flush_all()
@@ -385,7 +374,7 @@ class AgenteProfesor(Agent):
                             self.log.error("KB deregistration timed out, continuing") """
                     
                     # 3. Final storage flush - with timeout
-                    if hasattr(self, 'storage') and self.storage:
+                    if self.storage is not None:
                         try:
                             async with asyncio.timeout(2):
                                 await self.storage.force_flush()

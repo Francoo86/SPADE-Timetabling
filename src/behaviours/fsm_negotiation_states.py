@@ -623,8 +623,7 @@ class FinishedState(State):
             
             # Start cleanup with proper error handling and await it
             try:
-                # First flush any metrics
-                if hasattr(self.agent, 'metrics_monitor'):
+                if self.agent.metrics_monitor:
                     await self.agent.metrics_monitor._flush_all()
                     
                 # Perform cleanup
@@ -671,7 +670,7 @@ class FinishedState(State):
                 self.agent.log.info("No next professor found - all professors completed")
                 
                 # Final metrics flush before shutdown
-                if hasattr(self.agent, 'metrics_monitor'):
+                if self.agent.metrics_monitor:
                     await self.agent.metrics_monitor._flush_all()
                 
                 # Notify supervisor to begin shutdown

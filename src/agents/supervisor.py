@@ -182,7 +182,7 @@ class AgenteSupervisor(Agent):
                     self.agent.log.info("Received shutdown signal - initiating system shutdown")
                     
                     # First stop metrics monitor to ensure clean metrics shutdown
-                    if hasattr(self.agent, 'metrics_monitor'):
+                    if self.agent.metrics_monitor:
                         self.agent.log.info("Stopping metrics monitor...")
                         await self.agent.metrics_monitor.stop()
                         await self.agent.metrics_monitor._flush_all()  # Final flush
@@ -197,7 +197,7 @@ class AgenteSupervisor(Agent):
                         await self.agent.prof_storage.generate_json_file()
                         
                         # Force flush any pending updates
-                        await self.agent.room_storage.force_flush()
+                       #  await self.agent.room_storage.force_flush()
                         await self.agent.prof_storage.force_flush()
                         
                     except Exception as e:
