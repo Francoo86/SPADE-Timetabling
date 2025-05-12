@@ -190,31 +190,31 @@ class AgenteProfesor(Agent):
 
     async def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        # async with self.prof_lock:
-        self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
-                    f"(total: {len(self.asignaturas)})")
-        
-        if self.asignatura_actual >= len(self.asignaturas):
-            self.log.info(f" [MOVE] Already at last subject")
-            return
+        async with self.prof_lock:
+            self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
+                        f"(total: {len(self.asignaturas)})")
             
-        current = self.get_current_subject()
-        current_name = current.get_nombre()
-        current_code = current.get_codigo_asignatura()
-        self.asignatura_actual += 1
-        
-        if self.asignatura_actual < len(self.asignaturas):
-            next_subject = self.asignaturas[self.asignatura_actual]
-            if (next_subject.get_nombre() == current_name and 
-                next_subject.get_codigo_asignatura() == current_code):
-                self.current_instance_index += 1
-                self.log.info(f" [MOVE] Moving to next instance ({self.current_instance_index}) "
-                            f"of {current_name}")
+            if self.asignatura_actual >= len(self.asignaturas):
+                self.log.info(f" [MOVE] Already at last subject")
+                return
+                
+            current = self.get_current_subject()
+            current_name = current.get_nombre()
+            current_code = current.get_codigo_asignatura()
+            self.asignatura_actual += 1
+            
+            if self.asignatura_actual < len(self.asignaturas):
+                next_subject = self.asignaturas[self.asignatura_actual]
+                if (next_subject.get_nombre() == current_name and 
+                    next_subject.get_codigo_asignatura() == current_code):
+                    self.current_instance_index += 1
+                    self.log.info(f" [MOVE] Moving to next instance ({self.current_instance_index}) "
+                                f"of {current_name}")
+                else:
+                    self.current_instance_index = 0
+                    self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
             else:
-                self.current_instance_index = 0
-                self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
-        else:
-            self.log.info(f" [MOVE] Reached end of subjects")
+                self.log.info(f" [MOVE] Reached end of subjects")
         
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
