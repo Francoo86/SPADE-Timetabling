@@ -30,6 +30,7 @@ class NegotiationFSM(FSMBehaviour):
     MAX_RETRIES = 3
     BASE_TIMEOUT = 5 # 1 second, relative to 1000ms in JADE
     BACKOFF_OFFSET = 1 # also 1 second, relative to 1000ms in JADE
+    HARD_TIMEOUT = 5
     
     def __init__(self, profesor_agent):
         super().__init__()
@@ -269,23 +270,25 @@ class CollectingState(CFPSenderState):
                 
                 if msg:
                     # Skip already processed messages
+                    """
                     if msg.id in already_msgs_id:
                         self.agent.log.warning(f"Skipping already processed message: {msg.id}")
-                        continue
+                        continue """
                     
                     self.parent.received_proposals += 1
                     
-                    sender = str(msg.sender)
-                    already_msgs_id.add(msg.id)
+                    # sender = str(msg.sender)
+                    # already_msgs_id.add(msg.id)
                     
                     # In JADE this is done by an internal count.
-                    if sender in self.parent.expected_rooms:
-                        self.parent.responding_rooms.add(sender)
+                    #if sender in self.parent.expected_rooms:
+                    #     self.parent.responding_rooms.add(sender)
+                    curr_performative = msg.get_metadata("performative")
                     
-                    if msg.get_metadata("performative") == FIPAPerformatives.PROPOSE:
+                    if curr_performative == FIPAPerformatives.PROPOSE:
                         proposes_received += 1
                         await self.handle_proposal(msg)
-                    elif msg.get_metadata("performative") == FIPAPerformatives.REFUSE:
+                    elif curr_performative == FIPAPerformatives.REFUSE:
                         refuses_received += 1
                         
                     await self.__log_response(msg)
@@ -310,10 +313,9 @@ class CollectingState(CFPSenderState):
                 f"Proposes: {proposes}, Refuses: {refuses}"
             )
             
-            # Add a delay when all responses were REFUSE to slow down cycling
             if refuses == responses and responses > 0:
                 self.agent.log.warning("All rooms refused - adding delay before retry")
-                await asyncio.sleep(1.0)  # Add a 1-second delay to really slow down the spam
+                await asyncio.sleep(1.0)
             
             if not self.parent.proposals.empty():
                 self.set_next_state(NegotiationStates.EVALUATING)
@@ -381,17 +383,14 @@ class CollectingState(CFPSenderState):
             self.agent.log.error(f"Error processing proposal: {str(e)}")
 
 class EvaluatingState(CFPSenderState):
-    TIMEOUT_PROPUESTA = 1000
     MAX_RETRIES = 3
     
     def __init__(self, evaluator: ConstraintEvaluator, parent: NegotiationFSM):
         self.evaluator = evaluator
-        # self.parent = parent
         super().__init__(parent=parent)
     
     async def run(self):
         try:
-            # Get all proposals atomically
             proposals = []
             while not self.parent.proposals.empty():
                 try:
@@ -412,9 +411,9 @@ class EvaluatingState(CFPSenderState):
                     await self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
-                    # Add timeout for sending new CFPs
                     try:
-                        async with asyncio.timeout(5):  # 5 second timeout
+                        # HACK: Hard timeout to avoid infinite loop (this is mostly related to JSON problems.)
+                        async with asyncio.timeout(self.parent.HARD_TIMEOUT): 
                             await self.send_cfp_messages()
                             self.parent.timeout = self.parent.BASE_TIMEOUT
                             self.set_next_state(NegotiationStates.COLLECTING)
@@ -426,7 +425,6 @@ class EvaluatingState(CFPSenderState):
                 
         except Exception as e:
             self.agent.log.error(f"Error in evaluating state: {str(e)}")
-            # Always ensure we transition to a valid state
             self.set_next_state(NegotiationStates.SETUP)
             
     async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
@@ -479,7 +477,6 @@ class EvaluatingState(CFPSenderState):
                     total_assigned += 1
                     daily_assignments[day] += 1
 
-            # Send batch assignment if we have requests
             if len(requests) > 0:
                 try:
                     if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
@@ -518,7 +515,7 @@ class EvaluatingState(CFPSenderState):
         
         try:
             conv_id = original_msg.get_metadata("conversation-id")
-            # Create batch request message
+
             msg = Message()
             msg.to = str(original_msg.sender)
             msg.set_metadata("performative", FIPAPerformatives.ACCEPT_PROPOSAL)
@@ -612,7 +609,7 @@ class EvaluatingState(CFPSenderState):
             else:
                 # Add timeout for retry
                 try:
-                    async with asyncio.timeout(5):
+                    async with asyncio.timeout(self.parent.HARD_TIMEOUT):
                         backoff_time = 2 ** self.parent.retry_count * self.parent.BACKOFF_OFFSET
                         self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
                         
@@ -636,7 +633,7 @@ class FinishedState(State):
         self.agent.log.info("Entering FinishedState")
         try:
             # Add more granular timeouts for better diagnosis
-            async with asyncio.timeout(5):
+            async with asyncio.timeout(self.parent.HARD_TIMEOUT):
                 self.agent.log.info("Starting finish_negotiations()")
                 await self.finish_negotiations()
                 self.agent.log.info("finish_negotiations() completed, killing state")
