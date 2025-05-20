@@ -110,7 +110,7 @@ class AgenteProfesor(Agent):
             self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
             
             # Discover rooms
-            await self.discover_rooms()
+            # await self.discover_rooms()
             
             # Add appropriate behaviour based on order
             if self.orden == 0:
