@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, List
 import jsonpickle
+import msgspec
 
-@dataclass
-class ClassroomAvailability:
+class ClassroomAvailability(msgspec.Struct):
     """
     A class to hold classroom availability data.
     
@@ -17,22 +17,6 @@ class ClassroomAvailability:
     campus: str
     capacidad: int
     available_blocks: Dict[str, List[int]]
-
-    def __init__(self, codigo: str, campus: str, capacidad: int, 
-                 available_blocks: Dict[str, List[int]]):
-        """
-        Initialize a ClassroomAvailability instance.
-
-        Args:
-            codigo (str): The classroom code
-            campus (str): The campus name
-            capacidad (int): The classroom capacity
-            available_blocks (Dict[str, List[int]]): Dictionary mapping days to lists of available blocks
-        """
-        self.codigo = codigo
-        self.campus = campus
-        self.capacidad = capacidad
-        self.available_blocks = available_blocks
 
     def get_codigo(self) -> str:
         """Get the classroom code."""
@@ -79,3 +63,17 @@ class ClassroomAvailability:
         return (f"ClassroomAvailability(codigo='{self.codigo}', "
                 f"campus='{self.campus}', capacidad={self.capacidad}, "
                 f"available_blocks={self.available_blocks})")
+        
+    def to_dict(self) -> Dict:
+        """
+        Convert the ClassroomAvailability instance to a dictionary.
+        
+        Returns:
+            Dict: A dictionary representation of the instance
+        """
+        return {
+            'codigo': self.codigo,
+            'campus': self.campus,
+            'capacidad': self.capacidad,
+            'available_blocks': self.available_blocks
+        }

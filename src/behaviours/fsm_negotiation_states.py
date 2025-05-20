@@ -7,6 +7,7 @@ from typing import List, Set, Dict
 from objects.helper.batch_proposals import BatchProposal
 from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
 from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
+from objects.helper.classroom_availability import ClassroomAvailability
 from objects.asignation_data import AssignationData
 from collections import defaultdict
 from evaluators.constraint_evaluator import ConstraintEvaluator
@@ -17,6 +18,7 @@ from aioxmpp import JID
 from objects.helper.quick_rejector import RoomQuickRejectFilter
 from performance.rtt_stats import RTTLogger
 import uuid
+from msgspec import json as msgspec_json
 
 # States for the FSM
 class NegotiationStates:
@@ -266,7 +268,7 @@ class CollectingState(CFPSenderState):
             
             # Regular collection logic
             while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
-                msg = await self.receive(timeout=0.1)
+                msg = await self.receive(timeout=0.5)
                 
                 if msg:
                     # Skip already processed messages
@@ -368,7 +370,7 @@ class CollectingState(CFPSenderState):
         """
         try:
             # Parse the content (assumed to be JSON)
-            availability = jsonpickle.decode(msg.body)
+            availability = msgspec_json.decode(msg.body, type=ClassroomAvailability)
 
             if availability:
                 # Create batch proposal
@@ -523,7 +525,7 @@ class EvaluatingState(CFPSenderState):
             msg.set_metadata("conversation-id", conv_id)
             msg.set_metadata("protocol", "contract-net")
             
-            msg.body = jsonpickle.encode(BatchAssignmentRequest(requests))
+            msg.body = msgspec_json.encode(BatchAssignmentRequest(requests)).decode("utf-8")
             
             id_prop = f"assign-{str(uuid.uuid4())}"
             msg.set_metadata("rtt-id", id_prop)
@@ -544,9 +546,9 @@ class EvaluatingState(CFPSenderState):
             timeout = timedelta(seconds=1)
 
             while datetime.now() - start_time < timeout:
-                confirmation_msg = await self.receive(timeout=0.1)
+                confirmation_msg = await self.receive(timeout=0.5)
                 if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
-                    confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
+                    confirmation_data : BatchAssignmentConfirmation = msgspec_json.decode(confirmation_msg.body, type=BatchAssignmentConfirmation)
                     
                     #await self.rtt_logger.end_request(
                     #    id_prop,

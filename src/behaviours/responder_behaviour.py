@@ -14,6 +14,7 @@ from ..fipa.acl_message import FIPAPerformatives
 import jsonpickle
 
 from ..performance.rtt_stats import RTTLogger
+from msgspec import json as msgspec_json
 
 class ResponderSolicitudesBehaviour(CyclicBehaviour):
     MAX_BLOQUE_DIURNO = 9
@@ -85,8 +86,8 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     )
 
                     reply = self.__create_reply(msg, FIPAPerformatives.PROPOSE)
-                    reply.body = jsonpickle.encode(availability)
-                    
+                    reply.body = msgspec_json.encode(availability).decode('utf-8')
+
                     await self.rtt_logger.record_message_sent(
                         agent_name=self.agent.name,
                         conversation_id=msg.get_metadata("rtt-id"),
@@ -135,7 +136,7 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
     async def confirm_assignment(self, msg: Message):
         """Handle assignment confirmation with improved verification"""
         try:
-            request_data : BatchAssignmentRequest = jsonpickle.decode(msg.body)
+            request_data : BatchAssignmentRequest = msgspec_json.decode(msg.body, type=BatchAssignmentRequest)
             confirmed_assignments = []
             
             async with asyncio.timeout(1.0):
@@ -186,8 +187,8 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     reply.set_metadata("performative", FIPAPerformatives.INFORM)
                     reply.set_metadata("ontology", "room-assignment")
                     reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
-                    reply.body = jsonpickle.encode(confirmation)
-                    
+                    reply.body = msgspec_json.encode(confirmation).decode('utf-8')
+
                     await self.send(reply)
                     
         except asyncio.TimeoutError:

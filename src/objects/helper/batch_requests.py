@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import List
 from ..static.agent_enums import Day
+import msgspec
 
-@dataclass
-class AssignmentRequest:
+class AssignmentRequest(msgspec.Struct):
     """
     A request for assigning a subject to a specific day/block/classroom.
     
@@ -48,18 +48,15 @@ class AssignmentRequest:
             prof_name=data.get("professor")
         )
 
-class BatchAssignmentRequest:
+class BatchAssignmentRequest(msgspec.Struct):
     """
     A container for multiple assignment requests.
     """
+    
+    assignments: List[AssignmentRequest]
+    """
     def __init__(self, assignments: List[AssignmentRequest]):
-        """
-        Initialize a BatchAssignmentRequest.
-        
-        Args:
-            assignments: List of AssignmentRequest objects
-        """
-        self.assignments = assignments
+        self.assignments = assignments """
 
     def get_assignments(self) -> List[AssignmentRequest]:
         """Get the list of assignment requests."""

@@ -5,9 +5,9 @@ from spade.message import Message
 from collections import defaultdict
 from ..static.agent_enums import Day
 from .classroom_availability import ClassroomAvailability
+import msgspec
 
-@dataclass
-class BlockProposal:
+class BlockProposal(msgspec.Struct):
     block: int
     day: Day
 
@@ -30,29 +30,13 @@ class BlockProposal:
             day=Day[data["day"]]
         )
 
-class BatchProposal:
-    def __init__(self, availability: "ClassroomAvailability", message: Message):
-        """
-        Initialize a BatchProposal object.
-        
-        Args:
-            availability: ClassroomAvailability object containing room info
-            message: SPADE Message object representing the original message
-        """
-        self.room_code: str = availability.codigo
-        self.campus: str = availability.campus
-        self.capacity: int = availability.capacidad
-        self.satisfaction_score: int = 0
-        self.original_message: Message = message
-        self.day_proposals: Dict[Day, List[BlockProposal]] = defaultdict(list)
-
-        # Convert string-based map to proper Day enum map
-        for day_str, blocks in availability.available_blocks.items():
-            day = Day.from_string(day_str)
-            self.day_proposals[day] = [
-                BlockProposal(block=block, day=day)
-                for block in blocks
-            ]
+class BatchProposal(msgspec.Struct, kw_only=True):
+    room_code: str
+    campus: str
+    capacity: int
+    satisfaction_score: int = 0
+    original_message: Message
+    day_proposals: Dict[Day, List[BlockProposal]]
 
     def get_day_proposals(self) -> Dict[Day, List[BlockProposal]]:
         return dict(self.day_proposals)
@@ -108,4 +92,28 @@ class BatchProposal:
     
     @classmethod
     def from_availability(cls, availability: ClassroomAvailability, message: Message):
-        return cls(availability, message)
+        # return cls(availability, message)
+        # now this is a struct
+        # create a minimal ClassroomAvailability for initialization
+        return BatchProposal(
+            room_code=availability.codigo,
+            campus=availability.campus,
+            capacity=availability.capacidad,
+            satisfaction_score=0,
+            original_message=message,
+            day_proposals={
+                day: [BlockProposal(block=block, day=day) for block in blocks]
+                for day, blocks in availability.available_blocks.items()
+            }
+        )
+    
+    # create the same method but consider the availability as a dictionary
+    @classmethod
+    def from_availability_dict(cls, availability: Dict, message: Message):
+        availability_obj = ClassroomAvailability(
+            codigo=availability["codigo"],
+            campus=availability["campus"],
+            capacidad=availability["capacidad"],
+            available_blocks=availability["available_blocks"]
+        )
+        return cls(availability_obj, message)
