@@ -108,7 +108,7 @@ class AgentKnowledgeBase:
     async def register_agent(self, jid: JID, capabilities: List[AgentCapability]) -> bool:
         """Enhanced registration with DF metrics tracking"""
         start_time = time.perf_counter()
-        agent_id = str(jid).split("@")[0]  # Extract agent name from JID
+        # agent_id = str(jid).split("@")[0]  # Extract agent name from JID
         
         try:
             async with self._register_lock:

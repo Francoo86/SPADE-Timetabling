@@ -34,11 +34,11 @@ class NegotiationState(Enum):
     FINISHED = 3
     
 class Day(str, Enum):
-    LUNES = "Lunes"
-    MARTES = "Martes"
-    MIERCOLES = "Miercoles"
-    JUEVES = "Jueves"
-    VIERNES = "Viernes"
+    LUNES = "LUNES"
+    MARTES = "MARTES"
+    MIERCOLES = "MIERCOLES"
+    JUEVES = "JUEVES"
+    VIERNES = "VIERNES"
 
     @property
     def display_name(self):
