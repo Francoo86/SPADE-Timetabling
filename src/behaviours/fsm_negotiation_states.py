@@ -303,7 +303,7 @@ class CollectingState(CFPSenderState):
                     #if asyncio.get_event_loop().time() >= min_end_time:
                     #    break
                         
-                await asyncio.sleep(0.05)
+                # await asyncio.sleep(0.05)
             
             # Report collection results
             responses = len(self.parent.responding_rooms)
@@ -317,7 +317,7 @@ class CollectingState(CFPSenderState):
             
             if refuses == responses and responses > 0:
                 self.agent.log.warning("All rooms refused - adding delay before retry")
-                await asyncio.sleep(1.0)
+                # await asyncio.sleep(1.0)
             
             if not self.parent.proposals.empty():
                 self.set_next_state(NegotiationStates.EVALUATING)
@@ -577,7 +577,7 @@ class EvaluatingState(CFPSenderState):
 
                     return True
 
-                await asyncio.sleep(0.05)
+                # await asyncio.sleep(0.05)
         except Exception as e:
             #await self.rtt_logger.end_request(
             #    conv_id,

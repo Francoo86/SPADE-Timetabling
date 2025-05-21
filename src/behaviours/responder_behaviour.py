@@ -33,9 +33,9 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
         """Main behaviour loop with improved message handling"""
         try:
             # Wait for a message with short timeout for responsiveness
-            msg = await self.receive(timeout=0.1)
+            msg = await self.receive(timeout=0.5)
             if not msg:
-                await asyncio.sleep(0.1)
+                # await asyncio.sleep(0.1)
                 return
 
             performative = msg.get_metadata("performative")

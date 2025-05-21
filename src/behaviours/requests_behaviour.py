@@ -43,9 +43,8 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
             except (KeyError, ValueError) as e:
                 self.profesor.log.error(f"Error processing START message: {str(e)}")
                 
-        else:
-            # No message received, wait a bit
-            await asyncio.sleep(0.1)
+        #else:
+            #await asyncio.sleep(0.1)
 
     async def on_end(self):
         """Cleanup when behaviour ends."""
