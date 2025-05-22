@@ -19,7 +19,7 @@ class ConstraintEvaluator:
         self.profesor = professor_agent
         # self.fsm_behaviour = fsm_behaviour
     
-    async def filter_and_sort_proposals(self, proposals: List[BatchProposal]) -> List[BatchProposal]:
+    def filter_and_sort_proposals(self, proposals: List[BatchProposal]) -> List[BatchProposal]:
         """Filter and sort batch proposals based on multiple criteria"""
         if not proposals:
             return []
@@ -34,17 +34,17 @@ class ConstraintEvaluator:
         current_schedule = self.profesor.get_blocks_by_subject(current_asignatura_nombre)
         room_usage = {}
         blocks_per_day = {}
-        most_used_room = await self.calculate_most_used_room(current_schedule, blocks_per_day, room_usage)
+        most_used_room = self.calculate_most_used_room(current_schedule, blocks_per_day, room_usage)
 
         scored_proposals = []
 
         # Process each proposal
         for proposal in proposals:
-            if not await self.is_valid_proposal(proposal, current_subject, current_nivel, 
+            if not self.is_valid_proposal(proposal, current_subject, current_nivel, 
                                             needs_meeting_room, current_asignatura_nombre):
                 continue
 
-            total_score = await self.calculate_total_score(
+            total_score = self.calculate_total_score(
                 proposal, current_subject, current_campus, current_nivel,
                 needs_meeting_room, blocks_per_day, most_used_room, room_usage,
                 current_schedule
@@ -60,7 +60,7 @@ class ConstraintEvaluator:
         scored_proposals.sort(key=lambda ps: ps.score, reverse=True)
         return [ps.proposal for ps in scored_proposals]
     
-    async def calculate_most_used_room(
+    def calculate_most_used_room(
         self,
         current_schedule: Dict[Day, List[int]],
         blocks_per_day: Dict[Day, int],
@@ -82,8 +82,8 @@ class ConstraintEvaluator:
                         most_used_room = room
 
         return most_used_room
-    
-    async def is_valid_proposal(
+
+    def is_valid_proposal(
         self,
         proposal: BatchProposal,
         current_subject: Asignatura,
@@ -101,12 +101,12 @@ class ConstraintEvaluator:
         elif is_meeting_room:
             return False
 
-        return (await self.is_valid_proposal_fast(
+        return (self.is_valid_proposal_fast(
             proposal, current_subject,
             current_nivel % 2 == 1, current_asignatura_nombre) and
-            await self.validate_gaps_for_proposal(proposal))
-        
-    async def validate_consecutive_gaps(self, dia: Day, proposed_blocks: List[BlockProposal]) -> bool:
+            self.validate_gaps_for_proposal(proposal))
+
+    def validate_consecutive_gaps(self, dia: Day, proposed_blocks: List[BlockProposal]) -> bool:
         """Validate consecutive gaps in schedule"""
         tipo_contrato = self.profesor.get_tipo_contrato()
         
@@ -139,14 +139,14 @@ class ConstraintEvaluator:
 
         return True
         
-    async def validate_gaps_for_proposal(self, proposal: BatchProposal) -> bool:
+    def validate_gaps_for_proposal(self, proposal: BatchProposal) -> bool:
         """Validate gaps for all days in a proposal"""
         for day, block_proposals in proposal.get_day_proposals().items():
-            if not await self.validate_consecutive_gaps(day, block_proposals):
+            if not self.validate_consecutive_gaps(day, block_proposals):
                 return False
         return True
 
-    async def is_valid_proposal_fast(
+    def is_valid_proposal_fast(
         self,
         proposal: BatchProposal,
         asignatura: Asignatura,
@@ -154,7 +154,7 @@ class ConstraintEvaluator:
         asignatura_nombre: str
     ) -> bool:
         """Fast validation of proposal basics"""
-        if not await self.check_campus_constraints(proposal, asignatura.get_campus()):
+        if not self.check_campus_constraints(proposal, asignatura.get_campus()):
             return False
 
         for day, blocks in proposal.get_day_proposals().items():
@@ -196,7 +196,7 @@ class ConstraintEvaluator:
 
         return False
     
-    async def check_campus_constraints(self, proposal: BatchProposal, current_campus: str) -> bool:
+    def check_campus_constraints(self, proposal: BatchProposal, current_campus: str) -> bool:
         """Check if campus constraints are satisfied"""
         proposed_campus = self.get_campus_sala(proposal.get_room_code())
 
@@ -207,17 +207,17 @@ class ConstraintEvaluator:
         # Check transitions for each day in the proposal
         for day, block_proposals in proposal.get_day_proposals().items():
             # Check if there's already a campus transition this day
-            if await self.has_existing_transition_in_day(day):
+            if self.has_existing_transition_in_day(day):
                 return False
 
             # Validate buffer blocks for each proposed block
             for block_proposal in block_proposals:
-                if not await self.validate_transition_buffer(day, block_proposal.get_block(), proposal.get_room_code()):
+                if not self.validate_transition_buffer(day, block_proposal.get_block(), proposal.get_room_code()):
                     return False
 
         return True
     
-    async def validate_transition_buffer(self, day: Day, block: int, codigo_sala: str) -> bool:
+    def validate_transition_buffer(self, day: Day, block: int, codigo_sala: str) -> bool:
         """Validate transition buffer between different campuses"""
         proposed_campus = self.get_campus_sala(codigo_sala)
 
@@ -233,7 +233,7 @@ class ConstraintEvaluator:
 
         return True
 
-    async def has_existing_transition_in_day(self, day: Day) -> bool:
+    def has_existing_transition_in_day(self, day: Day) -> bool:
         """Check if there are existing campus transitions in a day"""
         day_classes = self.profesor.get_blocks_by_day(day)
         if not day_classes:
@@ -256,7 +256,7 @@ class ConstraintEvaluator:
 
         return False
     
-    async def calculate_total_score(
+    def calculate_total_score(
         self,
         proposal: BatchProposal,
         current_subject: Asignatura,
@@ -270,22 +270,22 @@ class ConstraintEvaluator:
     ) -> int:
         """Calculate total score for a proposal considering all factors"""
         # Calculate base scores
-        await self.calculate_satisfaction_scores(
+        self.calculate_satisfaction_scores(
             proposal, current_subject, current_campus,
             current_nivel, current_schedule
         )
 
-        total_score = await self.calculate_proposal_score(
+        total_score = self.calculate_proposal_score(
             proposal, current_campus, current_nivel, current_subject
         )
 
         # Apply room type scoring
-        total_score = await self.apply_meeting_room_score(
+        total_score = self.apply_meeting_room_score(
             total_score, proposal, needs_meeting_room, current_subject
         )
 
         # Apply day-based scoring
-        total_score = await self.apply_day_based_scoring(
+        total_score = self.apply_day_based_scoring(
             total_score, proposal, current_campus,
             blocks_per_day, most_used_room, room_usage
         )
@@ -293,7 +293,7 @@ class ConstraintEvaluator:
         # Ensure minimum viable score
         return max(total_score, 1)
     
-    async def calculate_proposal_score(
+    def calculate_proposal_score(
         self,
         proposal: BatchProposal,
         current_campus: str,
@@ -339,7 +339,7 @@ class ConstraintEvaluator:
 
         return score
     
-    async def calculate_satisfaction_scores(
+    def calculate_satisfaction_scores(
         self,
         proposal: BatchProposal,
         current_subject: Asignatura,
@@ -363,7 +363,7 @@ class ConstraintEvaluator:
                 )
                 proposal.set_satisfaction_score(satisfaction)
     
-    async def apply_meeting_room_score(
+    def apply_meeting_room_score(
         self,
         total_score: int,
         proposal: BatchProposal,
@@ -389,7 +389,7 @@ class ConstraintEvaluator:
 
         return total_score
     
-    async def apply_day_based_scoring(
+    def apply_day_based_scoring(
         self,
         total_score: int,
         proposal: BatchProposal,
@@ -413,14 +413,14 @@ class ConstraintEvaluator:
                 total_score += 7000
 
             # Apply campus and block penalties
-            total_score = await self.apply_campus_and_block_penalties(
+            total_score = self.apply_campus_and_block_penalties(
                 total_score, proposal, day, current_campus,
                 day_usage, room_usage
             )
 
         return total_score
     
-    async def apply_campus_and_block_penalties(
+    def apply_campus_and_block_penalties(
         self,
         total_score: int,
         proposal: BatchProposal,
