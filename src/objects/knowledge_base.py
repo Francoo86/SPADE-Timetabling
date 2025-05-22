@@ -186,32 +186,32 @@ class AgentKnowledgeBase:
             if cached_result:
                 return cached_result
 
-            async with self._search_lock:
-                results = []
-                candidate_jids = (self._capabilities.get(service_type, set()) 
-                                if service_type else set(self._agents.keys()))
-                
-                for jid_str in candidate_jids:
-                    agent = self._agents.get(jid_str)
-                    if not agent:
-                        continue
-                        
-                    if properties:
-                        for cap in agent.capabilities:
-                            if cap.service_type == service_type:
-                                matches = all(
-                                    key in cap.properties and cap.properties[key] == value
-                                    for key, value in properties.items()
-                                )
-                                if matches:
-                                    results.append(agent)
-                                    break
-                    else:
-                        results.append(agent)
+            # async with self._search_lock:
+            results = []
+            candidate_jids = (self._capabilities.get(service_type, set()) 
+                            if service_type else set(self._agents.keys()))
+            
+            for jid_str in candidate_jids:
+                agent = self._agents.get(jid_str)
+                if not agent:
+                    continue
+                    
+                if properties:
+                    for cap in agent.capabilities:
+                        if cap.service_type == service_type:
+                            matches = all(
+                                key in cap.properties and cap.properties[key] == value
+                                for key, value in properties.items()
+                            )
+                            if matches:
+                                results.append(agent)
+                                break
+                else:
+                    results.append(agent)
 
             # Calculate response time
             end_time = time.perf_counter()
-            response_time = (end_time - start_time) * 1000
+            # response_time = (end_time - start_time) * 1000
             
             self.update_cache(agent_id, "search", cache_params, results)
             
@@ -219,7 +219,7 @@ class AgentKnowledgeBase:
             
         except Exception as e:
             end_time = time.perf_counter()
-            response_time = (end_time - start_time) * 1000
+            # response_time = (end_time - start_time) * 1000
             
             raise Exception(f"Error searching for agents: {str(e)}")
     
