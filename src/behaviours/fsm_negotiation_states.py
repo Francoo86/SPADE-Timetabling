@@ -41,11 +41,11 @@ class NegotiationFSM(FSMBehaviour):
         self.proposals = asyncio.Queue()
         self.timeout = 0  # seconds
         self.bloques_pendientes = 0
-        self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent, fsm_behaviour=self)
+        self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent)
         self.assignation_data = AssignationData()
         
-        self.responding_rooms: Set[str] = set()  # Track rooms that responded
-        self.expected_rooms: Set[str] = set()    # Track rooms we sent CFPs to
+        # self.responding_rooms: Set[str] = set()  # Track rooms that responded
+        # self.expected_rooms: Set[str] = set()    # Track rooms we sent CFPs to
         self.response_times: Dict[str, float] = {}  # Track response times per room
         
         self.cfp_count = 0  # Track number of CFPs sent
@@ -71,6 +71,9 @@ class NegotiationFSM(FSMBehaviour):
         # A FALLBACK ONLY
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.SETUP)
         self.add_transition(NegotiationStates.COLLECTING, NegotiationStates.COLLECTING)
+        
+    def get_bloques_pendientes(self) -> int:
+        return self.bloques_pendientes
         
 class CFPSenderState(State):
     def __init__(self, parent: NegotiationFSM):
@@ -135,7 +138,7 @@ class CFPSenderState(State):
                 
                 room_props = room_caps.properties
                 
-                should_reject = await self.room_filter.can_quick_reject(
+                should_reject = self.room_filter.can_quick_reject(
                     subject_name=current_subject.get_nombre(),
                     subject_code=current_subject.get_codigo_asignatura(),
                     subject_campus=current_subject.get_campus(),
@@ -161,7 +164,8 @@ class CFPSenderState(State):
                 msg.set_metadata("protocol", "contract-net")
                 msg.set_metadata("performative", FIPAPerformatives.CFP)
                 msg.set_metadata("conversation-id", f"neg-{self.agent.nombre}-{self.parent.bloques_pendientes}")
-                msg.body = json.dumps(solicitud_info)
+                # msg.body = json.dumps(solicitud_info)
+                msg.body = msgspec_json.encode(solicitud_info).decode("utf-8")
                 
                 cfp_id = f"cfp-{str(uuid.uuid4())}"
                 msg.set_metadata("rtt-id", cfp_id)
@@ -178,7 +182,7 @@ class CFPSenderState(State):
 
                 cfp_count += 1
             self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
-            self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
+            # self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
             self.parent.cfp_count = cfp_count
             return cfp_count
         except Exception as e:
@@ -207,8 +211,8 @@ class SetupState(CFPSenderState):
         self.parent.assignation_data.clear()
         
         # SPADE specific stuff, JADE doesn't have it.
-        self.parent.responding_rooms.clear()
-        self.parent.expected_rooms.clear()
+        # self.parent.responding_rooms.clear()
+        # self.parent.expected_rooms.clear()
         self.parent.response_times.clear()
         
         self.parent.negotiation_start_time = datetime.now()
@@ -258,13 +262,13 @@ class CollectingState(CFPSenderState):
     async def run(self):
         try:
             start_time = asyncio.get_event_loop().time()
-            already_msgs_id = set()
+            # already_msgs_id = set()
             proposes_received = 0
             refuses_received = 0
             
             # Add minimum collection time to prevent rapid cycling
-            min_collection_time = 0.5  # 500ms minimum wait
-            min_end_time = start_time + min_collection_time
+            # min_collection_time = 0.5  # 500ms minimum wait
+            # min_end_time = start_time + min_collection_time
             
             # Regular collection logic
             while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
@@ -306,7 +310,7 @@ class CollectingState(CFPSenderState):
                 # await asyncio.sleep(0.05)
             
             # Report collection results
-            responses = len(self.parent.responding_rooms)
+            responses = proposes_received + refuses_received
             proposes = proposes_received
             refuses = refuses_received
             

@@ -15,9 +15,9 @@ class ConstraintEvaluator:
     MEETING_ROOM_THRESHOLD = 10
     MAX_BLOQUE_DIURNO = 9
 
-    def __init__(self, professor_agent, fsm_behaviour):
+    def __init__(self, professor_agent):
         self.profesor = professor_agent
-        self.fsm_behaviour = fsm_behaviour
+        # self.fsm_behaviour = fsm_behaviour
     
     async def filter_and_sort_proposals(self, proposals: List[BatchProposal]) -> List[BatchProposal]:
         """Filter and sort batch proposals based on multiple criteria"""
@@ -182,7 +182,8 @@ class ConstraintEvaluator:
                 if not (1 <= bloque <= self.MAX_BLOQUE_DIURNO):
                     continue
 
-                if bloque == 9 and self.fsm_behaviour.bloques_pendientes % 2 == 0:
+                # if bloque == 9 and self.fsm_behaviour.bloques_pendientes % 2 == 0:
+                if bloque == 9 and self.profesor.get_bloques_pendientes() % 2 == 0:
                     continue
 
                 if is_odd_year:
