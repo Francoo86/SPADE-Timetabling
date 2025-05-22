@@ -78,7 +78,6 @@ class AgenteSupervisor(Agent):
         # await self.performance_monitor.start_monitoring()
         self.state = SupervisorState(self.professor_jids)
         
-        # Store initial state in knowledge base
         self.set("system_active", True)
         
         capability = AgentCapability(
@@ -97,86 +96,11 @@ class AgenteSupervisor(Agent):
         
         self.add_behaviour(self.ShutdownBehaviour(), shutdown_template)
 
-    async def finish_system(self):
-        """Clean up and shut down the system"""
-        try:
-            # self.set("system_active", False)
-            self.log.info("[Supervisor] Starting system shutdown...")
-            
-            # Ensure storage instances exist
-            if not self.room_storage or not self.prof_storage:
-                self.log.error("Storage instances not properly initialized")
-                return
-                
-            # Generate final files with proper error handling
-            try:
-                self.log.info("Generating room schedules JSON...")
-                await self.room_storage.generate_json_file()
-                
-                self.log.info("Generating professor schedules JSON...")
-                await self.prof_storage.generate_json_file()
-                
-                # Force flush any pending updates
-                await self.room_storage.force_flush()
-                await self.prof_storage.force_flush()
-                
-            except Exception as e:
-                self.log.error(f"Error generating JSON files: {str(e)}")
-                
-            # Verify files were generated
-            output_path = Path(os.getcwd()) / "agent_output"
-            sala_file = output_path / "Horarios_salas.json"
-            prof_file = output_path / "Horarios_asignados.json"
-            
-            # Add detailed logging for verification
-            if sala_file.exists():
-                size = sala_file.stat().st_size
-                self.log.info(f"Horarios_salas.json generated: {size} bytes")
-                if size == 0:
-                    self.log.error("Horarios_salas.json is empty")
-            else:
-                self.log.error("Horarios_salas.json was not generated")
-                
-            if prof_file.exists():
-                size = prof_file.stat().st_size
-                self.log.info(f"Horarios_asignados.json generated: {size} bytes")
-                if size == 0:
-                    self.log.error("Horarios_asignados.json is empty")
-            else:
-                self.log.error("Horarios_asignados.json was not generated")
-
-            # Ensure proper cleanup
-            try:
-                await self._kb.deregister_agent(self.jid)
-                self.log.info("Deregistered from knowledge base")
-            except Exception as e:
-                self.log.error(f"Error deregistering from KB: {str(e)}")
-                
-            # Stop the agent
-            try:
-                await self.stop()
-                self.log.info("Agent stopped successfully")
-            except Exception as e:
-                self.log.error(f"Error stopping agent: {str(e)}")
-                
-            # Set completion event
-            # if self.finalizer:
-                # self.finalizer.set()
-                # self.log.info("Finalizer event set")
-                
-        except Exception as e:
-            self.log.error(f"Critical error in finish_system: {str(e)}")
-            # Ensure finalizer is set even on error
-            # if self.finalizer:
-                # self.finalizer.set()
-        
-        self.set("system_active", False)
-
     class ShutdownBehaviour(CyclicBehaviour):
         """Handles system shutdown signals from professors"""
         
         async def run(self):            
-            msg = await self.receive(timeout=0.1)
+            msg = await self.receive(timeout=0.5)
             if msg:
                 try:
                     self.agent.log.info("Received shutdown signal - initiating system shutdown")
