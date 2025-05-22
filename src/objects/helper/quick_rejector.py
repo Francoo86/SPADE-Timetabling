@@ -24,7 +24,7 @@ class RoomQuickRejectFilter:
         """Generate cache key from subject and room IDs"""
         return f"{subject_code}-{room_id}"
         
-    async def can_quick_reject(self, 
+    def can_quick_reject(self, 
                              subject_name: str,
                              subject_code: str, 
                              subject_campus: str,

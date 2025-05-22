@@ -132,18 +132,6 @@ class AgenteSala(Agent):
             self.log.error(f"Error updating schedule storage: {str(e)}")
             raise
 
-    class HeartbeatBehaviour(PeriodicBehaviour):
-        """Send periodic heartbeats to maintain registration"""
-        
-        def __init__(self):
-            super().__init__(period=30)  # 30 seconds between heartbeats
-            
-        async def run(self):
-            try:
-                await self.agent._kb.update_heartbeat(self.agent.jid)
-            except Exception as e:
-                self.agent.log.error(f"Error sending heartbeat: {str(e)}")
-
     async def cleanup(self):
         """Deregister from directory during cleanup"""
         try:
