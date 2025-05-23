@@ -19,6 +19,7 @@ from objects.helper.quick_rejector import RoomQuickRejectFilter
 from performance.rtt_stats import RTTLogger
 import uuid
 from msgspec import json as msgspec_json
+from math import ceil
 
 # States for the FSM
 class NegotiationStates:
@@ -76,14 +77,77 @@ class NegotiationFSM(FSMBehaviour):
         return self.bloques_pendientes
         
 class CFPSenderState(State):
+    MEETING_ROOM_THRESHOLD = 10
+    
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
-        self.room_filter = RoomQuickRejectFilter()
+        # self.room_filter = RoomQuickRejectFilter()
+        self._quick_rj_cache : Dict[str, bool] = {}
         # self.rtt_logger = parent.agent.rtt_logger
         # self.rtt_logger : 'RTTLogger' = None
         self.rtt_initialized = False
         super().__init__()
         
+    def _get_quick_rj_cache_key(self, subject_code: str, room_id: str) -> str:
+        """Generate cache key from subject and room IDs"""
+        return f"{subject_code}-{room_id}"
+        
+    def can_quick_reject(self, 
+                             subject_name: str,
+                             subject_code: str, 
+                             subject_campus: str,
+                             subject_vacancies: int,
+                             room_code: str,
+                             room_campus: str,
+                             room_capacity: int) -> bool:
+        """
+        Quickly determine if a room can be rejected without full evaluation
+        
+        Args:
+            subject_name: Name of the subject
+            subject_code: Subject's code
+            subject_campus: Subject's campus
+            subject_vacancies: Number of students
+            room_code: Room's code
+            room_campus: Room's campus  
+            room_capacity: Room's capacity
+            
+        Returns:
+            bool: True if room can be rejected, False if it needs full evaluation
+        """
+        cache_key = self._get_quick_rj_cache_key(subject_code, room_code)
+
+        if cache_key not in self._quick_rj_cache:
+            # Quick reject conditions
+            should_reject = False
+            
+            # Campus mismatch
+            if room_campus != subject_campus:
+                should_reject = True
+                
+            else:
+                # Meeting room logic
+                subject_needs_meeting_room = subject_vacancies < self.MEETING_ROOM_THRESHOLD
+                is_meeting_room = room_capacity < self.MEETING_ROOM_THRESHOLD
+                
+                # Reject if meeting room requirements don't match
+                if subject_needs_meeting_room != is_meeting_room:
+                    should_reject = True
+                    
+                # For meeting rooms, be more lenient with capacity
+                elif is_meeting_room:
+                    should_reject = room_capacity < ceil(subject_vacancies * 0.8)
+                    
+                # For regular rooms
+                else:
+                    should_reject = room_capacity < subject_vacancies
+                    
+            # Cache the result
+            self._quick_rj_cache[cache_key] = should_reject
+
+            return should_reject
+        return self._quick_rj_cache[cache_key]
+
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
         """Sanitize subject name removing special characters"""
@@ -138,7 +202,7 @@ class CFPSenderState(State):
                 
                 room_props = room_caps.properties
                 
-                should_reject = self.room_filter.can_quick_reject(
+                should_reject = self.can_quick_reject(
                     subject_name=current_subject.get_nombre(),
                     subject_code=current_subject.get_codigo_asignatura(),
                     subject_campus=current_subject.get_campus(),
@@ -236,7 +300,7 @@ class SetupState(CFPSenderState):
             # If we've reached max retries, move to the next subject
             if self.parent.retry_count >= self.parent.MAX_RETRIES:
                 self.agent.log.info(f"Max retries reached for {current_subject.get_nombre()}, moving to next subject")
-                await self.agent.move_to_next_subject()
+                self.agent.move_to_next_subject()
                 self.parent.retry_count = 0
             
             # Stay in SETUP state to retry or try with new subject
@@ -332,7 +396,7 @@ class CollectingState(CFPSenderState):
                 
                 if self.parent.retry_count >= self.parent.MAX_RETRIES:
                     self.agent.log.info(f"Max retries ({self.parent.MAX_RETRIES}) reached with only refusals, moving to next subject")
-                    await self.agent.move_to_next_subject()
+                    self.agent.move_to_next_subject()
                     self.parent.retry_count = 0
                 else:
                     self.agent.log.info(f"No proposals received (retry {self.parent.retry_count}/{self.parent.MAX_RETRIES})")
@@ -350,7 +414,7 @@ class CollectingState(CFPSenderState):
             current_subject = self.agent.get_current_subject()
             
             if self.parent.bloques_pendientes == current_subject.get_horas():
-                await self.agent.move_to_next_subject()
+                self.agent.move_to_next_subject()
             else:
                 self.parent.assignation_data.set_sala_asignada(None)
             
@@ -407,22 +471,22 @@ class EvaluatingState(CFPSenderState):
 
             self.agent.log.debug(f"Processing {len(proposals)} proposals")
             
-            valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
+            valid_proposals = self.evaluator.filter_and_sort_proposals(proposals)
             self.agent.log.debug(f"Found {len(valid_proposals)} valid proposals")
 
             if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
                 self.parent.retry_count = 0
 
                 if self.parent.bloques_pendientes == 0:
-                    await self.agent.move_to_next_subject()
+                    self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
                     try:
                         # HACK: Hard timeout to avoid infinite loop (this is mostly related to JSON problems.)
-                        async with asyncio.timeout(self.parent.HARD_TIMEOUT): 
-                            await self.send_cfp_messages()
-                            self.parent.timeout = self.parent.BASE_TIMEOUT
-                            self.set_next_state(NegotiationStates.COLLECTING)
+                        # async with asyncio.timeout(self.parent.HARD_TIMEOUT): 
+                        await self.send_cfp_messages()
+                        self.parent.timeout = self.parent.BASE_TIMEOUT
+                        self.set_next_state(NegotiationStates.COLLECTING)
                     except asyncio.TimeoutError:
                         self.agent.log.error("Timeout sending CFPs")
                         self.set_next_state(NegotiationStates.SETUP)
@@ -531,8 +595,8 @@ class EvaluatingState(CFPSenderState):
             
             msg.body = msgspec_json.encode(BatchAssignmentRequest(requests)).decode("utf-8")
             
-            id_prop = f"assign-{str(uuid.uuid4())}"
-            msg.set_metadata("rtt-id", id_prop)
+            # id_prop = f"assign-{str(uuid.uuid4())}"
+            # msg.set_metadata("rtt-id", id_prop)
             
             # TODO: Remove this because we only need CFP -> PROPOSE/REFUSE.
             #await self.rtt_logger.start_request(
@@ -609,18 +673,18 @@ class EvaluatingState(CFPSenderState):
                 if self.parent.assignation_data.has_sala_asignada():
                     self.parent.assignation_data.set_sala_asignada(None)
                 else:
-                    await self.agent.move_to_next_subject()
+                    self.agent.move_to_next_subject()
                 self.parent.retry_count = 0
                 self.set_next_state(NegotiationStates.SETUP)
             else:
                 # Add timeout for retry
                 try:
-                    async with asyncio.timeout(self.parent.HARD_TIMEOUT):
-                        backoff_time = 2 ** self.parent.retry_count * self.parent.BACKOFF_OFFSET
-                        self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
-                        
-                        await self.send_cfp_messages()
-                        self.set_next_state(NegotiationStates.COLLECTING)
+                    # async with asyncio.timeout(self.parent.HARD_TIMEOUT):
+                    backoff_time = 2 ** self.parent.retry_count * self.parent.BACKOFF_OFFSET
+                    self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
+                    
+                    await self.send_cfp_messages()
+                    self.set_next_state(NegotiationStates.COLLECTING)
                 except asyncio.TimeoutError:
                     self.agent.log.error("Timeout during retry")
                     self.set_next_state(NegotiationStates.SETUP)
@@ -639,12 +703,12 @@ class FinishedState(State):
         self.agent.log.info("Entering FinishedState")
         try:
             # Add more granular timeouts for better diagnosis
-            async with asyncio.timeout(self.parent.HARD_TIMEOUT):
-                self.agent.log.info("Starting finish_negotiations()")
-                await self.finish_negotiations()
-                self.agent.log.info("finish_negotiations() completed, killing state")
-                self.kill()
-                self.agent.log.info("State killed successfully")
+            # async with asyncio.timeout(self.parent.HARD_TIMEOUT):
+            self.agent.log.info("Starting finish_negotiations()")
+            await self.finish_negotiations()
+            self.agent.log.info("finish_negotiations() completed, killing state")
+            self.kill()
+            self.agent.log.info("State killed successfully")
         except asyncio.TimeoutError as e:
             self.agent.log.error(f"Timeout during negotiation finish: {str(e)}")
             # Force kill on timeout
