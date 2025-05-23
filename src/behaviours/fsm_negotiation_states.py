@@ -193,7 +193,6 @@ class CFPSenderState(State):
 
             cfp_count = 0
             # Filter rooms before sending CFPs
-            filtered_rooms = []
             for room in rooms:
                 # Extract room properties from capabilities
                 room_caps = next((cap for cap in room.capabilities if cap.service_type == "sala"), None)
@@ -212,15 +211,9 @@ class CFPSenderState(State):
                     room_capacity=room_props["capacidad"]
                 )
                 
-                if not should_reject:
-                    filtered_rooms.append(room)
-
-            if not filtered_rooms:
-                self.agent.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
-                return 0
-
-            # Send CFP only to filtered rooms
-            for room in filtered_rooms:
+                if should_reject:
+                    continue
+                
                 msg = Message(
                     to=str(room.jid)
                 )
@@ -243,8 +236,9 @@ class CFPSenderState(State):
                 )
                 
                 await self.send(msg)
-
                 cfp_count += 1
+
+                # cfp_count += 1
             self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
             # self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
             self.parent.cfp_count = cfp_count
