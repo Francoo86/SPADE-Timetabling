@@ -193,7 +193,7 @@ class AgenteProfesor(Agent):
             return None
         return self.asignaturas[self.asignatura_actual]
 
-    async def move_to_next_subject(self):
+    def move_to_next_subject(self):
         """Move to the next subject in the list."""
     # async with self.prof_lock:
         self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
@@ -351,46 +351,45 @@ class AgenteProfesor(Agent):
     async def cleanup(self):
         """Simplified cleanup that avoids behavior killing but addresses locks"""
         try:
-            # Use a timeout for the entire cleanup operation
-            async with asyncio.timeout(10):  # 10 second total timeout
-                # async with self.cleanup_lock:
-                if self.is_cleaning_up:
-                    self.log.warning("Cleanup already in progress, skipping...")
-                    return
-                    
-                self.is_cleaning_up = True
-                self.log.info(f"Starting cleanup for professor {self.nombre}")
+        # Use a timeout for the entire cleanup operation
+        # async with asyncio.timeout(10):  # 10 second total timeout
+            # async with self.cleanup_lock:
+            if self.is_cleaning_up:
+                self.log.warning("Cleanup already in progress, skipping...")
+                return
                 
-                # 1. Flush metrics - with timeout
-                if self.metrics_monitor:
-                    try:
-                        async with asyncio.timeout(2):
-                            await self.metrics_monitor._flush_all()
-                    except asyncio.TimeoutError:
-                        self.log.error("Metrics flush timed out, continuing")
-                
-                """
-                # 2. Deregister from knowledge base - with timeout
-                if self._kb:
-                    try:
-                        async with asyncio.timeout(2):
-                            await self._kb.deregister_agent(self.jid)
-                    except asyncio.TimeoutError:
-                        self.log.error("KB deregistration timed out, continuing") """
-                
-                # 3. Final storage flush - with timeout
-                if self.storage is not None:
-                    try:
-                        async with asyncio.timeout(2):
-                            await self.storage.force_flush()
-                    except asyncio.TimeoutError:
-                        self.log.error("Storage flush timed out, continuing")
-                
-                # 4. Brief pause then stop agent
-                # await asyncio.sleep(0.1)
-                await self.stop()
-                self.log.info("Agent stopped successfully")
-        
+            self.is_cleaning_up = True
+            self.log.info(f"Starting cleanup for professor {self.nombre}")
+            
+            # 1. Flush metrics - with timeout
+            if self.metrics_monitor:
+                try:
+                    # async with asyncio.timeout(2):
+                    await self.metrics_monitor._flush_all()
+                except asyncio.TimeoutError:
+                    self.log.error("Metrics flush timed out, continuing")
+            
+            """
+            # 2. Deregister from knowledge base - with timeout
+            if self._kb:
+                try:
+                    async with asyncio.timeout(2):
+                        await self._kb.deregister_agent(self.jid)
+                except asyncio.TimeoutError:
+                    self.log.error("KB deregistration timed out, continuing") """
+            
+            # 3. Final storage flush - with timeout
+            if self.storage is not None:
+                try:
+                    #async with asyncio.timeout(2):
+                    await self.storage.force_flush()
+                except asyncio.TimeoutError:
+                    self.log.error("Storage flush timed out, continuing")
+            
+            # 4. Brief pause then stop agent
+            # await asyncio.sleep(0.1)
+            await self.stop()
+            self.log.info("Agent stopped successfully")
         except asyncio.TimeoutError:
             self.log.error("Overall cleanup timed out, forcing stop")
             await self.stop()

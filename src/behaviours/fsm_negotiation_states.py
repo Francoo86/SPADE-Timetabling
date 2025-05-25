@@ -272,7 +272,6 @@ class SetupState(CFPSenderState):
         # self.parent.responding_rooms.clear()
         # self.parent.expected_rooms.clear()
         self.parent.response_times.clear()
-        
         self.parent.negotiation_start_time = datetime.now()
         
         await self.send_cfp_messages()

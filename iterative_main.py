@@ -98,7 +98,7 @@ class IterationRunner:
         #stats = pstats.Stats(profiler)
         
         # Ensure cleanup between iterations
-        await asyncio.sleep(2)
+        await asyncio.sleep(0.1)
         # return result, stats
         return result, None
     
