@@ -65,53 +65,53 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             vacancies = request_data["vacantes"]
             
             # Check availability with timeout protection
-            async with asyncio.timeout(1.0):
-                available_blocks = self.get_available_blocks(vacancies)
-                
-                #await self.rtt_logger.record_message_received(
-                #    agent_name=self.agent.name,
-                #    conversation_id=msg.get_metadata("rtt-id"),
-                #    performative=FIPAPerformatives.CFP,
-                #    sender=str(msg.sender),
-                #    ontology="classroom-availability",
-                #    message_size=len(msg.body)
-                #)
-                
-                if available_blocks:
-                    availability = ClassroomAvailability(
-                        codigo=self.agent.codigo,
-                        campus=self.agent.campus,
-                        capacidad=self.agent.capacidad,
-                        available_blocks=available_blocks
-                    )
+            # async with asyncio.timeout(1.0):
+            available_blocks = self.get_available_blocks(vacancies)
+            
+            #await self.rtt_logger.record_message_received(
+            #    agent_name=self.agent.name,
+            #    conversation_id=msg.get_metadata("rtt-id"),
+            #    performative=FIPAPerformatives.CFP,
+            #    sender=str(msg.sender),
+            #    ontology="classroom-availability",
+            #    message_size=len(msg.body)
+            #)
+            
+            if available_blocks:
+                availability = ClassroomAvailability(
+                    codigo=self.agent.codigo,
+                    campus=self.agent.campus,
+                    capacidad=self.agent.capacidad,
+                    available_blocks=available_blocks
+                )
 
-                    reply = self.__create_reply(msg, FIPAPerformatives.PROPOSE)
-                    reply.body = msgspec_json.encode(availability).decode('utf-8')
+                reply = self.__create_reply(msg, FIPAPerformatives.PROPOSE)
+                reply.body = msgspec_json.encode(availability).decode('utf-8')
 
-                    await self.rtt_logger.record_message_sent(
-                        agent_name=self.agent.name,
-                        conversation_id=msg.get_metadata("rtt-id"),
-                        performative=FIPAPerformatives.PROPOSE,
-                        receiver=str(msg.sender),
-                        ontology="classroom-availability",
-                    )
-                    
-                    await self.send(reply)
-                    self.agent.log.debug(f"Sent proposal to {msg.sender} for {subject_name}")
-                else:
-                    reply = self.__create_reply(msg, FIPAPerformatives.REFUSE)
-                    reply.body = "No blocks available"
-                    
-                    await self.rtt_logger.record_message_sent(
-                        agent_name=self.agent.name,
-                        conversation_id=msg.get_metadata("rtt-id"),
-                        performative=FIPAPerformatives.REFUSE,
-                        receiver=str(msg.sender),
-                        ontology="classroom-availability",
-                    )
-                    
-                    await self.send(reply)
-                    self.agent.log.debug(f"Sent refuse to {msg.sender} - no blocks available")
+                await self.rtt_logger.record_message_sent(
+                    agent_name=self.agent.name,
+                    conversation_id=msg.get_metadata("rtt-id"),
+                    performative=FIPAPerformatives.PROPOSE,
+                    receiver=str(msg.sender),
+                    ontology="classroom-availability",
+                )
+                
+                await self.send(reply)
+                self.agent.log.debug(f"Sent proposal to {msg.sender} for {subject_name}")
+            else:
+                reply = self.__create_reply(msg, FIPAPerformatives.REFUSE)
+                reply.body = "No blocks available"
+                
+                await self.rtt_logger.record_message_sent(
+                    agent_name=self.agent.name,
+                    conversation_id=msg.get_metadata("rtt-id"),
+                    performative=FIPAPerformatives.REFUSE,
+                    receiver=str(msg.sender),
+                    ontology="classroom-availability",
+                )
+                
+                await self.send(reply)
+                self.agent.log.debug(f"Sent refuse to {msg.sender} - no blocks available")
                     
         except asyncio.TimeoutError:
             self.agent.log.error(f"Timeout processing request from {msg.sender}")
@@ -139,58 +139,57 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             request_data : BatchAssignmentRequest = msgspec_json.decode(msg.body, type=BatchAssignmentRequest)
             confirmed_assignments = []
             
-            async with asyncio.timeout(1.0):
-                for assignment in request_data.get_assignments():
-                    if assignment.classroom_code != self.agent.codigo:
-                        self.agent.log.debug(f"[DEBUG] Skipping request for different room: {assignment.classroom_code}")
-                        continue
+            # async with asyncio.timeout(1.0):
+            for assignment in request_data.get_assignments():
+                if assignment.classroom_code != self.agent.codigo:
+                    self.agent.log.debug(f"[DEBUG] Skipping request for different room: {assignment.classroom_code}")
+                    continue
 
-                    block = assignment.block - 1
-                    day = assignment.day
-                    assignments_for_day = self.agent.horario_ocupado.get(day)
+                block = assignment.block - 1
+                day = assignment.day
+                assignments_for_day = self.agent.horario_ocupado.get(day)
 
-                    self.agent.log.debug(f"[DEBUG] Processing request for {assignment.subject_name} " +
-                                        f"Day: {day} Block: {assignment.block}")
+                self.agent.log.debug(f"[DEBUG] Processing request for {assignment.subject_name} " +
+                                    f"Day: {day} Block: {assignment.block}")
 
-                    if (assignments_for_day is not None and 
-                        block >= 0 and 
-                        block < len(assignments_for_day) and
-                        assignments_for_day[block] is None):
+                if (assignments_for_day is not None and 
+                    block >= 0 and 
+                    block < len(assignments_for_day) and
+                    assignments_for_day[block] is None):
 
-                        capacity_fraction = float(assignment.vacancy) / self.agent.capacidad
-                        new_assignment = AsignacionSala(
-                            assignment.subject_name,
-                            assignment.satisfaction,
-                            capacity_fraction,
-                            assignment.prof_name
-                        )
-                        
-                        assignments_for_day[block] = new_assignment
-                        
-                        confirmed_assignments.append(ConfirmedAssignment(
-                            day,
-                            assignment.block,
-                            self.agent.codigo,
-                            assignment.satisfaction
-                        ))
-
-                        self.agent.log.debug(f"[DEBUG] Successfully assigned {assignment.subject_name} " +
-                                        f"to block {assignment.block} on {day}")
-                    else:
-                        self.agent.log.debug(f"[DEBUG] Could not assign - assignments_for_day is None? {assignments_for_day is None} " +
-                                        f"valid block? {(block >= 0 and block < (len(assignments_for_day) if assignments_for_day is not None else 0))} " +
-                                        f"block empty? {(assignments_for_day is not None and block >= 0 and block < len(assignments_for_day) and assignments_for_day[block] is None)}")
-
-                if confirmed_assignments:
-                    confirmation = BatchAssignmentConfirmation(confirmed_assignments)
-                    reply = msg.make_reply()
-                    reply.set_metadata("performative", FIPAPerformatives.INFORM)
-                    reply.set_metadata("ontology", "room-assignment")
-                    reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
-                    reply.body = msgspec_json.encode(confirmation).decode('utf-8')
-
-                    await self.send(reply)
+                    capacity_fraction = float(assignment.vacancy) / self.agent.capacidad
+                    new_assignment = AsignacionSala(
+                        assignment.subject_name,
+                        assignment.satisfaction,
+                        capacity_fraction,
+                        assignment.prof_name
+                    )
                     
+                    assignments_for_day[block] = new_assignment
+                    
+                    confirmed_assignments.append(ConfirmedAssignment(
+                        day,
+                        assignment.block,
+                        self.agent.codigo,
+                        assignment.satisfaction
+                    ))
+
+                    self.agent.log.debug(f"[DEBUG] Successfully assigned {assignment.subject_name} " +
+                                    f"to block {assignment.block} on {day}")
+                else:
+                    self.agent.log.debug(f"[DEBUG] Could not assign - assignments_for_day is None? {assignments_for_day is None} " +
+                                    f"valid block? {(block >= 0 and block < (len(assignments_for_day) if assignments_for_day is not None else 0))} " +
+                                    f"block empty? {(assignments_for_day is not None and block >= 0 and block < len(assignments_for_day) and assignments_for_day[block] is None)}")
+
+            if confirmed_assignments:
+                confirmation = BatchAssignmentConfirmation(confirmed_assignments)
+                reply = msg.make_reply()
+                reply.set_metadata("performative", FIPAPerformatives.INFORM)
+                reply.set_metadata("ontology", "room-assignment")
+                reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
+                reply.body = msgspec_json.encode(confirmation).decode('utf-8')
+
+                await self.send(reply)
         except asyncio.TimeoutError:
             self.agent.log.error(f"Timeout confirming assignment from {msg.sender}")
         except Exception as e:
