@@ -301,7 +301,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
             while True:
                 # Process in small batches to handle bursts more efficiently
                 batch = []
-                for _ in range(min(50, self._write_queue.qsize())):
+                for _ in range(min(150, self._write_queue.qsize())):
                     try:
                         measurement = self._write_queue.get_nowait()
                         batch.append(measurement)
@@ -324,7 +324,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
                             self._write_queue.task_done()
                 else:
                     # If no batch was formed, wait a bit
-                    await asyncio.sleep(0.01) 
+                    await asyncio.sleep(2) 
         except asyncio.CancelledError:
             # Flush remaining measurements
             while not self._write_queue.empty():
