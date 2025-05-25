@@ -87,15 +87,18 @@ class AgentKnowledgeBase:
 
     async def start(self):
         """Start the knowledge base and its maintenance tasks"""
-        if not self._cleanup_task:
-            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+        pass
+        #if not self._cleanup_task:
+        #    self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             
     def set_scenario(self, scenario: str):
         """Set the scenario for the knowledge base"""
         self.scenario = scenario
 
     async def stop(self):
+        pass
         """Stop the knowledge base and cleanup"""
+        """
         if self._cleanup_task:
             self._cleanup_task.cancel()
             try:
@@ -103,7 +106,7 @@ class AgentKnowledgeBase:
             except asyncio.CancelledError:
                 pass
             finally:
-                self._cleanup_task = None
+                self._cleanup_task = None """
 
     async def register_agent(self, jid: JID, capabilities: List[AgentCapability]) -> bool:
         """Enhanced registration with DF metrics tracking"""
@@ -175,7 +178,7 @@ class AgentKnowledgeBase:
 
     async def search(self, service_type: Optional[str] = None, properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
         """Enhanced search with DF metrics tracking"""
-        start_time = time.perf_counter()
+        # start_time = time.perf_counter()
         agent_id = properties.get("agent_id", "unknown") if properties else "unknown"
         
         try:
@@ -210,7 +213,7 @@ class AgentKnowledgeBase:
                     results.append(agent)
 
             # Calculate response time
-            end_time = time.perf_counter()
+            # end_time = time.perf_counter()
             # response_time = (end_time - start_time) * 1000
             
             self.update_cache(agent_id, "search", cache_params, results)
@@ -218,13 +221,14 @@ class AgentKnowledgeBase:
             return results
             
         except Exception as e:
-            end_time = time.perf_counter()
+            # end_time = time.perf_counter()
             # response_time = (end_time - start_time) * 1000
             
             raise Exception(f"Error searching for agents: {str(e)}")
     
+    """
     async def _cleanup_loop(self):
-        """Periodically remove expired agent registrations"""
+        # Periodically remove expired agent registrations
         while True:
             try:
                 await asyncio.sleep(60)  # Check every minute
@@ -232,7 +236,7 @@ class AgentKnowledgeBase:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Error in cleanup loop: {e}")
+                print(f"Error in cleanup loop: {e}") """
 
     async def _cleanup_expired(self):
         """Remove agents that haven't sent heartbeats within TTL"""
