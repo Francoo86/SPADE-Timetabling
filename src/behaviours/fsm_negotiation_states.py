@@ -570,14 +570,14 @@ class EvaluatingState(CFPSenderState):
             await self.send(msg)
             
             # Wait for confirmation with timeout
-            start_time = datetime.now()
-            timeout = timedelta(seconds=1)
+            start_time = asyncio.get_event_loop().time()
+            # timeout = timedelta(seconds=1)
 
-            while datetime.now() - start_time < timeout:
+            while asyncio.get_event_loop().time() - start_time < self.parent.BASE_TIMEOUT:
                 confirmation_msg = await self.receive(timeout=0.5)
-                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
-                    confirmation_data : BatchAssignmentConfirmation = msgspec_json.decode(confirmation_msg.body, type=BatchAssignmentConfirmation)
-                    
+                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):
+                    confirmation_data: BatchAssignmentConfirmation = msgspec_json.decode(confirmation_msg.body, type=BatchAssignmentConfirmation)
+
                     #await self.rtt_logger.end_request(
                     #    id_prop,
                     #     response_performative=FIPAPerformatives.INFORM,
