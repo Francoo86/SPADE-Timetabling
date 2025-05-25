@@ -319,13 +319,8 @@ class CollectingState(CFPSenderState):
     async def run(self):
         try:
             start_time = asyncio.get_event_loop().time()
-            # already_msgs_id = set()
             proposes_received = 0
             refuses_received = 0
-            
-            # Add minimum collection time to prevent rapid cycling
-            # min_collection_time = 0.5  # 500ms minimum wait
-            # min_end_time = start_time + min_collection_time
             
             # Regular collection logic
             while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
@@ -333,19 +328,8 @@ class CollectingState(CFPSenderState):
                 
                 if msg:
                     # Skip already processed messages
-                    """
-                    if msg.id in already_msgs_id:
-                        self.agent.log.warning(f"Skipping already processed message: {msg.id}")
-                        continue """
-                    
                     self.parent.received_proposals += 1
-                    
-                    # sender = str(msg.sender)
-                    # already_msgs_id.add(msg.id)
-                    
-                    # In JADE this is done by an internal count.
-                    #if sender in self.parent.expected_rooms:
-                    #     self.parent.responding_rooms.add(sender)
+                
                     curr_performative = msg.get_metadata("performative")
                     
                     if curr_performative == FIPAPerformatives.PROPOSE:
@@ -361,12 +345,6 @@ class CollectingState(CFPSenderState):
                     self.agent.log.info("Received all expected responses")
                     break
                     
-                    #if asyncio.get_event_loop().time() >= min_end_time:
-                    #    break
-                        
-                # await asyncio.sleep(0.05)
-            
-            # Report collection results
             responses = proposes_received + refuses_received
             proposes = proposes_received
             refuses = refuses_received
@@ -384,17 +362,6 @@ class CollectingState(CFPSenderState):
                 self.set_next_state(NegotiationStates.EVALUATING)
             else:
                 await self.handle_no_proposals()
-                """
-                self.parent.retry_count += 1
-                
-                if self.parent.retry_count >= self.parent.MAX_RETRIES:
-                    self.agent.log.info(f"Max retries ({self.parent.MAX_RETRIES}) reached with only refusals, moving to next subject")
-                    self.agent.move_to_next_subject()
-                    self.parent.retry_count = 0
-                else:
-                    self.agent.log.info(f"No proposals received (retry {self.parent.retry_count}/{self.parent.MAX_RETRIES})")
-                
-                self.set_next_state(NegotiationStates.SETUP) """
         
         except Exception as e:
             self.agent.log.error(f"Error in collecting state: {str(e)}")
