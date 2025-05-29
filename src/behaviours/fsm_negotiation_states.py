@@ -235,6 +235,11 @@ class CFPSenderState(State):
                     ontology="classroom-availability"
                 )
                 
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=msg
+                )
+                
                 await self.send(msg)
                 cfp_count += 1
 
@@ -327,6 +332,10 @@ class CollectingState(CFPSenderState):
                 msg = await self.receive(timeout=0.5)
                 
                 if msg:
+                    await self.parent.agent.message_logger.log_message_received(
+                        agent_name=self.parent.agent.representative_name,
+                        message=msg
+                    )
                     # Skip already processed messages
                     self.parent.received_proposals += 1
                 
@@ -565,6 +574,11 @@ class EvaluatingState(CFPSenderState):
             #    str(original_msg.sender),
             #    ontology="room-assignment"
             #)
+            
+            await self.agent.message_logger.log_message_sent(
+                agent_name=self.agent.representative_name,
+                message=msg
+            )
 
             # Send message and wait for confirmation
             await self.send(msg)
@@ -575,6 +589,13 @@ class EvaluatingState(CFPSenderState):
 
             while asyncio.get_event_loop().time() - start_time < self.parent.BASE_TIMEOUT:
                 confirmation_msg = await self.receive(timeout=0.5)
+                # TODO: Remove this if branch.
+                if confirmation_msg:
+                    await self.agent.message_logger.log_message_received(
+                        agent_name=self.agent.representative_name,
+                        message=confirmation_msg
+                    )
+                
                 if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):
                     confirmation_data: BatchAssignmentConfirmation = msgspec_json.decode(confirmation_msg.body, type=BatchAssignmentConfirmation)
 
@@ -731,6 +752,10 @@ class FinishedState(State):
                 msg.set_metadata("nextOrden", str(next_orden))
                 # msg.set_metadata("require-ack", "true")
                 msg.body = "START"
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=msg
+                )
                 
                 await self.send(msg)
                 self.agent.log.info(f"Notified next professor with order: {next_orden}.")
@@ -750,9 +775,15 @@ class FinishedState(State):
                     if supervisor_agents:
                         supervisor = supervisor_agents[0]
                         shutdown_msg = Message(to=str(supervisor.jid))
-                        shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                        shutdown_msg.set_metadata("performative", FIPAPerformatives.CANCEL)
                         shutdown_msg.set_metadata("ontology", "system-control")
-                        shutdown_msg.set_metadata("content", "SHUTDOWN")
+                        # shutdown_msg.set_metadata("content", "NULL_PROF")
+                        shutdown_msg.body = "NULL_PROF"
+                        
+                        await self.agent.message_logger.log_message_sent(
+                            agent_name=self.agent.representative_name,
+                            message=shutdown_msg
+                        )
                         
                         await self.send(shutdown_msg)
                         self.agent.log.info("Sent shutdown signal to supervisor")

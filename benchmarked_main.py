@@ -18,6 +18,7 @@ from src.fipa.acl_message import FIPAPerformatives
 
 from src.performance.agent_factory import AgentFactory
 from src.performance.rtt_stats import RTTLogger
+from src.performance.agent_message_logger import AgentMessageLogger
 import time
 
 # Configure logging
@@ -45,6 +46,7 @@ class ApplicationAgent(Agent):
         self.is_running = True
         self._kb = None
         self.rtt_logger : 'RTTLogger' = None
+        self.message_logger = None
         
         self._rooms_ready = False
         self._professors_ready = False
@@ -106,6 +108,9 @@ class ApplicationAgent(Agent):
         logger.info("Application agent starting...")
         self._kb = await AgentKnowledgeBase.get_instance()
         self._kb.set_scenario(self.scenario)
+        
+        self.message_logger = await AgentMessageLogger()
+        await self.message_logger.start(self.scenario)
         
         # Initialize storage instances
         self.prof_storage = await ProfesorScheduleStorage.get_instance()
@@ -205,6 +210,10 @@ class ApplicationAgent(Agent):
                     msg.set_metadata("conversation-id", "negotiation-start-base")
                     msg.body = "START"
                     
+                    await self.agent.message_logger.log_message_sent(
+                        first_prof.representative_name, msg
+                    )
+                    
                     await self.send(msg)
                     """
                     await self.factory.metrics_monitor.log_request(
@@ -262,6 +271,7 @@ class ApplicationAgent(Agent):
                     room.set_storage(self.agent.room_storage)
                     room.set_knowledge_base(self.agent._kb)
                     room.set_rtt_logger(self.agent.rtt_logger)
+                    room.set_message_logger(self.agent.message_logger)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
@@ -308,6 +318,7 @@ class ApplicationAgent(Agent):
                     professor.set_storage(self.agent.prof_storage)
                     professor.set_knowledge_base(self.agent._kb)
                     professor.set_rtt_logger(self.agent.rtt_logger)
+                    professor.set_message_logger(self.agent.message_logger)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
                     logger.info(f"Professor agent started: {prof_jid}")

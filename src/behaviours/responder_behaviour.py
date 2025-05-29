@@ -37,6 +37,11 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
             if not msg:
                 # await asyncio.sleep(0.1)
                 return
+            
+            await self.agent.message_logger.log_message_received(
+                agent_name=self.agent.representative_name,
+                message=msg
+            )
 
             performative = msg.get_metadata("performative")
 
@@ -96,6 +101,10 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     ontology="classroom-availability",
                 )
                 
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=reply,
+                )
                 await self.send(reply)
                 self.agent.log.debug(f"Sent proposal to {msg.sender} for {subject_name}")
             else:
@@ -110,6 +119,10 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                     ontology="classroom-availability",
                 )
                 
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=reply,
+                )                
                 await self.send(reply)
                 self.agent.log.debug(f"Sent refuse to {msg.sender} - no blocks available")
                     
@@ -188,6 +201,11 @@ class ResponderSolicitudesBehaviour(CyclicBehaviour):
                 reply.set_metadata("ontology", "room-assignment")
                 reply.set_metadata("conversation-id", msg.get_metadata("conversation-id"))
                 reply.body = msgspec_json.encode(confirmation).decode('utf-8')
+                
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=reply,
+                )
 
                 await self.send(reply)
         except asyncio.TimeoutError:

@@ -14,6 +14,9 @@ class EsperarTurnoBehaviour(CyclicBehaviour):
         
         if msg:
             try:
+                await self.agent.message_logger.log_message_received(
+                    self.profesor.representative_name, msg
+                )
                 content = msg.body
                 # Check if this is a START message
                 if content == "START":

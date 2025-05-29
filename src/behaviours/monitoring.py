@@ -8,5 +8,8 @@ class InitialWaitBehaviour(CyclicBehaviour):
     async def run(self):
         msg = await self.receive(timeout=10)
         if msg:
+            await self.agent.message_logger.log_message_received(
+                self.agent.representative_name, msg
+            )
             self.agent.prepare_behaviours()
             self.kill()
