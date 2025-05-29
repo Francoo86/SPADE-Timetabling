@@ -90,9 +90,10 @@ class AgenteSupervisor(Agent):
         
         # Add shutdown behavior
         shutdown_template = Template()
-        shutdown_template.set_metadata("performative", FIPAPerformatives.INFORM)
+        shutdown_template.set_metadata("performative", FIPAPerformatives.CANCEL)
         shutdown_template.set_metadata("ontology", "system-control")
-        shutdown_template.set_metadata("content", "SHUTDOWN")
+        shutdown_template.body = "NULL_PROF"
+        # shutdown_template.set_metadata("content", "NULL_PROF")
         
         self.add_behaviour(self.ShutdownBehaviour(), shutdown_template)
 
