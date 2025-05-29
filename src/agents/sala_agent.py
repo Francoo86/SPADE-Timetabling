@@ -14,6 +14,7 @@ from ..fipa.common_templates import CommonTemplates
 from ..behaviours.responder_behaviour import ResponderSolicitudesBehaviour
 from src.performance.rtt_stats import RTTLogger
 from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
+from src.performance.agent_message_logger import AgentMessageLogger
 
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
@@ -31,6 +32,8 @@ class AgenteSala(Agent):
         self._kb = None
         self.storage = None
         self.scenario = scenario
+        self.message_logger = None
+        self.representative_name = f"Sala{codigo.upper()}"
 
         """
         self.performance_monitor = CentralizedPerformanceMonitor(
@@ -47,6 +50,10 @@ class AgenteSala(Agent):
 
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
+        
+    def set_message_logger(self, message_logger: AgentMessageLogger):
+        """Set the message logger for this agent"""
+        self.message_logger = message_logger
 
     async def setup(self):
         """Initialize agent setup"""

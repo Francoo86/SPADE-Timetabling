@@ -44,7 +44,9 @@ class AgenteProfesor(Agent):
         self.storage = None
         # self.cleanup_lock = asyncio.Lock()
         self.metrics_monitor = None
-        
+        self.message_logger = None
+        self.representative_name = f"Profesor{self.orden}"
+
         # Lock para replicar el synchronized de Java
         # self.prof_lock = asyncio.Lock()
         
@@ -67,6 +69,10 @@ class AgenteProfesor(Agent):
         """Get the number of pending blocks for the current subject."""
         """ Wrapper for the negotiation state behaviour """
         return self.negotiation_state_behaviour.get_bloques_pendientes()
+    
+    def set_message_logger(self, message_logger):
+        """Set the message logger for this agent"""
+        self.message_logger = message_logger
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
