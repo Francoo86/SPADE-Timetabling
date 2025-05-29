@@ -6,3 +6,4 @@ class FIPAPerformatives:
     PROPOSE = "propose"
     REFUSE = "refuse"
     QUERY_REF = "query-ref"
+    CANCEL = "cancel"
