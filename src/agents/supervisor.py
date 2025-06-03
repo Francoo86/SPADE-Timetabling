@@ -48,11 +48,17 @@ class AgenteSupervisor(Agent):
         self.metrics_monitor = None
         self.scenario = scenario
         
+        """
         self.performance_monitor = CentralizedPerformanceMonitor(
             agent_identifier=self.jid,
             agent_type="supervisor",
             scenario=self.scenario
-        )
+        )"""
+        
+        self.room_agents = []
+        
+    def set_room_agents(self, room_agents: List[Agent]):
+        self.room_agents = room_agents
         
     def set_metrics_monitor(self, monitor):
         self.metrics_monitor = monitor
@@ -69,10 +75,9 @@ class AgenteSupervisor(Agent):
 
     async def setup(self):
         """Initialize the supervisor agent"""
-        await self.performance_monitor.start_monitoring()
+        # await self.performance_monitor.start_monitoring()
         self.state = SupervisorState(self.professor_jids)
         
-        # Store initial state in knowledge base
         self.set("system_active", True)
         
         capability = AgentCapability(
@@ -85,98 +90,24 @@ class AgenteSupervisor(Agent):
         
         # Add shutdown behavior
         shutdown_template = Template()
-        shutdown_template.set_metadata("performative", FIPAPerformatives.INFORM)
+        shutdown_template.set_metadata("performative", FIPAPerformatives.CANCEL)
         shutdown_template.set_metadata("ontology", "system-control")
-        shutdown_template.set_metadata("content", "SHUTDOWN")
+        shutdown_template.body = "NULL_PROF"
+        # shutdown_template.set_metadata("content", "NULL_PROF")
         
         self.add_behaviour(self.ShutdownBehaviour(), shutdown_template)
-
-    async def finish_system(self):
-        """Clean up and shut down the system"""
-        try:
-            # self.set("system_active", False)
-            self.log.info("[Supervisor] Starting system shutdown...")
-            
-            # Ensure storage instances exist
-            if not self.room_storage or not self.prof_storage:
-                self.log.error("Storage instances not properly initialized")
-                return
-                
-            # Generate final files with proper error handling
-            try:
-                self.log.info("Generating room schedules JSON...")
-                await self.room_storage.generate_json_file()
-                
-                self.log.info("Generating professor schedules JSON...")
-                await self.prof_storage.generate_json_file()
-                
-                # Force flush any pending updates
-                await self.room_storage.force_flush()
-                await self.prof_storage.force_flush()
-                
-            except Exception as e:
-                self.log.error(f"Error generating JSON files: {str(e)}")
-                
-            # Verify files were generated
-            output_path = Path(os.getcwd()) / "agent_output"
-            sala_file = output_path / "Horarios_salas.json"
-            prof_file = output_path / "Horarios_asignados.json"
-            
-            # Add detailed logging for verification
-            if sala_file.exists():
-                size = sala_file.stat().st_size
-                self.log.info(f"Horarios_salas.json generated: {size} bytes")
-                if size == 0:
-                    self.log.error("Horarios_salas.json is empty")
-            else:
-                self.log.error("Horarios_salas.json was not generated")
-                
-            if prof_file.exists():
-                size = prof_file.stat().st_size
-                self.log.info(f"Horarios_asignados.json generated: {size} bytes")
-                if size == 0:
-                    self.log.error("Horarios_asignados.json is empty")
-            else:
-                self.log.error("Horarios_asignados.json was not generated")
-
-            # Ensure proper cleanup
-            try:
-                await self._kb.deregister_agent(self.jid)
-                self.log.info("Deregistered from knowledge base")
-            except Exception as e:
-                self.log.error(f"Error deregistering from KB: {str(e)}")
-                
-            # Stop the agent
-            try:
-                await self.stop()
-                self.log.info("Agent stopped successfully")
-            except Exception as e:
-                self.log.error(f"Error stopping agent: {str(e)}")
-                
-            # Set completion event
-            # if self.finalizer:
-                # self.finalizer.set()
-                # self.log.info("Finalizer event set")
-                
-        except Exception as e:
-            self.log.error(f"Critical error in finish_system: {str(e)}")
-            # Ensure finalizer is set even on error
-            # if self.finalizer:
-                # self.finalizer.set()
-        
-        self.set("system_active", False)
 
     class ShutdownBehaviour(CyclicBehaviour):
         """Handles system shutdown signals from professors"""
         
         async def run(self):            
-            msg = await self.receive(timeout=0.1)
+            msg = await self.receive(timeout=0.5)
             if msg:
                 try:
                     self.agent.log.info("Received shutdown signal - initiating system shutdown")
                     
                     # First stop metrics monitor to ensure clean metrics shutdown
-                    if hasattr(self.agent, 'metrics_monitor'):
+                    if self.agent.metrics_monitor:
                         self.agent.log.info("Stopping metrics monitor...")
                         await self.agent.metrics_monitor.stop()
                         await self.agent.metrics_monitor._flush_all()  # Final flush
@@ -184,13 +115,14 @@ class AgenteSupervisor(Agent):
                     # Generate final files with proper error handling
                     try:
                         self.agent.log.info("Generating room schedules JSON...")
-                        await self.agent.room_storage.generate_json_file()
+                        # await self.agent.room_storage.generate_json_file()
+                        await self.agent.room_storage.generate_supervisor_final_report(self.agent.room_agents)
                         
                         self.agent.log.info("Generating professor schedules JSON...")
                         await self.agent.prof_storage.generate_json_file()
                         
                         # Force flush any pending updates
-                        await self.agent.room_storage.force_flush()
+                       #  await self.agent.room_storage.force_flush()
                         await self.agent.prof_storage.force_flush()
                         
                     except Exception as e:

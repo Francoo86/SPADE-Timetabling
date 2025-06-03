@@ -41,17 +41,22 @@ class AgenteProfesor(Agent):
         # self.batch_proposals = asyncio.Queue()
         self.is_cleaning_up = False
         self.rtt_logger = None
-        self.cleanup_lock = asyncio.Lock()
-        
+        self.storage = None
+        # self.cleanup_lock = asyncio.Lock()
+        self.metrics_monitor = None
+        self.message_logger = None
+        self.representative_name = f"Profesor{self.orden}"
+
         # Lock para replicar el synchronized de Java
-        self.prof_lock = asyncio.Lock()
+        # self.prof_lock = asyncio.Lock()
         
         self.scenario = scenario
+        """
         self.performance_monitor = CentralizedPerformanceMonitor(
             agent_identifier=self.nombre,
             agent_type=self.AGENT_NAME,
             scenario=self.scenario
-        )
+        ) """
         
         # inicializar una fuente de verdad de los behaviors
         self.negotiation_state_behaviour = NegotiationFSM(profesor_agent=self)
@@ -59,6 +64,15 @@ class AgenteProfesor(Agent):
         # self.message_collector_behaviour = MessageCollectorBehaviour(self, self.batch_proposals, self.negotiation_state_behaviour)
     def set_rtt_logger(self, rtt_logger: RTTLogger):
         self.rtt_logger = rtt_logger
+        
+    def get_bloques_pendientes(self) -> int:
+        """Get the number of pending blocks for the current subject."""
+        """ Wrapper for the negotiation state behaviour """
+        return self.negotiation_state_behaviour.get_bloques_pendientes()
+    
+    def set_message_logger(self, message_logger):
+        """Set the message logger for this agent"""
+        self.message_logger = message_logger
         
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
@@ -76,19 +90,6 @@ class AgenteProfesor(Agent):
         
         # Initialize daily block assignments
         self.bloques_asignados_por_dia = {day: {} for day in Day}
-    
-    async def get_professor_status(self, request):
-        current = self.get_current_subject()
-        return {
-            "name": self.nombre,
-            "order": self.orden,
-            "current_subject": current.get_nombre() if current else None,
-            "total_subjects": len(self.asignaturas),
-            "completed_subjects": self.asignatura_actual,
-            "negotiation_state": self.current_state.name if hasattr(self, "current_state") else None,
-            "pending_blocks": self.bloques_pendientes if hasattr(self, "bloques_pendientes") else 0,
-            "schedule": self.horario_json
-        }
         
     def prepare_behaviours(self):
         negotiation_template = CommonTemplates.get_negotiation_template()
@@ -97,7 +98,7 @@ class AgenteProfesor(Agent):
     async def setup(self):
         """Setup the agent behaviors and structures."""
         try:
-            await self.performance_monitor.start_monitoring()
+            # await self.performance_monitor.start_monitoring()
             professor_capability = AgentCapability(
                 service_type="profesor",
                 properties={
@@ -120,7 +121,7 @@ class AgenteProfesor(Agent):
             self.log.info(f"Professor {self.nombre} registered with order {self.orden}")
             
             # Discover rooms
-            await self.discover_rooms()
+            # await self.discover_rooms()
             
             # Add appropriate behaviour based on order
             if self.orden == 0:
@@ -198,9 +199,9 @@ class AgenteProfesor(Agent):
             return None
         return self.asignaturas[self.asignatura_actual]
 
-    async def move_to_next_subject(self):
+    def move_to_next_subject(self):
         """Move to the next subject in the list."""
-        # async with self.prof_lock:
+    # async with self.prof_lock:
         self.log.info(f"[MOVE] Moving from subject index {self.asignatura_actual} "
                     f"(total: {len(self.asignaturas)})")
         
@@ -225,7 +226,7 @@ class AgenteProfesor(Agent):
                 self.log.info(f" [MOVE] Moving to new subject {next_subject.get_nombre()}")
         else:
             self.log.info(f" [MOVE] Reached end of subjects")
-        
+    
     def is_block_available(self, dia: Day, bloque: int) -> bool:
         """Check if a time block is available."""
         return dia not in self.horario_ocupado or bloque not in self.horario_ocupado[dia]
@@ -270,7 +271,7 @@ class AgenteProfesor(Agent):
     async def update_schedule_info(self, dia: Day, sala: str, bloque: int, nombre_asignatura: str, satisfaccion: int):
         """Update the schedule information with a new assignment."""
         try:
-            if not hasattr(self, 'storage') or not self.storage:
+            if not self.storage:
                 self.log.error("Storage not properly initialized")
                 return
                 
@@ -356,46 +357,45 @@ class AgenteProfesor(Agent):
     async def cleanup(self):
         """Simplified cleanup that avoids behavior killing but addresses locks"""
         try:
-            # Use a timeout for the entire cleanup operation
-            async with asyncio.timeout(10):  # 10 second total timeout
-                async with self.cleanup_lock:
-                    if self.is_cleaning_up:
-                        self.log.warning("Cleanup already in progress, skipping...")
-                        return
-                        
-                    self.is_cleaning_up = True
-                    self.log.info(f"Starting cleanup for professor {self.nombre}")
-                    
-                    # 1. Flush metrics - with timeout
-                    if hasattr(self, 'metrics_monitor'):
-                        try:
-                            async with asyncio.timeout(2):
-                                await self.metrics_monitor._flush_all()
-                        except asyncio.TimeoutError:
-                            self.log.error("Metrics flush timed out, continuing")
-                    
-                    """
-                    # 2. Deregister from knowledge base - with timeout
-                    if self._kb:
-                        try:
-                            async with asyncio.timeout(2):
-                                await self._kb.deregister_agent(self.jid)
-                        except asyncio.TimeoutError:
-                            self.log.error("KB deregistration timed out, continuing") """
-                    
-                    # 3. Final storage flush - with timeout
-                    if hasattr(self, 'storage') and self.storage:
-                        try:
-                            async with asyncio.timeout(2):
-                                await self.storage.force_flush()
-                        except asyncio.TimeoutError:
-                            self.log.error("Storage flush timed out, continuing")
-                    
-                    # 4. Brief pause then stop agent
-                    await asyncio.sleep(0.1)
-                    await self.stop()
-                    self.log.info("Agent stopped successfully")
-        
+        # Use a timeout for the entire cleanup operation
+        # async with asyncio.timeout(10):  # 10 second total timeout
+            # async with self.cleanup_lock:
+            if self.is_cleaning_up:
+                self.log.warning("Cleanup already in progress, skipping...")
+                return
+                
+            self.is_cleaning_up = True
+            self.log.info(f"Starting cleanup for professor {self.nombre}")
+            
+            # 1. Flush metrics - with timeout
+            if self.metrics_monitor:
+                try:
+                    # async with asyncio.timeout(2):
+                    await self.metrics_monitor._flush_all()
+                except asyncio.TimeoutError:
+                    self.log.error("Metrics flush timed out, continuing")
+            
+            """
+            # 2. Deregister from knowledge base - with timeout
+            if self._kb:
+                try:
+                    async with asyncio.timeout(2):
+                        await self._kb.deregister_agent(self.jid)
+                except asyncio.TimeoutError:
+                    self.log.error("KB deregistration timed out, continuing") """
+            
+            # 3. Final storage flush - with timeout
+            if self.storage is not None:
+                try:
+                    #async with asyncio.timeout(2):
+                    await self.storage.force_flush()
+                except asyncio.TimeoutError:
+                    self.log.error("Storage flush timed out, continuing")
+            
+            # 4. Brief pause then stop agent
+            # await asyncio.sleep(0.1)
+            await self.stop()
+            self.log.info("Agent stopped successfully")
         except asyncio.TimeoutError:
             self.log.error("Overall cleanup timed out, forcing stop")
             await self.stop()

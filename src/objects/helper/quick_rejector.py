@@ -2,6 +2,7 @@ from typing import Dict
 from dataclasses import dataclass
 from datetime import datetime
 import asyncio
+from math import ceil
 
 @dataclass
 class QuickRejectCacheEntry:
@@ -13,9 +14,7 @@ class QuickRejectCacheEntry:
 
 class RoomQuickRejectFilter:
     """Optimization filter for quickly rejecting unsuitable rooms"""
-    
     MEETING_ROOM_THRESHOLD = 10
-    CACHE_TTL_SECONDS = 300  # 5 minute cache entries
     
     def __init__(self):
         self._cache: Dict[str, QuickRejectCacheEntry] = {}
@@ -25,7 +24,7 @@ class RoomQuickRejectFilter:
         """Generate cache key from subject and room IDs"""
         return f"{subject_code}-{room_id}"
         
-    async def can_quick_reject(self, 
+    def can_quick_reject(self, 
                              subject_name: str,
                              subject_code: str, 
                              subject_campus: str,
@@ -50,14 +49,7 @@ class RoomQuickRejectFilter:
         """
         cache_key = self._get_cache_key(subject_code, room_code)
         
-        async with self._lock:
-            # Check cache first
-            if cache_key in self._cache:
-                entry = self._cache[cache_key]
-                age = (datetime.now() - entry.timestamp).total_seconds()
-                if age < self.CACHE_TTL_SECONDS:
-                    return entry.should_reject
-                
+        if not cache_key in self._cache:
             # Quick reject conditions
             should_reject = False
             
@@ -76,7 +68,7 @@ class RoomQuickRejectFilter:
                     
                 # For meeting rooms, be more lenient with capacity
                 elif is_meeting_room:
-                    should_reject = room_capacity < (subject_vacancies * 0.8)
+                    should_reject = room_capacity < ceil(subject_vacancies * 0.8)
                     
                 # For regular rooms
                 else:
@@ -90,14 +82,4 @@ class RoomQuickRejectFilter:
             )
             
             return should_reject
-            
-    async def cleanup_cache(self):
-        """Remove expired cache entries"""
-        async with self._lock:
-            now = datetime.now()
-            expired_keys = [
-                key for key, entry in self._cache.items()
-                if (now - entry.timestamp).total_seconds() > self.CACHE_TTL_SECONDS
-            ]
-            for key in expired_keys:
-                del self._cache[key]
+        return self._cache[cache_key].should_reject

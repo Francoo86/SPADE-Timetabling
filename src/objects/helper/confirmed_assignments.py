@@ -2,9 +2,9 @@ from dataclasses import dataclass
 from typing import List, Dict
 
 from ..static.agent_enums import Day
+import msgspec
 
-@dataclass
-class ConfirmedAssignment:
+class ConfirmedAssignment(msgspec.Struct):
     """Represents a confirmed classroom assignment."""
     day: Day
     block: int
@@ -46,17 +46,14 @@ class ConfirmedAssignment:
             satisfaction=data["satisfaction"]
         )
 
-class BatchAssignmentConfirmation:
+class BatchAssignmentConfirmation(msgspec.Struct):
     """Represents a batch of confirmed classroom assignments."""
+    
+    confirmed_assignments: List[ConfirmedAssignment]
 
+    """
     def __init__(self, confirmed_assignments: List[ConfirmedAssignment]):
-        """
-        Initialize a BatchAssignmentConfirmation.
-
-        Args:
-            confirmed_assignments: List of ConfirmedAssignment objects
-        """
-        self.confirmed_assignments = confirmed_assignments
+        self.confirmed_assignments = confirmed_assignments """
 
     def get_confirmed_assignments(self) -> List[ConfirmedAssignment]:
         """Get the list of confirmed assignments."""

@@ -9,6 +9,8 @@ class LogLevel(Enum):
     WARNING = 30
     ERROR = 40
     CRITICAL = 50
+    
+NO_DISPLAY = True
 
 class AgentLogger:
     def __init__(self, agent_name: str, min_level: LogLevel = LogLevel.INFO):

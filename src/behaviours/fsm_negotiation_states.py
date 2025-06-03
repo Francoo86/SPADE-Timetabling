@@ -7,6 +7,7 @@ from typing import List, Set, Dict
 from objects.helper.batch_proposals import BatchProposal
 from objects.helper.confirmed_assignments import BatchAssignmentConfirmation
 from objects.helper.batch_requests import AssignmentRequest, BatchAssignmentRequest
+from objects.helper.classroom_availability import ClassroomAvailability
 from objects.asignation_data import AssignationData
 from collections import defaultdict
 from evaluators.constraint_evaluator import ConstraintEvaluator
@@ -17,6 +18,8 @@ from aioxmpp import JID
 from objects.helper.quick_rejector import RoomQuickRejectFilter
 from performance.rtt_stats import RTTLogger
 import uuid
+from msgspec import json as msgspec_json
+from math import ceil
 
 # States for the FSM
 class NegotiationStates:
@@ -28,22 +31,26 @@ class NegotiationStates:
 class NegotiationFSM(FSMBehaviour):
     """FSM for handling professor negotiations"""
     MAX_RETRIES = 3
+    BASE_TIMEOUT = 5 # 1 second, relative to 1000ms in JADE
+    BACKOFF_OFFSET = 1 # also 1 second, relative to 1000ms in JADE
+    HARD_TIMEOUT = 5
     
     def __init__(self, profesor_agent):
         super().__init__()
         self.agent = profesor_agent
         # Rather than saving it here we could save it in the agent
         self.proposals = asyncio.Queue()
-        self.timeout = 5  # seconds
+        self.timeout = 0  # seconds
         self.bloques_pendientes = 0
-        self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent, fsm_behaviour=self)
+        self.evaluator = ConstraintEvaluator(professor_agent=profesor_agent)
         self.assignation_data = AssignationData()
         
-        self.responding_rooms: Set[str] = set()  # Track rooms that responded
-        self.expected_rooms: Set[str] = set()    # Track rooms we sent CFPs to
+        # self.responding_rooms: Set[str] = set()  # Track rooms that responded
+        # self.expected_rooms: Set[str] = set()    # Track rooms we sent CFPs to
         self.response_times: Dict[str, float] = {}  # Track response times per room
         
         self.cfp_count = 0  # Track number of CFPs sent
+        self.received_proposals = 0 # Track number of proposals received
         self.negotiation_start_time = None
         self.retry_count = 0
     
@@ -64,16 +71,83 @@ class NegotiationFSM(FSMBehaviour):
         
         # A FALLBACK ONLY
         self.add_transition(NegotiationStates.SETUP, NegotiationStates.SETUP)
+        self.add_transition(NegotiationStates.COLLECTING, NegotiationStates.COLLECTING)
+        
+    def get_bloques_pendientes(self) -> int:
+        return self.bloques_pendientes
         
 class CFPSenderState(State):
+    MEETING_ROOM_THRESHOLD = 10
+    
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
-        self.room_filter = RoomQuickRejectFilter()
+        # self.room_filter = RoomQuickRejectFilter()
+        self._quick_rj_cache : Dict[str, bool] = {}
         # self.rtt_logger = parent.agent.rtt_logger
         # self.rtt_logger : 'RTTLogger' = None
         self.rtt_initialized = False
         super().__init__()
         
+    def _get_quick_rj_cache_key(self, subject_code: str, room_id: str) -> str:
+        """Generate cache key from subject and room IDs"""
+        return f"{subject_code}-{room_id}"
+        
+    def can_quick_reject(self, 
+                             subject_name: str,
+                             subject_code: str, 
+                             subject_campus: str,
+                             subject_vacancies: int,
+                             room_code: str,
+                             room_campus: str,
+                             room_capacity: int) -> bool:
+        """
+        Quickly determine if a room can be rejected without full evaluation
+        
+        Args:
+            subject_name: Name of the subject
+            subject_code: Subject's code
+            subject_campus: Subject's campus
+            subject_vacancies: Number of students
+            room_code: Room's code
+            room_campus: Room's campus  
+            room_capacity: Room's capacity
+            
+        Returns:
+            bool: True if room can be rejected, False if it needs full evaluation
+        """
+        cache_key = self._get_quick_rj_cache_key(subject_code, room_code)
+
+        if cache_key not in self._quick_rj_cache:
+            # Quick reject conditions
+            should_reject = False
+            
+            # Campus mismatch
+            if room_campus != subject_campus:
+                should_reject = True
+                
+            else:
+                # Meeting room logic
+                subject_needs_meeting_room = subject_vacancies < self.MEETING_ROOM_THRESHOLD
+                is_meeting_room = room_capacity < self.MEETING_ROOM_THRESHOLD
+                
+                # Reject if meeting room requirements don't match
+                if subject_needs_meeting_room != is_meeting_room:
+                    should_reject = True
+                    
+                # For meeting rooms, be more lenient with capacity
+                elif is_meeting_room:
+                    should_reject = room_capacity < ceil(subject_vacancies * 0.8)
+                    
+                # For regular rooms
+                else:
+                    should_reject = room_capacity < subject_vacancies
+                    
+            # Cache the result
+            self._quick_rj_cache[cache_key] = should_reject
+
+            return should_reject
+        return self._quick_rj_cache[cache_key]
+
     @staticmethod
     def sanitize_subject_name(name: str) -> str:
         """Sanitize subject name removing special characters"""
@@ -89,6 +163,9 @@ class CFPSenderState(State):
         # await self.rtt_logger.start()
         
     async def send_cfp_messages(self):
+        self.parent.cfp_count = 0
+        self.parent.received_proposals = 0
+        
         """Send CFP messages to classroom agents"""
         try:
             current_subject = self.agent.get_current_subject()
@@ -116,7 +193,6 @@ class CFPSenderState(State):
 
             cfp_count = 0
             # Filter rooms before sending CFPs
-            filtered_rooms = []
             for room in rooms:
                 # Extract room properties from capabilities
                 room_caps = next((cap for cap in room.capabilities if cap.service_type == "sala"), None)
@@ -125,7 +201,7 @@ class CFPSenderState(State):
                 
                 room_props = room_caps.properties
                 
-                should_reject = await self.room_filter.can_quick_reject(
+                should_reject = self.can_quick_reject(
                     subject_name=current_subject.get_nombre(),
                     subject_code=current_subject.get_codigo_asignatura(),
                     subject_campus=current_subject.get_campus(),
@@ -135,15 +211,9 @@ class CFPSenderState(State):
                     room_capacity=room_props["capacidad"]
                 )
                 
-                if not should_reject:
-                    filtered_rooms.append(room)
-
-            if not filtered_rooms:
-                self.agent.log.debug(f"No suitable rooms found after filtering for {current_subject.get_nombre()}")
-                return 0
-
-            # Send CFP only to filtered rooms
-            for room in filtered_rooms:
+                if should_reject:
+                    continue
+                
                 msg = Message(
                     to=str(room.jid)
                 )
@@ -151,7 +221,8 @@ class CFPSenderState(State):
                 msg.set_metadata("protocol", "contract-net")
                 msg.set_metadata("performative", FIPAPerformatives.CFP)
                 msg.set_metadata("conversation-id", f"neg-{self.agent.nombre}-{self.parent.bloques_pendientes}")
-                msg.body = json.dumps(solicitud_info)
+                # msg.body = json.dumps(solicitud_info)
+                msg.body = msgspec_json.encode(solicitud_info).decode("utf-8")
                 
                 cfp_id = f"cfp-{str(uuid.uuid4())}"
                 msg.set_metadata("rtt-id", cfp_id)
@@ -164,11 +235,18 @@ class CFPSenderState(State):
                     ontology="classroom-availability"
                 )
                 
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=msg
+                )
+                
                 await self.send(msg)
-
                 cfp_count += 1
+
+                # cfp_count += 1
             self.agent.log.info(f"Sent CFPs to {cfp_count} rooms out of {len(rooms)} total rooms")
-            self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
+            # self.parent.expected_rooms = {str(r.jid) for r in filtered_rooms}
+            self.parent.cfp_count = cfp_count
             return cfp_count
         except Exception as e:
             self.agent.log.error(f"Error sending proposal requests: {str(e)}")
@@ -187,45 +265,50 @@ class SetupState(CFPSenderState):
             return
 
         current_subject = self.agent.get_current_subject()
-        if current_subject:
-            self.parent.bloques_pendientes = current_subject.get_horas()
-            self.parent.assignation_data.clear()
-            self.parent.negotiation_start_time = datetime.now()
-            
-            self.parent.responding_rooms.clear()
-            self.parent.expected_rooms.clear()
-            self.parent.response_times.clear()
-            
-            cfp_count = await self.send_cfp_messages()
-            self.parent.cfp_count = cfp_count
-            
-            if cfp_count > 0:
-                self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()} type: {current_subject.get_actividad()}")
-                self.set_next_state(NegotiationStates.COLLECTING)
-            else:
-                # Handle the case where no rooms are available
-                self.agent.log.warning(f"No suitable rooms found for {current_subject.get_nombre()} (retry {self.parent.retry_count + 1}/{self.parent.MAX_RETRIES})")
-                
-                # Increment retry count
-                self.parent.retry_count += 1
-                
-                # If we've reached max retries, move to the next subject
-                if self.parent.retry_count >= self.parent.MAX_RETRIES:
-                    self.agent.log.info(f"Max retries reached for {current_subject.get_nombre()}, moving to next subject")
-                    await self.agent.move_to_next_subject()
-                    self.parent.retry_count = 0
-                
-                # Stay in SETUP state to retry or try with new subject
-                self.set_next_state(NegotiationStates.SETUP)
-        else:
-            # No more subjects to process
+        if not current_subject:
+            self.agent.log.error("No current subject available for negotiation")
             self.set_next_state(NegotiationStates.FINISHED)
+            return
 
-class CollectingState(State):
+        self.parent.bloques_pendientes = current_subject.get_horas()
+        self.parent.assignation_data.clear()
+        
+        # SPADE specific stuff, JADE doesn't have it.
+        # self.parent.responding_rooms.clear()
+        # self.parent.expected_rooms.clear()
+        self.parent.response_times.clear()
+        self.parent.negotiation_start_time = datetime.now()
+        
+        await self.send_cfp_messages()
+        # self.parent.cfp_count = cfp_count
+        cfp_count = self.parent.cfp_count
+        
+        if cfp_count > 0:
+            self.agent.log.info(f"Sent {cfp_count} CFPs for {current_subject.get_nombre()} type: {current_subject.get_actividad()}")
+            self.set_next_state(NegotiationStates.COLLECTING)
+            self.parent.timeout = self.parent.BASE_TIMEOUT
+        else:
+            # NOTE: THIS SHOULDN'T EVEN HAPPEN...
+            # Handle the case where no rooms are available
+            self.agent.log.warning(f"No suitable rooms found for {current_subject.get_nombre()} (retry {self.parent.retry_count + 1}/{self.parent.MAX_RETRIES})")
+            
+            # Increment retry count
+            self.parent.retry_count += 1
+            
+            # If we've reached max retries, move to the next subject
+            if self.parent.retry_count >= self.parent.MAX_RETRIES:
+                self.agent.log.info(f"Max retries reached for {current_subject.get_nombre()}, moving to next subject")
+                self.agent.move_to_next_subject()
+                self.parent.retry_count = 0
+            
+            # Stay in SETUP state to retry or try with new subject
+            self.set_next_state(NegotiationStates.SETUP)
+
+class CollectingState(CFPSenderState):
     def __init__(self, parent: NegotiationFSM):
         self.parent = parent
         # self.rtt_logger = RTTLogger(str(self.parent.agent.jid), self.parent.agent.scenario)
-        super().__init__()
+        super().__init__(parent=parent)
         
     async def __log_response(self, msg : Message):
         await self.parent.agent.rtt_logger.end_request(
@@ -241,50 +324,37 @@ class CollectingState(State):
     async def run(self):
         try:
             start_time = asyncio.get_event_loop().time()
-            already_msgs_id = set()
             proposes_received = 0
             refuses_received = 0
             
-            # Add minimum collection time to prevent rapid cycling
-            min_collection_time = 0.5  # 500ms minimum wait
-            min_end_time = start_time + min_collection_time
-            
             # Regular collection logic
             while asyncio.get_event_loop().time() - start_time < self.parent.timeout:
-                msg = await self.receive(timeout=0.1)
+                msg = await self.receive(timeout=0.5)
                 
                 if msg:
+                    await self.parent.agent.message_logger.log_message_received(
+                        agent_name=self.parent.agent.representative_name,
+                        message=msg
+                    )
                     # Skip already processed messages
-                    if msg.id in already_msgs_id:
-                        self.agent.log.warning(f"Skipping already processed message: {msg.id}")
-                        continue
+                    self.parent.received_proposals += 1
+                
+                    curr_performative = msg.get_metadata("performative")
                     
-                    sender = str(msg.sender)
-                    already_msgs_id.add(msg.id)
-                    
-                    # Track response regardless of type
-                    if sender in self.parent.expected_rooms:
-                        self.parent.responding_rooms.add(sender)
-                    
-                    if msg.get_metadata("performative") == "propose":
+                    if curr_performative == FIPAPerformatives.PROPOSE:
                         proposes_received += 1
                         await self.handle_proposal(msg)
-                    elif msg.get_metadata("performative") == "refuse":
+                    elif curr_performative == FIPAPerformatives.REFUSE:
                         refuses_received += 1
                         
                     await self.__log_response(msg)
                 
                 # Log progress
-                if len(self.parent.responding_rooms) == self.parent.cfp_count:
+                if self.parent.received_proposals >= self.parent.cfp_count and self.parent.cfp_count > 0:
                     self.agent.log.info("Received all expected responses")
+                    break
                     
-                    if asyncio.get_event_loop().time() >= min_end_time:
-                        break
-                        
-                await asyncio.sleep(0.05)
-            
-            # Report collection results
-            responses = len(self.parent.responding_rooms)
+            responses = proposes_received + refuses_received
             proposes = proposes_received
             refuses = refuses_received
             
@@ -293,30 +363,40 @@ class CollectingState(State):
                 f"Proposes: {proposes}, Refuses: {refuses}"
             )
             
-            # Add a delay when all responses were REFUSE to slow down cycling
             if refuses == responses and responses > 0:
                 self.agent.log.warning("All rooms refused - adding delay before retry")
-                await asyncio.sleep(1.0)  # Add a 1-second delay to really slow down the spam
+                # await asyncio.sleep(1.0)
             
-            # Only transition to EVALUATING if we have actual proposals
             if not self.parent.proposals.empty():
                 self.set_next_state(NegotiationStates.EVALUATING)
             else:
-                # All responses were refusals or no responses - handle as a retry
-                self.parent.retry_count += 1
-                
-                if self.parent.retry_count >= self.parent.MAX_RETRIES:
-                    self.agent.log.info(f"Max retries ({self.parent.MAX_RETRIES}) reached with only refusals, moving to next subject")
-                    await self.agent.move_to_next_subject()
-                    self.parent.retry_count = 0
-                else:
-                    self.agent.log.info(f"No proposals received (retry {self.parent.retry_count}/{self.parent.MAX_RETRIES})")
-                
-                self.set_next_state(NegotiationStates.SETUP)
+                await self.handle_no_proposals()
         
         except Exception as e:
             self.agent.log.error(f"Error in collecting state: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
+            
+    async def handle_no_proposals(self):
+        self.parent.retry_count += 1
+        
+        if self.parent.retry_count >= self.parent.MAX_RETRIES:
+            current_subject = self.agent.get_current_subject()
+            
+            if self.parent.bloques_pendientes == current_subject.get_horas():
+                self.agent.move_to_next_subject()
+            else:
+                self.parent.assignation_data.set_sala_asignada(None)
+            
+            self.parent.retry_count = 0
+            self.set_next_state(NegotiationStates.SETUP)
+        else:
+            backoff_time = (2 ** self.parent.retry_count) * self.parent.BACKOFF_OFFSET
+            self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
+            
+            self.agent.log.info(f"Retrying with timeout {self.parent.timeout:.2f}s (retry {self.parent.retry_count}/{self.parent.MAX_RETRIES})")
+            await self.send_cfp_messages()
+            
+            self.set_next_state(NegotiationStates.COLLECTING)
             
     async def handle_proposal(self, msg: Message):
         """
@@ -327,7 +407,7 @@ class CollectingState(State):
         """
         try:
             # Parse the content (assumed to be JSON)
-            availability = jsonpickle.decode(msg.body)
+            availability = msgspec_json.decode(msg.body, type=ClassroomAvailability)
 
             if availability:
                 # Create batch proposal
@@ -342,17 +422,14 @@ class CollectingState(State):
             self.agent.log.error(f"Error processing proposal: {str(e)}")
 
 class EvaluatingState(CFPSenderState):
-    TIMEOUT_PROPUESTA = 1000
     MAX_RETRIES = 3
     
     def __init__(self, evaluator: ConstraintEvaluator, parent: NegotiationFSM):
         self.evaluator = evaluator
-        # self.parent = parent
         super().__init__(parent=parent)
     
     async def run(self):
         try:
-            # Get all proposals atomically
             proposals = []
             while not self.parent.proposals.empty():
                 try:
@@ -363,21 +440,22 @@ class EvaluatingState(CFPSenderState):
 
             self.agent.log.debug(f"Processing {len(proposals)} proposals")
             
-            valid_proposals = await self.evaluator.filter_and_sort_proposals(proposals)
+            valid_proposals = self.evaluator.filter_and_sort_proposals(proposals)
             self.agent.log.debug(f"Found {len(valid_proposals)} valid proposals")
 
             if valid_proposals and await self.try_assign_batch_proposals(valid_proposals):
                 self.parent.retry_count = 0
 
                 if self.parent.bloques_pendientes == 0:
-                    await self.agent.move_to_next_subject()
+                    self.agent.move_to_next_subject()
                     self.set_next_state(NegotiationStates.SETUP)
                 else:
-                    # Add timeout for sending new CFPs
                     try:
-                        async with asyncio.timeout(5):  # 5 second timeout
-                            await self.send_cfp_messages()
-                            self.set_next_state(NegotiationStates.COLLECTING)
+                        # HACK: Hard timeout to avoid infinite loop (this is mostly related to JSON problems.)
+                        # async with asyncio.timeout(self.parent.HARD_TIMEOUT): 
+                        await self.send_cfp_messages()
+                        self.parent.timeout = self.parent.BASE_TIMEOUT
+                        self.set_next_state(NegotiationStates.COLLECTING)
                     except asyncio.TimeoutError:
                         self.agent.log.error("Timeout sending CFPs")
                         self.set_next_state(NegotiationStates.SETUP)
@@ -386,7 +464,6 @@ class EvaluatingState(CFPSenderState):
                 
         except Exception as e:
             self.agent.log.error(f"Error in evaluating state: {str(e)}")
-            # Always ensure we transition to a valid state
             self.set_next_state(NegotiationStates.SETUP)
             
     async def try_assign_batch_proposals(self, batch_proposals: List[BatchProposal]) -> bool:
@@ -432,13 +509,13 @@ class EvaluatingState(CFPSenderState):
                         subject_name=current_subject.get_nombre(),
                         satisfaction=batch_proposal.get_satisfaction_score(),
                         classroom_code=batch_proposal.get_room_code(),
-                        vacancy=current_subject.get_vacantes()
+                        vacancy=current_subject.get_vacantes(),
+                        prof_name=self.agent.nombre
                     ))
 
                     total_assigned += 1
                     daily_assignments[day] += 1
 
-            # Send batch assignment if we have requests
             if len(requests) > 0:
                 try:
                     if await self.send_batch_assignment(requests, batch_proposal.get_original_message()):
@@ -477,7 +554,7 @@ class EvaluatingState(CFPSenderState):
         
         try:
             conv_id = original_msg.get_metadata("conversation-id")
-            # Create batch request message
+
             msg = Message()
             msg.to = str(original_msg.sender)
             msg.set_metadata("performative", FIPAPerformatives.ACCEPT_PROPOSAL)
@@ -485,10 +562,10 @@ class EvaluatingState(CFPSenderState):
             msg.set_metadata("conversation-id", conv_id)
             msg.set_metadata("protocol", "contract-net")
             
-            msg.body = jsonpickle.encode(BatchAssignmentRequest(requests))
+            msg.body = msgspec_json.encode(BatchAssignmentRequest(requests)).decode("utf-8")
             
-            id_prop = f"assign-{str(uuid.uuid4())}"
-            msg.set_metadata("rtt-id", id_prop)
+            # id_prop = f"assign-{str(uuid.uuid4())}"
+            # msg.set_metadata("rtt-id", id_prop)
             
             # TODO: Remove this because we only need CFP -> PROPOSE/REFUSE.
             #await self.rtt_logger.start_request(
@@ -497,19 +574,31 @@ class EvaluatingState(CFPSenderState):
             #    str(original_msg.sender),
             #    ontology="room-assignment"
             #)
+            
+            await self.agent.message_logger.log_message_sent(
+                agent_name=self.agent.representative_name,
+                message=msg
+            )
 
             # Send message and wait for confirmation
             await self.send(msg)
             
             # Wait for confirmation with timeout
-            start_time = datetime.now()
-            timeout = timedelta(seconds=1)
+            start_time = asyncio.get_event_loop().time()
+            # timeout = timedelta(seconds=1)
 
-            while datetime.now() - start_time < timeout:
-                confirmation_msg = await self.receive(timeout=0.1)
-                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):                    
-                    confirmation_data : BatchAssignmentConfirmation = jsonpickle.decode(confirmation_msg.body)
-                    
+            while asyncio.get_event_loop().time() - start_time < self.parent.BASE_TIMEOUT:
+                confirmation_msg = await self.receive(timeout=0.5)
+                # TODO: Remove this if branch.
+                if confirmation_msg:
+                    await self.agent.message_logger.log_message_received(
+                        agent_name=self.agent.representative_name,
+                        message=confirmation_msg
+                    )
+                
+                if confirmation_msg and self.is_valid_confirm(confirmation_msg, original_msg.sender, conv_id):
+                    confirmation_data: BatchAssignmentConfirmation = msgspec_json.decode(confirmation_msg.body, type=BatchAssignmentConfirmation)
+
                     #await self.rtt_logger.end_request(
                     #    id_prop,
                     #     response_performative=FIPAPerformatives.INFORM,
@@ -537,7 +626,7 @@ class EvaluatingState(CFPSenderState):
 
                     return True
 
-                await asyncio.sleep(0.05)
+                # await asyncio.sleep(0.05)
         except Exception as e:
             #await self.rtt_logger.end_request(
             #    conv_id,
@@ -565,20 +654,24 @@ class EvaluatingState(CFPSenderState):
                 if self.parent.assignation_data.has_sala_asignada():
                     self.parent.assignation_data.set_sala_asignada(None)
                 else:
-                    await self.agent.move_to_next_subject()
+                    self.agent.move_to_next_subject()
                 self.parent.retry_count = 0
                 self.set_next_state(NegotiationStates.SETUP)
             else:
                 # Add timeout for retry
                 try:
-                    async with asyncio.timeout(5):
-                        await self.send_cfp_messages()
-                        self.set_next_state(NegotiationStates.COLLECTING)
+                    # async with asyncio.timeout(self.parent.HARD_TIMEOUT):
+                    backoff_time = 2 ** self.parent.retry_count * self.parent.BACKOFF_OFFSET
+                    self.parent.timeout = self.parent.BASE_TIMEOUT + backoff_time
+                    
+                    await self.send_cfp_messages()
+                    self.set_next_state(NegotiationStates.COLLECTING)
                 except asyncio.TimeoutError:
                     self.agent.log.error("Timeout during retry")
                     self.set_next_state(NegotiationStates.SETUP)
                     
         except Exception as e:
+            # NOTE: Also this shouldn't happen.
             self.agent.log.error(f"Error in handle_proposal_failure: {str(e)}")
             self.set_next_state(NegotiationStates.SETUP)
 
@@ -591,12 +684,12 @@ class FinishedState(State):
         self.agent.log.info("Entering FinishedState")
         try:
             # Add more granular timeouts for better diagnosis
-            async with asyncio.timeout(5):
-                self.agent.log.info("Starting finish_negotiations()")
-                await self.finish_negotiations()
-                self.agent.log.info("finish_negotiations() completed, killing state")
-                self.kill()
-                self.agent.log.info("State killed successfully")
+            # async with asyncio.timeout(self.parent.HARD_TIMEOUT):
+            self.agent.log.info("Starting finish_negotiations()")
+            await self.finish_negotiations()
+            self.agent.log.info("finish_negotiations() completed, killing state")
+            self.kill()
+            self.agent.log.info("State killed successfully")
         except asyncio.TimeoutError as e:
             self.agent.log.error(f"Timeout during negotiation finish: {str(e)}")
             # Force kill on timeout
@@ -622,8 +715,7 @@ class FinishedState(State):
             
             # Start cleanup with proper error handling and await it
             try:
-                # First flush any metrics
-                if hasattr(self.agent, 'metrics_monitor'):
+                if self.agent.metrics_monitor:
                     await self.agent.metrics_monitor._flush_all()
                     
                 # Perform cleanup
@@ -660,6 +752,10 @@ class FinishedState(State):
                 msg.set_metadata("nextOrden", str(next_orden))
                 # msg.set_metadata("require-ack", "true")
                 msg.body = "START"
+                await self.agent.message_logger.log_message_sent(
+                    agent_name=self.agent.representative_name,
+                    message=msg
+                )
                 
                 await self.send(msg)
                 self.agent.log.info(f"Notified next professor with order: {next_orden}.")
@@ -670,7 +766,7 @@ class FinishedState(State):
                 self.agent.log.info("No next professor found - all professors completed")
                 
                 # Final metrics flush before shutdown
-                if hasattr(self.agent, 'metrics_monitor'):
+                if self.agent.metrics_monitor:
                     await self.agent.metrics_monitor._flush_all()
                 
                 # Notify supervisor to begin shutdown
@@ -679,9 +775,15 @@ class FinishedState(State):
                     if supervisor_agents:
                         supervisor = supervisor_agents[0]
                         shutdown_msg = Message(to=str(supervisor.jid))
-                        shutdown_msg.set_metadata("performative", FIPAPerformatives.INFORM)
+                        shutdown_msg.set_metadata("performative", FIPAPerformatives.CANCEL)
                         shutdown_msg.set_metadata("ontology", "system-control")
-                        shutdown_msg.set_metadata("content", "SHUTDOWN")
+                        # shutdown_msg.set_metadata("content", "NULL_PROF")
+                        shutdown_msg.body = "NULL_PROF"
+                        
+                        await self.agent.message_logger.log_message_sent(
+                            agent_name=self.agent.representative_name,
+                            message=shutdown_msg
+                        )
                         
                         await self.send(shutdown_msg)
                         self.agent.log.info("Sent shutdown signal to supervisor")

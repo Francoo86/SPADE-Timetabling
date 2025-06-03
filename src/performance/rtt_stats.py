@@ -15,7 +15,7 @@ from typing import Dict, Optional
 import asyncio
 import aiofiles
 from pathlib import Path
-from jade_migration.asyncio_singleton import AsyncioSingleton
+from src.jade_migration.asyncio_singleton import AsyncioSingleton
 
 @dataclass
 class RTTMeasurement:
@@ -67,6 +67,9 @@ class RTTLogger(metaclass=AsyncioSingleton):
         self._all_outgoing_messages_lock = asyncio.Lock()
         self._queue_lock = asyncio.Lock()
         
+        self._writer_task = None
+        self._cleanup_task = None
+        
     async def start(self):
         """Initialize the logger and start background writer"""
         # Write headers only if file doesn't exist
@@ -87,14 +90,14 @@ class RTTLogger(metaclass=AsyncioSingleton):
         
     async def stop(self):
         """Stop the logger and cleanup"""
-        if hasattr(self, '_writer_task') and self._writer_task:
+        if self._writer_task:
             self._writer_task.cancel()
             try:
                 await self._writer_task
             except asyncio.CancelledError:
                 pass
                 
-        if hasattr(self, '_cleanup_task') and self._cleanup_task:
+        if self._cleanup_task:
             self._cleanup_task.cancel()
             try:
                 await self._cleanup_task
@@ -131,7 +134,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
         async with self._all_outgoing_messages_lock:
             self._all_outgoing_messages[conversation_id] = start_data
             
-        print(f"DEBUG: {agent_name} starting request {conversation_id} to {receiver}")
+        # print(f"DEBUG: {agent_name} starting request {conversation_id} to {receiver}")
             
     async def record_message_sent(self, agent_name: str, conversation_id: str, 
                                performative: str, 
@@ -152,7 +155,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
                     'receiver': receiver,
                     'ontology': ontology
                 }
-                print(f"DEBUG: {agent_name} recording message {conversation_id} to {receiver}")
+                # print(f"DEBUG: {agent_name} recording message {conversation_id} to {receiver}")
             
     async def record_message_received(self, agent_name: str, conversation_id: str, 
                                 performative: str,
@@ -193,9 +196,11 @@ class RTTLogger(metaclass=AsyncioSingleton):
             async with self._queue_lock:
                 await self._write_queue.put(measurement)
                 
-            print(f"DEBUG: {agent_name} received response for {conversation_id} from {sender}, RTT={rtt:.3f}ms")
+            # print(f"DEBUG: {agent_name} received response for {conversation_id} from {sender}, RTT={rtt:.3f}ms")
+            pass
         else:
-            print(f"DEBUG: {agent_name} received message {conversation_id} from {sender} with no matching sent message")
+            # print(f"DEBUG: {agent_name} received message {conversation_id} from {sender} with no matching sent message")
+            pass
                 
     async def end_request(self,
                          agent_name: str,
@@ -251,7 +256,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
                 
                 return rtt
             else:
-                print(f"Warning: No request data found for conversation_id {conversation_id} in end_request")
+                # print(f"Warning: No request data found for conversation_id {conversation_id} in end_request")
                 return None
             
     async def _cleanup_stale_entries(self):
@@ -269,9 +274,9 @@ class RTTLogger(metaclass=AsyncioSingleton):
                     # Check for stale entries in pending requests
                     for conv_id, data in self._pending_requests.items():
                         if now - data.get('start_time_wall', 0) > STALE_THRESHOLD_SECONDS:
-                            agent_name = data.get('agent_name', "UNKNOWN")
+                            # agent_name = data.get('agent_name', "UNKNOWN")
                             stale_convs.append(conv_id)
-                            print(f"DEBUG: Removing stale request {conv_id} from {agent_name}")
+                            # print(f"DEBUG: Removing stale request {conv_id} from {agent_name}")
                     
                     # Remove the stale entries
                     for conv_id in stale_convs:
@@ -296,7 +301,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
             while True:
                 # Process in small batches to handle bursts more efficiently
                 batch = []
-                for _ in range(min(50, self._write_queue.qsize())):
+                for _ in range(min(150, self._write_queue.qsize())):
                     try:
                         measurement = self._write_queue.get_nowait()
                         batch.append(measurement)
@@ -319,7 +324,7 @@ class RTTLogger(metaclass=AsyncioSingleton):
                             self._write_queue.task_done()
                 else:
                     # If no batch was formed, wait a bit
-                    await asyncio.sleep(0.01) 
+                    await asyncio.sleep(2) 
         except asyncio.CancelledError:
             # Flush remaining measurements
             while not self._write_queue.empty():

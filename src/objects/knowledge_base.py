@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import json
 from aioxmpp import JID
 
-from performance.df_analysis import DFOperation, DFMetricsTracker
+# from performance.df_analysis import DFOperation, DFMetricsTracker
 import time
 
 @dataclass
@@ -35,12 +35,10 @@ class AgentKnowledgeBase:
         self._agents: Dict[str, AgentInfo] = {}
         self._capabilities: Dict[str, Set[str]] = {}  # service_type -> set of JIDs
         self._ttl = timedelta(seconds=ttl_seconds)
-        self._lock = asyncio.Lock()
+        self._register_lock = asyncio.Lock()
+        self._search_lock = asyncio.Lock()
         self._cleanup_task = None
         self._cache = {}
-        
-        # filename_with_timestamp = f"df_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        # self.df_tracker = DFMetricsTracker(output_file=filename_with_timestamp)
 
     @classmethod
     async def get_instance(cls) -> 'AgentKnowledgeBase':
@@ -89,17 +87,18 @@ class AgentKnowledgeBase:
 
     async def start(self):
         """Start the knowledge base and its maintenance tasks"""
-        if not self._cleanup_task:
-            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+        pass
+        #if not self._cleanup_task:
+        #    self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             
     def set_scenario(self, scenario: str):
         """Set the scenario for the knowledge base"""
         self.scenario = scenario
-        # Update the metrics tracker with the new scenario
-        # self.df_tracker = DFMetricsTracker(output_file=f"df_metrics_{scenario}.csv", scenario=scenario)
 
     async def stop(self):
+        pass
         """Stop the knowledge base and cleanup"""
+        """
         if self._cleanup_task:
             self._cleanup_task.cancel()
             try:
@@ -107,15 +106,15 @@ class AgentKnowledgeBase:
             except asyncio.CancelledError:
                 pass
             finally:
-                self._cleanup_task = None
+                self._cleanup_task = None """
 
     async def register_agent(self, jid: JID, capabilities: List[AgentCapability]) -> bool:
         """Enhanced registration with DF metrics tracking"""
         start_time = time.perf_counter()
-        agent_id = str(jid).split("@")[0]  # Extract agent name from JID
+        # agent_id = str(jid).split("@")[0]  # Extract agent name from JID
         
         try:
-            async with self._lock:
+            async with self._register_lock:
                 # Update agent info
                 self._agents[str(jid)] = AgentInfo(
                     jid=jid,
@@ -133,30 +132,11 @@ class AgentKnowledgeBase:
                 end_time = time.perf_counter()
                 response_time = (end_time - start_time) * 1000
                 
-                # Log registration operation
-                # await self.df_tracker.log_operation(DFOperation(
-                #     agent_id=agent_id,
-                #     operation="register",
-                #     timestamp=datetime.now(),
-                #     response_time_ms=response_time,
-                #     num_results=len(capabilities),  # Number of registered capabilities
-                #     status="success"
-                # ))
-                
                 return True
                 
         except Exception as e:
             end_time = time.perf_counter()
             response_time = (end_time - start_time) * 1000
-            
-            # await self.df_tracker.log_operation(DFOperation(
-            #     agent_id=agent_id,
-            #     operation="register",
-            #     timestamp=datetime.now(),
-            #     response_time_ms=response_time,
-            #     num_results=0,
-            #     status=f"error: {str(e)}"
-            # ))
             raise
 
     async def deregister_agent(self, jid: JID) -> bool:
@@ -166,18 +146,10 @@ class AgentKnowledgeBase:
         
         try:
             async with asyncio.timeout(10):
-                async with self._lock:
+                async with self._register_lock:
                     jid_str = str(jid)
-                    # if jid_str not in self._agents:
-                    #     await self.df_tracker.log_operation(DFOperation(
-                    #         agent_id=agent_id,
-                    #         operation="deregister",
-                    #         timestamp=datetime.now(),
-                    #         response_time_ms=0,
-                    #         num_results=0,
-                    #         status="not_found"
-                    #     ))
-                    #     return False 
+                    if jid_str not in self._agents:
+                        return False
 
                     # Remove from capability indices
                     agent_info = self._agents[jid_str]
@@ -196,35 +168,17 @@ class AgentKnowledgeBase:
                     end_time = time.perf_counter()
                     response_time = (end_time - start_time) * 1000
                     
-                    # Log deregistration operation
-                    # await self.df_tracker.log_operation(DFOperation(
-                    #     agent_id=agent_id,
-                    #     operation="deregister",
-                    #     timestamp=datetime.now(),
-                    #     response_time_ms=response_time,
-                    #     num_results=num_capabilities,  # Number of deregistered capabilities
-                    #     status="success"
-                    # ))
-                    
                     return True
         except Exception as e:
             end_time = time.perf_counter()
             response_time = (end_time - start_time) * 1000
             
-            # await self.df_tracker.log_operation(DFOperation(
-            #     agent_id=agent_id,
-            #     operation="deregister",
-            #     timestamp=datetime.now(),
-            #     response_time_ms=response_time,
-            #     num_results=0,
-            #     status=f"error: {str(e)}"
-            # ))
             # raise custom exception or log error
             raise Exception(f"Error deregistering agent {jid}: {str(e)}")
 
     async def search(self, service_type: Optional[str] = None, properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
         """Enhanced search with DF metrics tracking"""
-        start_time = time.perf_counter()
+        # start_time = time.perf_counter()
         agent_id = properties.get("agent_id", "unknown") if properties else "unknown"
         
         try:
@@ -233,76 +187,48 @@ class AgentKnowledgeBase:
             cached_result = self.check_cache(agent_id, "search", cache_params)
             
             if cached_result:
-                # Log cache hit
-                # await self.df_tracker.log_operation(DFOperation(
-                #     agent_id=agent_id,
-                #     operation="cache_hit",
-                #     timestamp=datetime.now(),
-                #     response_time_ms=0,
-                #     num_results=len(cached_result),
-                #     status="success"
-                # ))
                 return cached_result
 
-            async with self._lock:
-                results = []
-                candidate_jids = (self._capabilities.get(service_type, set()) 
-                                if service_type else set(self._agents.keys()))
-                
-                for jid_str in candidate_jids:
-                    agent = self._agents.get(jid_str)
-                    if not agent:
-                        continue
-                        
-                    if properties:
-                        for cap in agent.capabilities:
-                            if cap.service_type == service_type:
-                                matches = all(
-                                    key in cap.properties and cap.properties[key] == value
-                                    for key, value in properties.items()
-                                )
-                                if matches:
-                                    results.append(agent)
-                                    break
-                    else:
-                        results.append(agent)
+            # async with self._search_lock:
+            results = []
+            candidate_jids = (self._capabilities.get(service_type, set()) 
+                            if service_type else set(self._agents.keys()))
+            
+            for jid_str in candidate_jids:
+                agent = self._agents.get(jid_str)
+                if not agent:
+                    continue
+                    
+                if properties:
+                    for cap in agent.capabilities:
+                        if cap.service_type == service_type:
+                            matches = all(
+                                key in cap.properties and cap.properties[key] == value
+                                for key, value in properties.items()
+                            )
+                            if matches:
+                                results.append(agent)
+                                break
+                else:
+                    results.append(agent)
 
             # Calculate response time
-            end_time = time.perf_counter()
-            response_time = (end_time - start_time) * 1000
+            # end_time = time.perf_counter()
+            # response_time = (end_time - start_time) * 1000
             
-            # Log operation
-            # await self.df_tracker.log_operation(DFOperation(
-            #     agent_id=agent_id,
-            #     operation="search",
-            #     timestamp=datetime.now(),
-            #     response_time_ms=response_time,
-            #     num_results=len(results),
-            #     status="success"
-            # ))
-            
-            # Update cache
-            # self.df_tracker.update_cache(agent_id, "search", cache_params, results)
             self.update_cache(agent_id, "search", cache_params, results)
             
             return results
             
         except Exception as e:
-            end_time = time.perf_counter()
-            response_time = (end_time - start_time) * 1000
+            # end_time = time.perf_counter()
+            # response_time = (end_time - start_time) * 1000
             
-            # await self.df_tracker.log_operation(DFOperation(
-            #     agent_id=agent_id,
-            #     operation="search",
-            #     timestamp=datetime.now(),
-            #     response_time_ms=response_time,
-            #     num_results=0,
-            #     status=f"error: {str(e)}"
-            # ))
             raise Exception(f"Error searching for agents: {str(e)}")
     
+    """
     async def _cleanup_loop(self):
-        """Periodically remove expired agent registrations"""
+        # Periodically remove expired agent registrations
         while True:
             try:
                 await asyncio.sleep(60)  # Check every minute
@@ -310,11 +236,11 @@ class AgentKnowledgeBase:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Error in cleanup loop: {e}")
+                print(f"Error in cleanup loop: {e}") """
 
     async def _cleanup_expired(self):
         """Remove agents that haven't sent heartbeats within TTL"""
-        async with self._lock:
+        async with self._register_lock:
             now = datetime.now()
             expired = []
             
@@ -327,7 +253,7 @@ class AgentKnowledgeBase:
 
     async def export_state(self) -> str:
         """Export current state as JSON string"""
-        async with self._lock:
+        async with self._register_lock:
             state = {
                 "agents": {
                     jid: {
@@ -352,7 +278,7 @@ class AgentKnowledgeBase:
         kb = cls()
         state = json.loads(state_json)
         
-        async with kb._lock:
+        async with kb._register_lock:
             for jid_str, agent_data in state["agents"].items():
                 capabilities = [
                     AgentCapability(

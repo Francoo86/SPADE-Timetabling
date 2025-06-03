@@ -10,27 +10,26 @@ import logging
 import sys
 
 from pathlib import Path
-from src.agents.profesor_redux import AgenteProfesor
-from src.agents.sala_agent import AgenteSala
-from src.agents.supervisor import AgenteSupervisor
 from src.objects.knowledge_base import AgentKnowledgeBase
 
-from json_stuff.json_salas import SalaScheduleStorage
-from json_stuff.json_profesores import ProfesorScheduleStorage
+from src.json_stuff.json_salas import SalaScheduleStorage
+from src.json_stuff.json_profesores import ProfesorScheduleStorage
 from src.fipa.acl_message import FIPAPerformatives
 
 from src.performance.agent_factory import AgentFactory
 from src.performance.rtt_stats import RTTLogger
+from src.performance.agent_message_logger import AgentMessageLogger
 import time
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     filename='agent_logs.log',  # Specify the file to write logs
     filemode='w'  # Optional: Use 'w' to overwrite the file each time, or 'a' to append
 )
 logger = logging.getLogger(__name__)
+logger.disabled = True
 
 class ApplicationAgent(Agent):
     """
@@ -47,6 +46,7 @@ class ApplicationAgent(Agent):
         self.is_running = True
         self._kb = None
         self.rtt_logger : 'RTTLogger' = None
+        self.message_logger = None
         
         self._rooms_ready = False
         self._professors_ready = False
@@ -100,14 +100,17 @@ class ApplicationAgent(Agent):
         return status
         
     async def setup(self):
-        self.web.start(hostname="127.0.0.1", port=20000)
-        self.web.add_get("/status", self.get_system_status, template=None)
-        self.web.add_get("/agents", self.get_agent_status, template=None)
+        # self.web.start(hostname="127.0.0.1", port=20000)
+        # self.web.add_get("/status", self.get_system_status, template=None)
+        # self.web.add_get("/agents", self.get_agent_status, template=None)
     
         """Initialize agent behaviors and start agent creation sequence"""
         logger.info("Application agent starting...")
         self._kb = await AgentKnowledgeBase.get_instance()
         self._kb.set_scenario(self.scenario)
+        
+        self.message_logger = await AgentMessageLogger()
+        await self.message_logger.start(self.scenario)
         
         # Initialize storage instances
         self.prof_storage = await ProfesorScheduleStorage.get_instance()
@@ -136,6 +139,7 @@ class ApplicationAgent(Agent):
         def __init__(self, factory : AgentFactory):
             super().__init__()
             self.factory = factory
+            self.rooms = []
         
         async def on_start(self):
             """Initialize startup sequence"""
@@ -154,39 +158,42 @@ class ApplicationAgent(Agent):
                 if not self.agent._rooms_ready:
                     await self.initialize_rooms()
                     self.agent._rooms_ready = True
+                    """
                     await self.factory.metrics_monitor.log_request(
                         "SystemStartup",
                         "system_initialization",
                         start_time,
                         time.time(),
                         details="Rooms initialized"
-                    )
+                    ) """
                     return
 
                 # 2. Initialize professors after rooms
                 if not self.agent._professors_ready:
                     await self.initialize_professors()
                     self.agent._professors_ready = True
+                    """
                     await self.factory.metrics_monitor.log_request(
                         "SystemStartup",
                         "system_initialization",
                         start_time,
                         time.time(),
                         details="Professors initialized"
-                    )
+                    ) """
                     return
 
                 # 3. Initialize supervisor
                 if not self.agent._supervisor_ready:
                     await self.initialize_supervisor()
                     self.agent._supervisor_ready = True
+                    """
                     await self.factory.metrics_monitor.log_request(
                         "SystemStartup",
                         "system_initialization",
                         start_time,
                         time.time(),
                         details="Supervisor initialized"
-                    )
+                    )"""
                     return
 
                 # 4. Start negotiations when ready
@@ -194,7 +201,7 @@ class ApplicationAgent(Agent):
                     self.agent._professors_ready and 
                     self.agent._supervisor_ready):
                     
-                    negotiation_start = time.time()
+                    # negotiation_start = time.time()
                     
                     # Start first professor
                     first_prof = self.agent.professor_agents[0]
@@ -203,7 +210,12 @@ class ApplicationAgent(Agent):
                     msg.set_metadata("conversation-id", "negotiation-start-base")
                     msg.body = "START"
                     
+                    await self.agent.message_logger.log_message_sent(
+                        first_prof.representative_name, msg
+                    )
+                    
                     await self.send(msg)
+                    """
                     await self.factory.metrics_monitor.log_request(
                         "SystemStartup",
                         "start_negotiations",
@@ -218,12 +230,13 @@ class ApplicationAgent(Agent):
                         start_time,
                         time.time(),
                         details="System fully initialized"
-                    )
+                    )"""
                     print("[GOOD] System initialization complete - Starting negotiations")
-                    await asyncio.sleep(0.1)
+                    # await asyncio.sleep(0.1)
                     self.kill()
                     
             except Exception as e:
+                """
                 await self.factory.metrics_monitor.log_request(
                     "SystemStartup",
                     "system_initialization",
@@ -231,7 +244,7 @@ class ApplicationAgent(Agent):
                     time.time(),
                     status="error",
                     details=f"Error: {str(e)}"
-                )
+                )"""
                 print(f"[FATAL] Error in startup sequence: {str(e)}")
 
         async def initialize_rooms(self):
@@ -246,7 +259,7 @@ class ApplicationAgent(Agent):
                     room_jid = f"Sala{room_data['Codigo']}@{self.agent.jid.domain}"
                     
                     # Create room through factory for metrics integration
-                    room = await self.factory.create_classroom(
+                    room = self.factory.create_classroom(
                         jid=room_jid,
                         password=self.agent.password,
                         codigo=room_data.get("Codigo"),
@@ -258,9 +271,11 @@ class ApplicationAgent(Agent):
                     room.set_storage(self.agent.room_storage)
                     room.set_knowledge_base(self.agent._kb)
                     room.set_rtt_logger(self.agent.rtt_logger)
+                    room.set_message_logger(self.agent.message_logger)
                     await room.start(auto_register=True)
                     self.agent.room_agents[room_data['Codigo']] = room
                     logger.info(f"Room agent started: {room_jid}")
+                    self.rooms.append(room)
                     rooms_started += 1
                     
                 except Exception as e:
@@ -268,6 +283,7 @@ class ApplicationAgent(Agent):
                     rooms_failed += 1
             
             status = "partial_failure" if rooms_failed > 0 else "completed"
+            """
             await self.factory.metrics_monitor.log_request(
                 "SystemStartup",
                 "initialize_rooms",
@@ -275,9 +291,9 @@ class ApplicationAgent(Agent):
                 time.time(),
                 status=status,
                 details=f"Started: {rooms_started}, Failed: {rooms_failed}"
-            )
+            )"""
                     
-            await asyncio.sleep(2)  # Allow rooms to initialize
+            # await asyncio.sleep(0.1)  # Allow rooms to initialize
 
         async def initialize_professors(self):
             """Initialize and start professor agents with metrics"""
@@ -291,7 +307,7 @@ class ApplicationAgent(Agent):
                     prof_jid = f"Profesor{i}@{self.agent.jid.domain}"
                     
                     # Create professor through factory for metrics integration
-                    professor = await self.factory.create_professor(
+                    professor = self.factory.create_professor(
                         jid=prof_jid,
                         password=self.agent.password,
                         nombre=prof_data.get("Nombre"),
@@ -302,6 +318,7 @@ class ApplicationAgent(Agent):
                     professor.set_storage(self.agent.prof_storage)
                     professor.set_knowledge_base(self.agent._kb)
                     professor.set_rtt_logger(self.agent.rtt_logger)
+                    professor.set_message_logger(self.agent.message_logger)
                     await professor.start(auto_register=True)
                     self.agent.professor_agents.append(professor)
                     logger.info(f"Professor agent started: {prof_jid}")
@@ -312,6 +329,7 @@ class ApplicationAgent(Agent):
                     profs_failed += 1
             
             status = "partial_failure" if profs_failed > 0 else "completed"
+            """
             await self.factory.metrics_monitor.log_request(
                 "SystemStartup",
                 "initialize_professors",
@@ -319,9 +337,9 @@ class ApplicationAgent(Agent):
                 time.time(),
                 status=status,
                 details=f"Started: {profs_started}, Failed: {profs_failed}"
-            )
+            )"""
                     
-            await asyncio.sleep(2)  # Allow professors to initialize
+            # await asyncio.sleep(0.1)  # Allow professors to initialize
 
         async def initialize_supervisor(self):
             """Initialize and start supervisor agent with metrics"""
@@ -332,7 +350,7 @@ class ApplicationAgent(Agent):
                 supervisor_jid = f"Supervisor@{self.agent.jid.domain}"
                 
                 # Create supervisor through factory for metrics integration
-                supervisor = await self.factory.create_supervisor(
+                supervisor = self.factory.create_supervisor(
                     jid=supervisor_jid,
                     password=self.agent.password,
                     professor_jids=[agent.jid for agent in self.agent.professor_agents]
@@ -341,20 +359,23 @@ class ApplicationAgent(Agent):
                 supervisor.add_finalizer_event(self.agent.end_event)
                 supervisor.set_storages(self.agent.room_storage, self.agent.prof_storage)
                 supervisor.set_knowledge_base(self.agent._kb)
+                supervisor.set_room_agents(self.rooms)
                 await supervisor.start(auto_register=True)
                 self.agent.supervisor_agent = supervisor
                 logger.info(f"Supervisor agent started: {supervisor_jid}")
                 
+                """
                 await self.factory.metrics_monitor.log_request(
                     "SystemStartup",
                     "initialize_supervisor",
                     start_time,
                     time.time(),
                     details="Supervisor started successfully"
-                )
+                )"""
                 
             except Exception as e:
                 logger.error(f"Failed to start supervisor agent: {e}")
+                """
                 await self.factory.metrics_monitor.log_request(
                     "SystemStartup",
                     "initialize_supervisor",
@@ -362,9 +383,9 @@ class ApplicationAgent(Agent):
                     time.time(),
                     status="error",
                     details=f"Error: {str(e)}"
-                )
+                )"""
                 
-            await asyncio.sleep(2)  # Allow supervisor to initialize
+            # await asyncio.sleep(0.1)  # Allow supervisor to initialize
             
         async def start_negotiations(self):
             """Trigger the start of negotiations"""

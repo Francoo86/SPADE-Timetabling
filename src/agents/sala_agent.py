@@ -1,19 +1,20 @@
 from spade.agent import Agent
 from spade.behaviour import PeriodicBehaviour
 from typing import Dict, List, Optional, Any
-from json_stuff.json_salas import SalaScheduleStorage
-from objects.knowledge_base import AgentKnowledgeBase, AgentCapability
+from ..json_stuff.json_salas import SalaScheduleStorage
+from ..objects.knowledge_base import AgentKnowledgeBase, AgentCapability
 from datetime import datetime
 
-from objects.asignation_data import AsignacionSala
+from ..objects.asignation_data import AsignacionSala
 
-from objects.static.agent_enums import Day
+from ..objects.static.agent_enums import Day
 
 from .agent_logger import AgentLogger
-from fipa.common_templates import CommonTemplates
-from behaviours.responder_behaviour import ResponderSolicitudesBehaviour
+from ..fipa.common_templates import CommonTemplates
+from ..behaviours.responder_behaviour import ResponderSolicitudesBehaviour
 from src.performance.rtt_stats import RTTLogger
 from src.performance.lightweight_monitor import CentralizedPerformanceMonitor
+from src.performance.agent_message_logger import AgentMessageLogger
 
 class AgenteSala(Agent):
     SERVICE_NAME = "sala"
@@ -31,11 +32,15 @@ class AgenteSala(Agent):
         self._kb = None
         self.storage = None
         self.scenario = scenario
+        self.message_logger = None
+        self.representative_name = f"Sala{codigo.upper()}"
+
+        """
         self.performance_monitor = CentralizedPerformanceMonitor(
             agent_identifier=self.jid,
             agent_type="sala",
             scenario=self.scenario
-        )
+        )"""
         
 
         self.responder_behaviour = ResponderSolicitudesBehaviour()
@@ -45,10 +50,14 @@ class AgenteSala(Agent):
 
     def set_knowledge_base(self, kb: AgentKnowledgeBase):
         self._kb = kb
+        
+    def set_message_logger(self, message_logger: AgentMessageLogger):
+        """Set the message logger for this agent"""
+        self.message_logger = message_logger
 
     async def setup(self):
         """Initialize agent setup"""
-        await self.performance_monitor.start_monitoring()
+        # await self.performance_monitor.start_monitoring()
         self.initialize_schedule()
         await self.register_service()
         
@@ -130,18 +139,6 @@ class AgenteSala(Agent):
             self.log.error(f"Error updating schedule storage: {str(e)}")
             raise
 
-    class HeartbeatBehaviour(PeriodicBehaviour):
-        """Send periodic heartbeats to maintain registration"""
-        
-        def __init__(self):
-            super().__init__(period=30)  # 30 seconds between heartbeats
-            
-        async def run(self):
-            try:
-                await self.agent._kb.update_heartbeat(self.agent.jid)
-            except Exception as e:
-                self.agent.log.error(f"Error sending heartbeat: {str(e)}")
-
     async def cleanup(self):
         """Deregister from directory during cleanup"""
         try:
@@ -151,3 +148,15 @@ class AgenteSala(Agent):
                 self.log.info(f"Room {self.agent.codigo} deregistered from directory")
         except Exception as e:
             self.log.error(f"Agent Sala{self.agent.codigo}:Error during cleanup: {str(e)}")
+            
+    def get_campus(self) -> str:
+        """Get campus of the room"""
+        return self.campus
+    
+    def get_codigo(self) -> str:
+        """Get room code"""
+        return self.codigo
+    
+    def get_horario_ocupado(self) -> Dict[Day, List[Optional[AsignacionSala]]]:
+        """Get the occupied schedule"""
+        return self.horario_ocupado
