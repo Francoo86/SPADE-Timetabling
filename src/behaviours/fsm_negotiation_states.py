@@ -192,6 +192,10 @@ class CFPSenderState(State):
             }
 
             cfp_count = 0
+            
+            # sort rooms by name
+            rooms.sort(key=lambda r: str(r.jid))
+            
             # Filter rooms before sending CFPs
             for room in rooms:
                 # Extract room properties from capabilities

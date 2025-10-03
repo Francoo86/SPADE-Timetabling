@@ -79,7 +79,6 @@ class IterationRunner:
             }
             
             self.logger.info(f"Iteration {iteration} completed in {duration:.2f} seconds")
-            
         except Exception as e:
             self.logger.error(f"Error in iteration {iteration}: {str(e)}")
             result = {

@@ -22,6 +22,8 @@ def create_room_schedule(room_data):
     }
     days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes']
     
+    days = [day.upper() for day in days]  # Convert to uppercase for consistency
+    
     schedule_df = pd.DataFrame(
         index=time_blocks.values(),
         columns=days
@@ -34,8 +36,8 @@ def create_room_schedule(room_data):
             content = (f"Asignatura: {subject.get('Nombre', 'Sin nombre')}\n"
                       # f"Satisfacción: {subject.get('Satisfaccion', 'N/A')}/10\n"
                       f"Capacidad: {subject.get('Capacidad', 0):.0%}")  # Mostrar capacidad como porcentaje
-            schedule_df.at[time_slot, subject['Dia']] = content
-    
+            schedule_df.at[time_slot, subject['Dia'].upper()] = content
+
     return schedule_df.fillna('')
 
 def apply_excel_styling(worksheet):
@@ -53,7 +55,7 @@ def apply_excel_styling(worksheet):
                 cell.fill = header_fill
                 cell.font = Font(bold=True)
 
-def save_room_schedules(data, filename='room_schedules.xlsx'):
+def save_room_schedules(data, filename='room_schedules_spade.xlsx'):
     """Saves each room's schedule to a separate worksheet"""
     output_dir = 'scheduleRepresentation'
     os.makedirs(output_dir, exist_ok=True)

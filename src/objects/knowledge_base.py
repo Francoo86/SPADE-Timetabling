@@ -177,8 +177,6 @@ class AgentKnowledgeBase:
             raise Exception(f"Error deregistering agent {jid}: {str(e)}")
 
     async def search(self, service_type: Optional[str] = None, properties: Optional[Dict[str, any]] = None) -> List[AgentInfo]:
-        """Enhanced search with DF metrics tracking"""
-        # start_time = time.perf_counter()
         agent_id = properties.get("agent_id", "unknown") if properties else "unknown"
         
         try:
@@ -211,19 +209,12 @@ class AgentKnowledgeBase:
                                 break
                 else:
                     results.append(agent)
-
-            # Calculate response time
-            # end_time = time.perf_counter()
-            # response_time = (end_time - start_time) * 1000
             
             self.update_cache(agent_id, "search", cache_params, results)
             
             return results
             
         except Exception as e:
-            # end_time = time.perf_counter()
-            # response_time = (end_time - start_time) * 1000
-            
             raise Exception(f"Error searching for agents: {str(e)}")
     
     """

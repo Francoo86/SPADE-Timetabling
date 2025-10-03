@@ -23,6 +23,7 @@ def create_teacher_schedule(teacher_data):
     }
     
     days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes']
+    days = [day.upper() for day in days]  # Convert to uppercase for consistency
     
     schedule_df = pd.DataFrame(
         index=time_blocks.values(),
@@ -32,7 +33,7 @@ def create_teacher_schedule(teacher_data):
     # Fill schedule with teacher's subjects
     for subject in teacher_data['Asignaturas']:
         time_slot = time_blocks[subject['Bloque']]
-        day = subject['Dia']
+        day = subject['Dia'].upper()
         content = (f"{subject['Nombre']}\n"
                   f"Sala: {subject['Sala']}\n"
                   )#f"Satisfacción: {subject['Satisfaccion']}/10")
@@ -55,7 +56,7 @@ def apply_excel_styling(worksheet):
                 cell.fill = header_fill
                 cell.font = Font(bold=True)
 
-def save_schedules(data, filename='teacher_schedules.xlsx'):
+def save_schedules(data, filename='teacher_schedules_spade.xlsx'):
     """Saves each teacher's schedule to a separate worksheet in scheduleRepresentation folder"""
     output_dir = 'scheduleRepresentation'
     os.makedirs(output_dir, exist_ok=True)
