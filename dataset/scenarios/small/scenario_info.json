@@ -1,0 +1,6 @@
+{
+  "name": "small",
+  "professor_count": 20,
+  "classroom_count": 15,
+  "description": "Small benchmark scenario"
+}

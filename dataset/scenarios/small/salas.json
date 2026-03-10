@@ -1,0 +1,92 @@
+[
+  {
+    "Turno": 29,
+    "Codigo": "KAUT1",
+    "Capacidad": 28,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 30,
+    "Codigo": "KAUT2",
+    "Capacidad": 28,
+    "Campus": "Kaufmann"
+  },
+  {
+    "Turno": 63,
+    "Codigo": "S210",
+    "Capacidad": 35,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 45,
+    "Codigo": "LC6",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 2,
+    "Codigo": "ANT21",
+    "Capacidad": 22,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 14,
+    "Codigo": "IC3",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 19,
+    "Codigo": "IM4",
+    "Capacidad": 9,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 68,
+    "Codigo": "TBD",
+    "Capacidad": 11,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 11,
+    "Codigo": "E6",
+    "Capacidad": 45,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 47,
+    "Codigo": "LCOM",
+    "Capacidad": 12,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 59,
+    "Codigo": "LRSM",
+    "Capacidad": 20,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 65,
+    "Codigo": "S316",
+    "Capacidad": 25,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 37,
+    "Codigo": "LAMB",
+    "Capacidad": 40,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 3,
+    "Codigo": "CM3",
+    "Capacidad": 50,
+    "Campus": "Playa Brava"
+  },
+  {
+    "Turno": 22,
+    "Codigo": "K2",
+    "Capacidad": 30,
+    "Campus": "Playa Brava"
+  }
+]
