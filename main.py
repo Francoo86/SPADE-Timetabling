@@ -331,8 +331,8 @@ class ApplicationRunner:
         """Run the SPADE application"""
         try:
             # Load configuration data
-            professors_data = self.load_json("inputOfProfs.json")
-            rooms_data = self.load_json("inputOfSala.json")
+            professors_data = self.load_json("profesores.json")
+            rooms_data = self.load_json("salas.json")
             
             if not professors_data or not rooms_data:
                 logger.error("Failed to load required data files")
